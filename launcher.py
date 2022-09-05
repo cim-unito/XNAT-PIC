@@ -34,7 +34,7 @@ from new_project_manager import NewProjectManager, NewSubjectManager, NewExperim
 import itertools
 from Treeview import Treeview
 
-
+# TEst
 PATH_IMAGE = "images\\"
 # PATH_IMAGE = "lib\\images\\"
 PERCENTAGE_SCREEN = 1  # Defines the size of the canvas. If equal to 1 (100%) ,it takes the whole screen
