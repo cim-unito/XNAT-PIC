@@ -6,7 +6,7 @@ Created on Fri Aug 10 11:18:01 2018
 """
 from pydicom import datadict
 import pydicom.encoders.gdcm
-
+import pydicom.encoders.pylibjpeg
 
 def add_cest_dict():
     # CEST acquisition
