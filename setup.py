@@ -66,7 +66,7 @@ icon="logo3.ico"
 )
 
 setup(name=product_name,
-version='1.0.0',
+version='2.0.0',
 description='XNAT for Preclinical Imaging Centers (XNAT-PIC) has been developed to expand basic functionalities of XNAT to preclinical imaging',
 executables=[exe],
 options={'bdist_msi': bdist_msi_options,
