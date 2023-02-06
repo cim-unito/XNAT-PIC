@@ -198,9 +198,21 @@ def metadata_params(information_folder, value):
         keys = sub + "#" + exp
         path_list1.update({keys : path})
         # Check if the txt file is in folder of the patient
+        tmp_path = ''
+        for dirpath, dirnames, filenames in os.walk(path.replace('\\', '/')):
+            # Check if the visu pars file is in the scans
+            for filename in [f for f in filenames if f.startswith("visu_pars")]:
+                tmp_path = path
+                break
+            # Check if the DICOM is in the scans
+            for filename in [f for f in filenames if f.endswith(".dcm")]:
+                tmp_path = path + "\\MR\\"
+                break
+            if tmp_path:
+                break
         # If the file exists, read le info
-        if os.path.exists((path + "\\" + name).replace('\\', '/')):
-            subject_data = read_table((path + "\\" + name).replace('\\', '/'))
+        if os.path.exists((tmp_path + "\\" + name).replace('\\', '/')):
+            subject_data = read_table((tmp_path + "\\" + name).replace('\\', '/'))
             tmp_dict = {keys: subject_data}
         else:
         # If the txt file do not exist, load default value

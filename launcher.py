@@ -14,7 +14,7 @@ from progress_bar import ProgressBar
 from dicom_converter import Bruker2DicomConverter
 from glob import glob
 from tabulate import tabulate
-import datetime 
+import datetime as dt
 from datetime import date
 import threading
 from dotenv import load_dotenv
@@ -161,13 +161,11 @@ class xnat_pic_gui():
         new_menu.add_command(label="Experiment", image = self.logo_folder, compound = 'left',command=new_exp)
 
         fileMenu.add_cascade(label="New...", image = self.logo_subdirectory, compound = 'left', menu=new_menu)
-        fileMenu.add_command(label="Login", image = self.logo_login, compound = 'left')
         fileMenu.add_separator()
         fileMenu.add_command(label="Exit", image = self.logo_exit, compound = 'left', command=lambda: self.root.destroy())
         
         self.toolbar_menu.add_cascade(label="File", menu=fileMenu)
-        self.toolbar_menu.add_cascade(label="Edit")
-        self.toolbar_menu.add_cascade(label="Options")
+        self.toolbar_menu.add_cascade(label="Help")
         self.root.config(menu=self.toolbar_menu)
 
         # Logo on the top
@@ -285,13 +283,11 @@ class xnat_pic_gui():
             new_menu.add_command(label="Experiment", image = self.logo_folder, compound = 'left',command=new_exp)
 
             fileMenu.add_cascade(label="New...", image = self.logo_subdirectory, compound = 'left', menu=new_menu)
-            fileMenu.add_command(label="Login", image = self.logo_login, compound = 'left')
             fileMenu.add_separator()
             fileMenu.add_command(label="Exit", image = self.logo_exit, compound = 'left', command=lambda: self.root.destroy())
             
             self.toolbar_menu.add_cascade(label="File", menu=fileMenu)
-            self.toolbar_menu.add_cascade(label="Edit")
-            self.toolbar_menu.add_cascade(label="Options")
+            self.toolbar_menu.add_cascade(label="Help")
             self.root.config(menu=self.toolbar_menu)
 
 
@@ -354,21 +350,17 @@ class xnat_pic_gui():
             self.menu = ttk.Menu(master.root)
             file_menu = ttk.Menu(self.menu, tearoff=0)
             home_menu = ttk.Menu(self.menu, tearoff=0)
-            #exit_menu = ttk.Menu(self.menu, tearoff=0)
             help_menu = ttk.Menu(self.menu, tearoff=0)
 
             home_menu.add_command(label="Home", image = master.logo_home, compound='left', command = lambda: exit_converter())
 
             file_menu.add_command(label="Clear Tree", image = master.logo_clear, compound='left', command = lambda: clear_tree())
             
-            #exit_menu.add_command(label="Exit", image = master.logo_exit, compound='left', command = lambda: self.exit_metadata(master))
-
             help_menu.add_command(label="Help", image = master.logo_help, compound='left', command = lambda: messagebox.showinfo("XNAT-PIC","Help"))
 
             self.menu.add_cascade(label='Home', menu=home_menu)
             self.menu.add_cascade(label="File", menu=file_menu)
             self.menu.add_cascade(label="About", menu=help_menu)
-            #self.menu.add_cascade(label="Exit", menu=exit_menu)
             master.root.config(menu=self.menu)
 
             # Label Frame Main (for Title only)
@@ -445,7 +437,6 @@ class xnat_pic_gui():
                 # Check if folder has not been selected (Cancel button)
                 if self.folder_to_convert.get() == '':
                     messagebox.showerror("XNAT-PIC Converter", "Please select a folder.")
-                    #enable_buttons([self.prj_conv_btn, self.sbj_conv_btn, self.exp_conv_btn])
                     return
 
                 # Check if the selected folder is related to the right convertion flag
@@ -570,8 +561,8 @@ class xnat_pic_gui():
                     self.tree_converted.tree.delete(*self.tree_converted.tree.get_children())
 
             self.clear_tree_btn = ttk.Button(self.frame_converter, image=master.logo_clear,
-                                    cursor=CURSOR_HAND, state='disabled', command=clear_tree, style="WithoutBack.TButton")
-            self.clear_tree_btn.place(relx = 0.37, rely = 0.72, anchor = NE)
+                                    cursor=CURSOR_HAND, command=clear_tree, style="WithoutBack.TButton")
+            self.clear_tree_btn.place(relx = 0.05, rely = 0.72, anchor = NW)
             Hovertip(self.clear_tree_btn, "Delete tree")
 
             # Search entry to find objects
@@ -580,26 +571,7 @@ class xnat_pic_gui():
                     self.tree_to_convert.find_items(self.search_var.get())
                 else:
                     self.tree_to_convert.remove_selection()
-            
-            self.search_var = tk.StringVar()
-            self.search_entry = ttk.Entry(self.frame_converter, cursor=CURSOR_HAND, state='disabled', textvariable=self.search_var)
-            self.search_entry.place(relx = 0.07, rely = 0.72, anchor = NW)
-            self.search_pre_btn = ttk.Button(self.frame_converter, image=master.logo_search, state='disabled',
-                                    cursor=CURSOR_HAND, command = lambda: self.search_entry.focus_set(), style="WithoutBack.TButton")
-            self.search_pre_btn.place(relx = 0.05, rely = 0.72, anchor = NW)
-
-            self.search_var.trace('w', scankey)
-            
-            # Details Button
-            def show_folder_details_pre(*args):
-            
-                folder_reader = FolderDetails(self.object_folder.get())
-                if glob(os.path.join(self.object_folder.get()).replace("\\", "/") + '/**/**/**/2dseq', recursive=False):
-                    folder_reader.read_folder_details_raw_images()
-                folder_reader.save_folder_details()
-                folder_reader.show_folder_details(master.root)
-                master.root.wait_window(folder_reader.popup)
-                  
+                             
             def selected_object_handler(*args):
                 curItem = self.tree_to_convert.tree.focus()
                 parentItem = self.tree_to_convert.tree.parent(curItem)
@@ -611,10 +583,6 @@ class xnat_pic_gui():
                     self.details_btn.config(state='disabled')
 
             self.object_folder = tk.StringVar()
-            self.details_btn = ttk.Button(self.frame_converter, cursor=CURSOR_HAND, image=master.details_icon, command=show_folder_details_pre,
-                                            style="WithoutBack.TButton", state='disabled')
-            self.details_btn.place(relx = 0.4, rely = 0.72, anchor = NE)
-            Hovertip(self.details_btn, "Show details")
 
             # Treeview widget pre_convertion
             columns = [("#0", "Selected folder"), ("#1", "Last Update"), ("#2", "Size"), ("#3", "Type")]
@@ -734,41 +702,10 @@ class xnat_pic_gui():
             self.tree_to_convert.tree.bind("<ButtonRelease-1>", selected_object_handler)
 
             # Treeview post_convertion
-            # Search entry to find objects
-            def scankey(*args):
-                if self.search_var.get() != '':
-                    self.tree_converted.find_items(self.search_var.get())
-                else:
-                    self.tree_converted.remove_selection()
-
-            self.search_var = tk.StringVar()
-            self.search_post_entry = ttk.Entry(self.frame_converter, cursor=CURSOR_HAND, state='disabled', textvariable=self.search_var)
-            self.search_post_entry.place(relx = 0.62, rely = 0.72, anchor = NW)
-            self.search_post_btn = ttk.Button(self.frame_converter, image=master.logo_search, state='disabled',
-                                                cursor=CURSOR_HAND, command = lambda: self.search_post_entry.focus_set(), style="WithoutBack.TButton")
-            self.search_post_btn.place(relx = 0.6, rely = 0.72, anchor = NW)
-            self.search_var.trace('w', scankey)
-
             self.clear_tree_btn_post = ttk.Button(self.frame_converter, image=master.logo_clear,
                                     cursor=CURSOR_HAND, state='normal', command=clear_tree, style="WithoutBack.TButton")
-            self.clear_tree_btn_post.place(relx = 0.92, rely = 0.72, anchor = NE)
+            self.clear_tree_btn_post.place(relx = 0.95, rely = 0.72, anchor = NE)
             Hovertip(self.clear_tree_btn_post, "Delete Tree")
-
-            def show_folder_details_post(*args):
-            
-                folder_reader = FolderDetails(self.object_folder_post.get())
-                if glob(os.path.join(self.object_folder_post.get()).replace("\\", "/") + '/**/**/*.dcm', recursive=False):
-                    folder_reader.read_folder_details_dcm_images()
-                folder_reader.save_folder_details()
-                folder_reader.show_folder_details(master.root)
-                master.root.wait_window(folder_reader.popup)
-
-            # Show Details Button
-            self.object_folder_post = tk.StringVar()
-            self.details_btn_post = ttk.Button(self.frame_converter, cursor=CURSOR_HAND, image=master.details_icon, command=show_folder_details_post,
-                                            style="WithoutBack.TButton", state='disabled')
-            self.details_btn_post.place(relx = 0.95, rely = 0.72, anchor = NE)
-            Hovertip(self.details_btn, "Show details")
 
             # Treeview widget post_convertion
             self.tree_converted = Treeview(self.frame_converter, columns, width=100)
@@ -826,6 +763,8 @@ class xnat_pic_gui():
                 else:
                     self.converted_folder.set('')
 
+                enable_buttons([self.exit_btn])
+
             self.next_btn = ttk.Button(self.frame_converter, text="Next", cursor=CURSOR_HAND,  style="Secondary1.TButton", command=next_btn_handler,
                                     state='disabled')
             self.next_btn.place(relx = 0.95, rely = 0.9, relwidth=0.15, anchor = NE)
@@ -846,7 +785,7 @@ class xnat_pic_gui():
             # if press_btn == 0:
             # Disable main buttons
             disable_buttons([self.prj_conv_btn, self.sbj_conv_btn, self.exp_conv_btn])
-            enable_buttons([self.select_folder_button, self.search_entry, self.search_pre_btn, self.clear_tree_btn, self.search_post_entry, self.search_post_btn])
+            enable_buttons([self.select_folder_button, self.clear_tree_btn])
 
             # View what conversion you are doing (Project, Subject, Experiment)
             if self.conv_flag.get() == 0:
@@ -881,7 +820,6 @@ class xnat_pic_gui():
             master.root.deiconify()
             master.root.update()
             # Define the project destination folder
-            # self.prj_dst = self.folder_to_convert.get() + '_dcm'
             self.prj_dst = self.converted_folder.get()
 
             # Initialize converter class
@@ -987,10 +925,6 @@ class xnat_pic_gui():
 
             master.root.deiconify()
             master.root.update()
-            # head, tail = os.path.split(self.folder_to_convert.get())
-            # head = head + '_dcm'
-            # project_foldername = tail.split('.',1)[0]
-            # self.sub_dst = os.path.join(head, project_foldername).replace('\\', '/')
             self.sub_dst = self.converted_folder.get()
 
             # Start converter
@@ -1072,10 +1006,6 @@ class xnat_pic_gui():
 
             master.root.deiconify()
             master.root.update()
-            # head, tail = os.path.split(self.folder_to_convert.get())
-            # head2, tail2 = os.path.split(head)
-            # head2 = head2 + '_dcm'
-            # self.exp_dst = os.path.join(head2, tail2, tail).replace('\\', '/')
             self.exp_dst = self.converted_folder.get()
 
             # Initialize converter class
@@ -1246,7 +1176,7 @@ class xnat_pic_gui():
 
             file_menu.add_command(label="Select Folder", image = master.logo_folder, compound='left', command = browse_fun)
             file_menu.add_separator()
-            file_menu.add_command(label ="Show details",  image=master.details_icon, compound='left', command= lambda: self.show_folder_details(master),)
+            #file_menu.add_command(label ="Show details",  image=master.details_icon, compound='left', command= lambda: self.show_folder_details(master))
             file_menu.add_command(label="Add ID", image = master.logo_add, compound='left',command = lambda: self.add_ID(master))
             file_menu.add_command(label="Add Custom Variables", image = master.logo_add, compound='left', command = lambda: self.add_custom_variable(master))
             file_menu.add_command(label="Clear Custom Variables", image = master.logo_clear, compound='left', command = lambda: self.clear_metadata())
@@ -1612,7 +1542,7 @@ class xnat_pic_gui():
                 self.entries_value_ID[4].insert(0, str(self.cal.entry.get()))
                 if self.entries_value_ID[4].get():
                     try:
-                        acq_date = datetime.datetime.strptime(self.entries_value_ID[4].get(), '%Y-%m-%d')
+                        acq_date = dt.datetime.strptime(self.entries_value_ID[4].get(), '%Y-%m-%d')
                         self.today = date.today()
                         self.today = self.today.strftime('%Y-%m-%d')
                         if acq_date.strftime('%Y-%m-%d') > self.today:
@@ -1701,7 +1631,8 @@ class xnat_pic_gui():
 
             if self.entries_value_ID[4].get():
                 try:
-                    datetime.datetime.strptime(self.entries_value_ID[4].get(), '%Y-%m-%d')
+                    a = self.entries_value_ID[4].get()
+                    dt.datetime.strptime(self.entries_value_ID[4].get(), '%Y-%m-%d')
                 except Exception as e:
                     raise Exception ("Incorrect data format in acquisition date, should be YYYY-MM-DD")
 
@@ -1765,7 +1696,18 @@ class xnat_pic_gui():
             # Saves the changes made by the user in the txt file
             substring = self.path_list1.get(my_key)
             name_txt = str(my_key).rsplit('#', 1)[1] + "_" + "Custom_Variables.txt"
-            tmp_path = substring + "\\" + name_txt
+            tmp_path = ''
+            for dirpath, dirnames, filenames in os.walk(substring.replace('\\', '/')):
+            # Check if the visu pars file is in the scans
+                for filename in [f for f in filenames if f.startswith("visu_pars")]:
+                    tmp_path = substring + "\\" + name_txt
+                    break
+                # Check if the DICOM is in the scans
+                for filename in [f for f in filenames if f.endswith(".dcm")]:
+                     tmp_path = substring + "\\MR\\" + name_txt
+                     break
+                if tmp_path:
+                    break
             try:
                 with open(tmp_path.replace('\\', '/'), 'w+') as meta_file:
                     meta_file.write(tabulate(self.results_dict[my_key].items(), headers=['Variable', 'Value']))
@@ -2399,8 +2341,6 @@ class xnat_pic_gui():
 
                     # Update the fields of the parent object
                     dict_items['0']['values'] = (last_edit_time, str(round(total_weight/1024, 2)) + "GB", "Folder")
-                    self.search_entry.config(state='normal')
-                    self.search_label.config(state='normal')
                     self.tree.set(dict_items)
             
             # Initialize the folder_to_upload path
@@ -2447,8 +2387,7 @@ class xnat_pic_gui():
             def clear_tree(*args):
                 if self.tree.tree.exists(0):
                     self.tree.tree.delete(*self.tree.tree.get_children())
-                    self.search_entry.config(state='disabled')
-                    self.search_label.config(state='disabled')
+                    #self.search_entry.config(state='disabled')
                     self.folder_to_upload.set("")
 
             self.clear_tree_btn = ttk.Button(self.frame_uploader, image=master.logo_clear,
@@ -2462,13 +2401,6 @@ class xnat_pic_gui():
                 else:
                     self.tree.remove_selection()
             self.search_var = tk.StringVar()
-            self.search_entry = ttk.Entry(self.frame_uploader, cursor=CURSOR_HAND, textvariable=self.search_var,
-                                             state='disabled')
-            #self.search_entry.place(relx = 0.15, rely = 0.65, relwidth=0.1, anchor = NW)
-            self.search_label = ttk.Button(self.frame_uploader, image=master.logo_search, command = lambda: self.search_entry.focus_set(), state='disabled', cursor=CURSOR_HAND)
-            # self.search_label.place(relx = 0.05, rely = 0.65, anchor = NW)
-
-            # self.search_var.trace('w', scankey)
 
             # Upload additional files
             self.add_file_flag = tk.IntVar()
@@ -2907,8 +2839,7 @@ class xnat_pic_gui():
                 # Restore main frame buttons
                 messagebox.showinfo("XNAT-PIC Uploader","Done! Your project is uploaded on XNAT platform.")
             # Destroy all the existent widgets (Button, OptionMenu, ...)
-            destroy_widgets([self.label_frame_uploader, self.uploader_data, self.custom_var_labelframe,
-                                self.exit_btn, self.next_btn, self.folder_selection_label_frame, self.frame_title])
+            destroy_widgets([self.frame_uploader, self.menu])
             # Clear and update session cache
             self.session.clearcache()
             self.overall_uploader(master)
@@ -3014,8 +2945,7 @@ class xnat_pic_gui():
                 # Restore main frame buttons
                 messagebox.showinfo("XNAT-PIC Uploader","Done! Your subject is uploaded on XNAT platform.")
             # Destroy all the existent widgets (Button, OptionMenu, ...)
-            destroy_widgets([self.label_frame_uploader, self.uploader_data, self.custom_var_labelframe,
-                                self.exit_btn, self.next_btn, self.folder_selection_label_frame, self.frame_title])
+            destroy_widgets([self.frame_uploader, self.menu])
             # Clear and update session cache
             self.session.clearcache()
             self.overall_uploader(master)
@@ -3121,8 +3051,7 @@ class xnat_pic_gui():
                 # Restore main frame buttons
                 messagebox.showinfo("XNAT-PIC Uploader","Done! Your experiment is uploaded on XNAT platform.")
             # Destroy all the existent widgets (Button, OptionMenu, ...)
-            destroy_widgets([self.label_frame_uploader, self.uploader_data, self.custom_var_labelframe,
-                                self.exit_btn, self.next_btn, self.folder_selection_label_frame, self.frame_title])
+            destroy_widgets([self.frame_uploader, self.menu])
             # Clear and update session cache
             self.session.clearcache()
             self.overall_uploader(master)
@@ -3160,8 +3089,7 @@ class xnat_pic_gui():
                 messagebox.showinfo("XNAT-PIC Uploader","Done! Your file is uploaded on XNAT platform.")
 
             # Destroy all the existent widgets (Button, OptionMenu, ...)
-            destroy_widgets([self.label_frame_uploader, self.uploader_data, self.custom_var_labelframe,
-                                self.exit_btn, self.next_btn, self.folder_selection_label_frame, self.frame_title])
+            destroy_widgets([self.frame_uploader, self.menu])
             # Clear and update session cache
             self.session.clearcache()
             self.overall_uploader(master)

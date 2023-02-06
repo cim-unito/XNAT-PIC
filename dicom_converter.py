@@ -636,15 +636,19 @@ class Bruker2DicomConverter():
                 ds_temp.WindowCenterWidthExplanation = "MinMax"
                 ds_temp.PixelData = layer
                 ds_temp[0x7FE0, 0x0010].VR = "OW"
-                ds_temp.WindowWidth = int(np.amax(img) + 1)
-                ds_temp.WindowCenter = int((np.amax(img) + 1) / 2)
+                max_range = int(np.amax(layer)/factor)
+                min_range = int(np.amin(layer)/factor)
+                ds_temp.WindowWidth = max_range
+                ds_temp.WindowCenter = int((max_range-min_range) / 2)
+                #ds_temp.WindowWidth = int(np.amax(img) + 1)
+                #ds_temp.WindowCenter = int((np.amax(img) + 1) / 2)
                 ds_temp[0x0028, 0x1050].VR = "DS"
                 ds_temp[0x0028, 0x1051].VR = "DS"
                 ds_temp.SmallestImagePixelValue = int(np.amin(layer))
                 ds_temp.LargestImagePixelValue = int(np.amax(layer))
                 ds_temp[0x0028, 0x0106].VR = "US"
                 ds_temp[0x0028, 0x0107].VR = "US"
-                ds_temp.RescaleSlope = factor
+                ds_temp.RescaleSlope = 1/factor
                 for j in range(0, nframes - 1):
                     ds_temp.RescaleIntercept = str(parameters.get("VisuCoreDataOffs")[j])
 

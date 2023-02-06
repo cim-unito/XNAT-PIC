@@ -168,10 +168,18 @@ class AccessManager():
         self.popup.button_quit.grid(row=2, column=0, padx=10, pady=5, sticky=tk.W)
 
     def forgot_psw(self, *args):
-        webbrowser.open("http://130.192.212.48:8080/app/template/ForgotLogin.vm#!", new=1)
+        if len(self.popup.entry_address.var.get()) == 0:
+           messagebox.showerror("XNAT-PIC Login", "Enter the XNAT web andress!")
+        else:
+            forget_uri = str(self.popup.http.get() + self.popup.entry_address.var.get() + "app/template/ForgotLogin.vm#!")
+            webbrowser.open(forget_uri, new=1)
 
     def register(self, *args):
-        webbrowser.open("http://130.192.212.48:8080/app/template/Register.vm#!", new=1)
+        if len(self.popup.entry_address.var.get()) == 0:
+           messagebox.showerror("XNAT-PIC Login", "Enter the XNAT web andress!")
+        else:
+            forget_uri = str(self.popup.http.get() + self.popup.entry_address.var.get() + "app/template/Register.vm#!")
+            webbrowser.open(forget_uri, new=1)
 
     def get_list_of_users(self):
             # Get the list of registered and stored users
