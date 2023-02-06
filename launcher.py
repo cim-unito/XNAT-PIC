@@ -1684,7 +1684,18 @@ class xnat_pic_gui():
             # Saves the changes made by the user in the txt file
             substring = self.path_list1.get(my_key)
             name_txt = str(my_key).rsplit('#', 1)[1] + "_" + "Custom_Variables.txt"
-            tmp_path = substring + "\\" + name_txt
+            tmp_path = ''
+            for dirpath, dirnames, filenames in os.walk(substring.replace('\\', '/')):
+            # Check if the visu pars file is in the scans
+                for filename in [f for f in filenames if f.startswith("visu_pars")]:
+                    tmp_path = substring + "\\" + name_txt
+                    break
+                # Check if the DICOM is in the scans
+                for filename in [f for f in filenames if f.endswith(".dcm")]:
+                     tmp_path = substring + "\\MR\\" + name_txt
+                     break
+                if tmp_path:
+                    break
             try:
                 with open(tmp_path.replace('\\', '/'), 'w+') as meta_file:
                     meta_file.write(tabulate(self.results_dict[my_key].items(), headers=['Variable', 'Value']))
@@ -2318,8 +2329,6 @@ class xnat_pic_gui():
 
                     # Update the fields of the parent object
                     dict_items['0']['values'] = (last_edit_time, str(round(total_weight/1024, 2)) + "GB", "Folder")
-                    #self.search_entry.config(state='normal')
-                    self.search_label.config(state='normal')
                     self.tree.set(dict_items)
             
             # Initialize the folder_to_upload path
@@ -2367,7 +2376,6 @@ class xnat_pic_gui():
                 if self.tree.tree.exists(0):
                     self.tree.tree.delete(*self.tree.tree.get_children())
                     #self.search_entry.config(state='disabled')
-                    self.search_label.config(state='disabled')
                     self.folder_to_upload.set("")
 
             self.clear_tree_btn = ttk.Button(self.frame_uploader, image=master.logo_clear,
@@ -2381,13 +2389,6 @@ class xnat_pic_gui():
                 else:
                     self.tree.remove_selection()
             self.search_var = tk.StringVar()
-            #self.search_entry = ttk.Entry(self.frame_uploader, cursor=CURSOR_HAND, textvariable=self.search_var,
-            #state='disabled')
-            #self.search_entry.place(relx = 0.15, rely = 0.65, relwidth=0.1, anchor = NW)
-            #self.search_label = ttk.Button(self.frame_uploader, image=master.logo_search, command = lambda: self.search_entry.focus_set(), state='disabled', cursor=CURSOR_HAND)
-            # self.search_label.place(relx = 0.05, rely = 0.65, anchor = NW)
-
-            # self.search_var.trace('w', scankey)
 
             # Upload additional files
             self.add_file_flag = tk.IntVar()
