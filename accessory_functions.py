@@ -230,10 +230,14 @@ def metadata_params(information_folder, value):
                         "Subject": sub,
                         "Experiment": exp,
                         "Acquisition_date": tmp_acq_date,
-                        "C_V": "",
-                        "Group": "",
-                        "Timepoint":"",
-                        "Dose":""
+                        "SubjectsCV": "",
+                        "SubjectsGroup": "",
+                        "SubjectsTimepoint":"",
+                        "SubjectsDose":"",
+                        "SessionsCV": "",
+                        "SessionsGroup": "",
+                        "SessionsTimepoint":"",
+                        "SessionsDose":""
                         }
             tmp_dict = {keys: subject_data}
 
