@@ -73,17 +73,21 @@ class Dicom2XnatUploader():
                                         content_type='application/zip')
             self.session.clearcache()
             experiment = self.session.projects[project_id].subjects[subject_id].experiments[experiment_id]
-                
+            subject = self.session.projects[project_id].subjects[subject_id]
+
             if flag > 0:
                 print('Updating ' + str(flag) + ' custom variables...')
                 count = 0
                 for var in params.keys():
-                    if count < flag:
-                        if var not in ['project_id', 'subject_id', 'folder_to_upload', 'experiment_id', 'custom_var_flag', 'C_V']:
-                            experiment.fields[var.lower()] = params[var]
-                            count += 1
-                    else: 
-                        break
+                    if var not in ['project_id', 'subject_id', 'folder_to_upload', 'experiment_id', 'custom_var_flag', 'SubjectsCV', 'SubjectsGroup', 'SubjectsTimepoint',
+                                    'SubjectsDose', 'SessionsCV']:
+                        expfield = var.replace('Sessions', '')           
+                        experiment.fields[expfield.lower()] = params[var]
+                    if var not in ['project_id', 'subject_id', 'folder_to_upload', 'experiment_id', 'custom_var_flag', 'SubjectsCV', 'SessionsGroup', 'SessionsTimepoint',
+                                    'SessionsDose', 'SessionsCV']:
+                        subfield = var.replace('Subjects', '') 
+                        subject.fields[subfield.lower()] = params[var]
+                        count += 1
 
             os.remove(zip_dst)
 

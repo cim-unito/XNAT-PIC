@@ -6,7 +6,6 @@ Created on May 30, 2022
 
 """
 import tkinter as tk
-import tkinter.simpledialog
 from tkinter import messagebox
 import ttkbootstrap as ttk
 import json, os, xnat
@@ -93,16 +92,6 @@ class AccessManager():
             else:
                 self.popup.entry_psw.config(show='')
                 self.popup.toggle_btn.config(image=self.closed_eye)
-                # ans = tkinter.simpledialog.askstring("PIN", "Enter PIN: ", show='*', parent=self.popup.cred_frame)
-                # if ans:
-                    # if ans == os.environ.get('secretPIN'):
-                    #     self.popup.entry_psw.config(show='')
-                    #     self.popup.toggle_btn.config(image=self.closed_eye)
-                    # else:
-                    #     messagebox.showerror("XNAT-PIC Uploader", "Error! The PIN code does not correspond")
-                    #     self.popup.deiconify()
-                # else:
-                #     pass
         
         self.popup.entry_psw = ttk.Entry(self.popup.cred_frame, show="*", width=25)
         self.popup.entry_psw.var = tk.StringVar()
