@@ -1054,10 +1054,10 @@ class xnat_pic_gui():
 
             file_menu.add_command(label="Select Folder", image = master.logo_folder, compound='left', command = lambda: self.overall_projectdata(master))
             file_menu.add_separator()
-            modify_ID_menu.add_command(label="Project", compound='left', command = lambda: self.modify_ID_metadata(flag_ID='Project'))
-            modify_ID_menu.add_command(label="Subject", compound='left', command = lambda: self.modify_ID_metadata(flag_ID='Subject'))
-            modify_ID_menu.add_command(label="Experiment", compound='left', command = lambda: self.modify_ID_metadata(flag_ID='Experiment'))
-            modify_ID_menu.add_command(label="Acquisition Date", compound='left', command = lambda: self.modify_ID_metadata(flag_ID='Acquisition'))
+            modify_ID_menu.add_command(label="Project", compound='left', command = lambda: self.modify_ID_metadata(master, flag_ID='Project'))
+            modify_ID_menu.add_command(label="Subject", compound='left', command = lambda: self.modify_ID_metadata(master, flag_ID='Subject'))
+            modify_ID_menu.add_command(label="Experiment", compound='left', command = lambda: self.modify_ID_metadata(master, flag_ID='Experiment'))
+            modify_ID_menu.add_command(label="Acquisition Date", compound='left', command = lambda: self.modify_ID_metadata(master, flag_ID='Acquisition Date'))
             file_menu.add_cascade(label="Modify Name ID", image = master.logo_edit, compound='left', menu=modify_ID_menu)
             file_menu.add_separator()
             clear_menu.add_command(label="Group", compound='left', command = lambda: self.clear_metadata(flag='Group'))
@@ -1136,7 +1136,7 @@ class xnat_pic_gui():
 
             # Be sure that we call OnFrameConfigure on the right canvas
             self.frame_ID.bind("<Configure>", lambda event, canvas=self.canvas_ID: OnFrameConfigure(canvas))
-            self.label_frame_ID.place(relx = 0.5, rely = 0.25, relheight=0.25, relwidth=0.30, anchor = tk.NW)
+            self.label_frame_ID.place(relx = 0.5, rely = 0.25, relheight=0.25, relwidth=0.32, anchor = tk.NW)
             def OnFrameConfigure(canvas):
                     canvas.configure(scrollregion=canvas.bbox("all"))
 
@@ -1422,10 +1422,11 @@ class xnat_pic_gui():
                     self.my_listbox = self.listbox_notebook[self.index_tab]
                     
                     def find_selected_folder():
-                        for k,v in self.results_dict.items():
+                        for k,v in self.path_list1.items():
                             if str(self.tab_name) in str(k):
-                                for k1, v1 in v.items():
-                                    if "Subject" == k1 and str(self.tab_name) == v1:
+                                path = v.split('/')
+                                sub_name = path[len(path)-2]
+                                if sub_name == str(self.tab_name):
                                         self.selected_folder = k
                                         return
                     find_selected_folder()
@@ -1740,11 +1741,12 @@ class xnat_pic_gui():
                     self.entries_value_CV[i]['state'] = tk.DISABLED 
                 # Find all the keys for the subject (Sub+Exp) that you want to update
                 keys = []
-                for k,v in self.results_dict.items():
+                for k,v in self.path_list1.items():
                     if str(sub_name) in str(k):
-                        for k1, v1 in v.items():
-                            if "Subject" == k1 and str(sub_name) == v1:
-                                keys.append(k)
+                        path = v.split('/')
+                        sub_name = path[len(path)-2]
+                        if sub_name == str(sub_name):
+                            keys.append(k)
                 for x in range(len(keys)):
                     my_key = keys[x]           
                     self.results_dict[my_key].update(tmp_CV)
@@ -1990,18 +1992,247 @@ class xnat_pic_gui():
             self.popup_subject.protocol('WM_DELETE_WINDOW', enable)
              
         ##################### Modify ID Name ########################
-        def modify_ID_metadata(self, flag_ID):
-            if flag_ID == "Project":
-                print("Project")
-            elif flag_ID == "Subject":
-                print("Subject")
-            elif flag_ID == "Experiment":
-                print("Experiment")
-            elif flag_ID == "Acquisition Date":
-                print("Acquisition Date")
+        def modify_ID_metadata(self, master, flag_ID):
+            # Check before editing the data
+            if not self.entries_value_ID[0].get():
+                messagebox.showerror("XNAT-PIC", "Select a folder")
+                return 
+            # Normal entry CV
+            for i in range(0, len(self.entries_value_CV)):
+                self.entries_value_CV[i]['state'] = 'disabled'
+        
+            # Clear all 
+            self.selected_group.set('')
+            self.selected_dose.set('')
+            self.selected_timepoint.set('')
+            self.selected_timepoint1.set('')
+            self.time_entry.delete(0, tk.END)
+            disable_buttons([self.dose_menu, self.group_menu, self.timepoint_menu, self.time_entry, self.timepoint_menu1])
+            disable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
 
+            if flag_ID == "Project":               
+                # Modify Project Name
+                self.entries_value_ID[0]['state'] = 'normal'
+                
+                def confirm_project_name():
+                    new_prj = self.entries_value_ID[0].get()
+                    if not new_prj:
+                        messagebox.showerror("XNAT-PIC", "Insert the name of the project!")
+                        return 
+                    self.entries_value_ID[0]['state'] = 'disabled'
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    for k,v in self.results_dict.items():
+                        self.results_dict[k]['Project'] = new_prj
+                    for k,v in self.path_list1.items():
+                        # Saves the changes made by the user in the txt file
+                        substring = v
+                        name_txt = str(k).rsplit('#', 1)[1] + "_" + "Custom_Variables.txt"
+                        tmp_path = ''
+                        for dirpath, dirnames, filenames in os.walk(substring.replace('\\', '/')):
+                        # Check if the visu pars file is in the scans
+                            for filename in [f for f in filenames if f.startswith("visu_pars")]:
+                                tmp_path = substring + "\\" + name_txt
+                                break
+                            # Check if the DICOM is in the scans
+                            for filename in [f for f in filenames if f.endswith(".dcm")]:
+                                tmp_path = substring + "\\MR\\" + name_txt
+                                break
+                            if tmp_path:
+                                break
+                        try:
+                            with open(tmp_path.replace('\\', '/'), 'w+') as meta_file:
+                                meta_file.write(tabulate(self.results_dict[k].items(), headers=['Variable', 'Value']))
+                        except Exception as e: 
+                                messagebox.showerror("XNAT-PIC", "Confirmation failed: " + str(e))  
+                                raise    
+                    btn_project_delete_ID.destroy()        
+                    btn_project_confirm_ID.destroy()
+                    
+                btn_project_confirm_ID = ttk.Button(self.frame_metadata, image = master.logo_accept, 
+                                                command=confirm_project_name, cursor=CURSOR_HAND)
+                btn_project_confirm_ID.place(relx = 0.65, rely = 0.53, anchor = NE)
+
+                def delete_project_name():
+                    self.entries_value_ID[0]['state'] = 'disabled'
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    btn_project_delete_ID.destroy()
+                    btn_project_confirm_ID.destroy()
+
+                btn_project_delete_ID = ttk.Button(self.frame_metadata, image = master.logo_delete, 
+                                                command=delete_project_name, cursor=CURSOR_HAND)
+                btn_project_delete_ID.place(relx = 0.71, rely = 0.53, anchor = NE)
+
+            elif flag_ID == "Subject":
+                # Modify Project Name
+                self.entries_value_ID[1]['state'] = 'normal'
+                
+                def confirm_subject_name():
+                    new_sub = self.entries_value_ID[1].get()
+                    if not new_sub:
+                        messagebox.showerror("XNAT-PIC", "Insert the name of the subject!")
+                        return 
+                    self.entries_value_ID[1]['state'] = 'disabled'
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    
+                    keys = []
+                    for k,v in self.path_list1.items():
+                        if str(self.tab_name) in str(k):
+                            path = v.split('/')
+                            sub_name = path[len(path)-2]
+                            if sub_name == str(self.tab_name):
+                                self.results_dict[k]['Subject'] = new_sub
+                                keys.append(k)
+                    for x in range(len(keys)):
+                        my_key = keys[x]           
+                        substring = self.path_list1.get(my_key)
+                        name_txt = str(my_key).rsplit('#', 1)[1] + "_" + "Custom_Variables.txt"
+                        tmp_path = ''
+                        for dirpath, dirnames, filenames in os.walk(substring.replace('\\', '/')):
+                        # Check if the visu pars file is in the scans
+                            for filename in [f for f in filenames if f.startswith("visu_pars")]:
+                                tmp_path = substring + "\\" + name_txt
+                                break
+                            # Check if the DICOM is in the scans
+                            for filename in [f for f in filenames if f.endswith(".dcm")]:
+                                tmp_path = substring + "\\MR\\" + name_txt
+                                break
+                            if tmp_path:
+                                break
+                        try:
+                            with open(tmp_path.replace('\\', '/'), 'w+') as meta_file:
+                                meta_file.write(tabulate(self.results_dict[my_key].items(), headers=['Variable', 'Value']))
+                        except Exception as e: 
+                                messagebox.showerror("XNAT-PIC", "Confirmation failed: " + str(e))  
+                                raise    
+
+                    btn_subject_delete_ID.destroy()        
+                    btn_subject_confirm_ID.destroy()
+                    
+                btn_subject_confirm_ID = ttk.Button(self.frame_metadata, image = master.logo_accept, 
+                                                command=confirm_subject_name, cursor=CURSOR_HAND)
+                btn_subject_confirm_ID.place(relx = 0.65, rely = 0.53, anchor = NE)
+
+                def delete_subject_name():
+                    self.entries_value_ID[1]['state'] = 'disabled'
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    btn_subject_delete_ID.destroy()
+                    btn_subject_confirm_ID.destroy()
+
+                btn_subject_delete_ID = ttk.Button(self.frame_metadata, image = master.logo_delete, 
+                                                command=delete_subject_name, cursor=CURSOR_HAND)
+                btn_subject_delete_ID.place(relx = 0.71, rely = 0.53, anchor = NE)
+
+            elif flag_ID == "Experiment":
+                if str(self.level_CV.get()) == "Subjects":
+                    messagebox.showerror("XNAT-PIC", "Select Sessions Level")
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    return 
+                if str(self.level_CV.get()) == "Sessions" and not self.entries_value_ID[3].get():
+                    messagebox.showerror("XNAT-PIC", "Click Tab to select a folder from the list box on the left")
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    return 
+                # Modify Project Name
+                self.entries_value_ID[2]['state'] = 'normal'
+
+                def confirm_exp_name():
+                    new_exp = self.entries_value_ID[2].get()
+                    if not new_exp:
+                        messagebox.showerror("XNAT-PIC", "Insert the name of the experiment!")
+                        return 
+                    self.entries_value_ID[2]['state'] = 'disabled'
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+ 
+                    self.results_dict[self.selected_folder]['Experiment'] = new_exp
+                    self.confirm_metadata()
+
+                    btn_exp_delete_ID.destroy()        
+                    btn_exp_confirm_ID.destroy()
+                    
+                btn_exp_confirm_ID = ttk.Button(self.frame_metadata, image = master.logo_accept, 
+                                                command=confirm_exp_name, cursor=CURSOR_HAND)
+                btn_exp_confirm_ID.place(relx = 0.65, rely = 0.53, anchor = NE)
+
+                def delete_exp_name():
+                    self.entries_value_ID[2]['state'] = 'disabled'
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    btn_exp_delete_ID.destroy()
+                    btn_exp_confirm_ID.destroy()
+
+                btn_exp_delete_ID = ttk.Button(self.frame_metadata, image = master.logo_delete, 
+                                                command=delete_exp_name, cursor=CURSOR_HAND)
+                btn_exp_delete_ID.place(relx = 0.71, rely = 0.53, anchor = NE)
+
+            elif flag_ID == "Acquisition Date":
+                if str(self.level_CV.get()) == "Subjects":
+                    messagebox.showerror("XNAT-PIC", "Select Sessions Level")
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    return 
+                if str(self.level_CV.get()) == "Sessions" and not self.entries_value_ID[3].get():
+                    messagebox.showerror("XNAT-PIC", "Click Tab to select a folder from the list box on the left")
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    return 
+
+                # Modify acq date Name
+                self.cal.entry['state'] = 'normal'
+                self.cal.button['state'] = 'normal'
+
+                            # # Acquisition date: you can modify date with the calendar           
+                def date_entry_selected(*args):
+                    self.entries_value_ID[3]['state'] = tk.NORMAL
+                    self.entries_value_ID[3].delete(0, tk.END)
+                    self.entries_value_ID[3].insert(0, str(self.cal.entry.get()))
+                    if self.entries_value_ID[3].get():
+                        try:
+                            acq_date = dt.datetime.strptime(self.entries_value_ID[3].get(), '%Y-%m-%d')
+                            self.today = date.today()
+                            self.today = self.today.strftime('%Y-%m-%d')
+                            if acq_date.strftime('%Y-%m-%d') > self.today:
+                                self.entries_value_ID[3].delete(0, tk.END)
+                                raise Exception("The date entered is greater than today's date")
+                        except Exception as e:
+                            messagebox.showerror("XNAT-PIC", str(e))
+                            self.entries_value_ID[3].delete(0, tk.END)
+                            self.entries_value_ID[3]['state'] = tk.DISABLED
+                            raise
+
+                    self.entries_value_ID[3]['state'] = tk.DISABLED
+                    self.my_listbox.selection_set(self.selected_index)
+            
+                self.datevar.trace('w', date_entry_selected)
+
+                def confirm_date_name():
+                    self.cal.entry['state'] = 'disabled'
+                    self.cal.button['state'] = 'disabled'
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    
+                    new_date = self.entries_value_ID[3].get()
+
+                    self.results_dict[self.selected_folder]['Acquisition_date'] = new_date
+                    self.confirm_metadata()
+
+                    btn_date_delete_ID.destroy()        
+                    btn_date_confirm_ID.destroy()
+                    
+                btn_date_confirm_ID = ttk.Button(self.frame_metadata, image = master.logo_accept, 
+                                                command=confirm_date_name, cursor=CURSOR_HAND)
+                btn_date_confirm_ID.place(relx = 0.65, rely = 0.53, anchor = NE)
+
+                def delete_date_name():
+                    self.cal.entry['state'] = 'disabled'
+                    self.cal.button['state'] = 'disabled'
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    btn_date_delete_ID.destroy()
+                    btn_date_confirm_ID.destroy()
+
+                btn_date_delete_ID = ttk.Button(self.frame_metadata, image = master.logo_delete, 
+                                                command=delete_date_name, cursor=CURSOR_HAND)
+                btn_date_delete_ID.place(relx = 0.71, rely = 0.53, anchor = NE)
         ##################### Clear the metadata ####################              
         def clear_metadata(self, flag):
+            # Check before editing the data
+            if not self.entries_value_ID[0].get():
+                messagebox.showerror("XNAT-PIC", "Select a folder")
+                return 
             # Clear all the combobox and the entry
             self.selected_dose.set('')
             self.selected_group.set('')
@@ -2030,6 +2261,10 @@ class xnat_pic_gui():
             self.confirm_metadata()
         # #################### Save all the metadata ####################
         def save_metadata(self):
+            # Check before editing the data
+            if not self.entries_value_ID[0].get():
+                messagebox.showerror("XNAT-PIC", "Select a folder")
+                return 
             tmp_global_path = str(self.information_folder) + "\\" + self.project_name + '_' + 'Custom_Variables.xlsx'
             try:
                 df = pandas.DataFrame.from_dict(self.results_dict, orient='index')
