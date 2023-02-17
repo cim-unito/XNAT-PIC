@@ -175,6 +175,11 @@ class Bruker2DicomConverter():
             check_and_create(dst_path)
             os.chdir(dst_path)
 
+            """
+            The dicom viewer expects unsigned 16-bit images as input.
+            So you need to convert the 16-bit signed or 32-bit signed images of the paravision to 16-bit unsigned.
+            The conversion is based on the fact that raw image values ​​are now represented by values ​​ranging from 0 to 2^16
+            """
             if img_type == "_16BIT_SGN_INT" and img_endianness == "littleEndian":
 
                 # img = np.array(img_data_precision,np.uint16)
