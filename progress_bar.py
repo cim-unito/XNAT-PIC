@@ -22,6 +22,7 @@ class ProgressBar():
 
         self.title = bar_title
         self.popup = tk.Toplevel(root)
+        self.popup.grab_set() # when you show the popup
         self.popup.geometry("%dx%d+%d+%d" % (500, 100, 700, 500))
         self.popup.resizable(False, False)
         self.popup.title(bar_title)
