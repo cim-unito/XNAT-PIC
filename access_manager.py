@@ -35,6 +35,7 @@ class AccessManager():
 
         # Start with a popup to get credentials
         self.popup = ttk.Toplevel(self.root)
+        self.popup.grab_set()
         self.popup.title("XNAT-PIC ~ Login")
         self.popup.geometry("+%d+%d" % (600, 400))
         self.popup.resizable(False, False)

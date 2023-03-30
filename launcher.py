@@ -2413,7 +2413,6 @@ class xnat_pic_gui():
                     # Check for pre-existent tree
                     if self.tree.tree.exists(0):
                         # # Check for the name of the previous tree
-                        # if self.tree.item(0)['text'] != self.folder_to_upload.get().split('/')[-1]:
                         # If the folder name is changed, then delete the previous tree
                         self.tree.tree.delete(*self.tree.tree.get_children())
 
