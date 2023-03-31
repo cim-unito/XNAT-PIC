@@ -13,6 +13,7 @@ from accessory_functions import disable_buttons, enable_buttons, open_image
 from datetime import date, datetime
 from logging import exception
 import tkinter.simpledialog
+from progress_bar import ProgressBar
 
 PATH_IMAGE = "images\\"
 CURSOR_HAND = "hand2"
@@ -165,12 +166,18 @@ class ProjectManager():
         def enable_submit(*args):
             if self.project_id.get() != '':
                 if self.project_id.get() in list(self.session.projects):
+                    try:
+                        if self.error_label.winfo_exists():
+                            self.error_label.destroy()
+                    except:
+                        pass
                     self.error_label = ttk.Label(self.project_id_labelframe, image=self.warning_icon,
                                                 text="A Project with the same project_id already exists.\n"
                                                     "Please select an other ID.", style="Error.TLabel",
                                                 compound='left')
                     self.error_label.pack(fill='x', anchor=tk.NW)
                     self.submit_btn.config(state='disabled')
+
                 else:
                     try:
                         self.error_label.destroy()
@@ -258,25 +265,24 @@ class ProjectManager():
 
     def create_new_project(self):
 
-        result = messagebox.askyesno("XNAT-PIC Uploader", "A new project will be created. Are you sure?")
-        if result is False:
-            self.master.deiconify()
-            return
-        try:
+        def func_new_prj(*args):
+            try:
+                project = self.session.classes.ProjectData(
+                                name=self.project_id.get(), parent=self.session)
+                project.description = self.project_description_entry.get("1.0", END)
+                project.keywords = ",".join(self.project_keywords_list)
+                self.session.put(os.path.join(project.uri, 'accessibility', self.access_status.get()).replace('\\', '/'))
+                progressbar_new_sub.stop_progress_bar()
+                self.master.destroy()
+                messagebox.showinfo('XNAT-PIC Uploader', 'A new project is created.')
+            except exception as e:
+                progressbar_new_sub.stop_progress_bar()
+                self.master.destroy()
+                messagebox.showerror("Error!", str(e))
 
-            prj_progressbar = ttk.Label(self.project_labelframe, text='test')
-            prj_progressbar.grid(row=7, column=0, pady=5, sticky=tk.NSEW)
-            project = self.session.classes.ProjectData(
-                            name=self.project_id.get(), parent=self.session)
-            project.description = self.project_description_entry.get("1.0", END)
-            project.keywords = ",".join(self.project_keywords_list)
-            self.session.put(os.path.join(project.uri, 'accessibility', self.access_status.get()).replace('\\', '/'))
-            messagebox.showinfo('XNAT-PIC Uploader', 'A new project is created.')
-            self.master.destroy()
-
-        except exception as e:
-            messagebox.showerror("Error!", str(e))
-        
+        progressbar_new_sub = ProgressBar(self.master, "XNAT-PIC Uploader")
+        progressbar_new_sub.start_indeterminate_bar()
+        self.master.after(1000, func_new_prj)
 
 class SubjectManager():
 
