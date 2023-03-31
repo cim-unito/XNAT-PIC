@@ -272,16 +272,16 @@ class ProjectManager():
                 project.description = self.project_description_entry.get("1.0", END)
                 project.keywords = ",".join(self.project_keywords_list)
                 self.session.put(os.path.join(project.uri, 'accessibility', self.access_status.get()).replace('\\', '/'))
-                progressbar_new_sub.stop_progress_bar()
+                progressbar_new_prj.stop_progress_bar()
                 self.master.destroy()
                 messagebox.showinfo('XNAT-PIC Uploader', 'A new project is created.')
             except exception as e:
-                progressbar_new_sub.stop_progress_bar()
+                progressbar_new_prj.stop_progress_bar()
                 self.master.destroy()
                 messagebox.showerror("Error!", str(e))
 
-        progressbar_new_sub = ProgressBar(self.master, "XNAT-PIC Uploader")
-        progressbar_new_sub.start_indeterminate_bar()
+        progressbar_new_prj = ProgressBar(self.master, "XNAT-PIC Uploader")
+        progressbar_new_prj.start_indeterminate_bar()
         self.master.after(1000, func_new_prj)
 
 class SubjectManager():
@@ -386,6 +386,11 @@ class SubjectManager():
             if self.parent_project.get() != '' and self.subject_id.get() != '':
                 if self.subject_id.get() in list(self.session.projects[self.parent_project.get()].subjects.key_map.keys()):
                     if self.error.get() == '':
+                        try:
+                            if self.error_label.winfo_exists():
+                                self.error_label.destroy()
+                        except:
+                            pass
                         self.error.set('Error')
                         self.error.label = ttk.Label(self.subject_id_labelframe, image=self.warning_icon,
                                                     text="A Subject with the same subject_id within "+ str(self.parent_project.get()) + 
@@ -426,30 +431,24 @@ class SubjectManager():
         self.submit_btn.pack(side='right', padx=25, pady=10, anchor=tk.NE)
 
     def create_new_subject(self):
+        
+        def func_new_sub(*args):
+            try:
+                project = self.session.projects[self.parent_project.get()]
 
-        result = messagebox.askyesno("XNAT-PIC Uploader", "A new subject will be created. Are you sure?")
-        if result is False:
-            self.master.deiconify()
-            return
-        try:
-            project = self.session.projects[self.parent_project.get()]
+                subject = self.session.classes.SubjectData(
+                                    parent=project, label=self.subject_id.get())
+                progressbar_new_sub.stop_progress_bar()
+                self.master.destroy()
+                messagebox.showinfo('XNAT-PIC Uploader', 'A new subject is created.') 
+            except exception as e:
+                progressbar_new_sub.stop_progress_bar()
+                self.master.destroy()
+                messagebox.showerror("Error!", str(e))
+        progressbar_new_sub = ProgressBar(self.master, "XNAT-PIC Uploader")
+        progressbar_new_sub.start_indeterminate_bar()
+        self.master.after(1000, func_new_sub)
 
-            subject = self.session.classes.SubjectData(
-                                parent=project, label=self.subject_id.get())
-
-            # if self.subject_gender.get() != "":
-            #     subject.demographics.gender = self.subject_gender.get().lower()
-            # # Missing weight and Notes set methods
-            # subject.demographics.age = int(str(datetime.strptime(str(date.today()), "%Y-%m-%d") - datetime.strptime(self.subject_age.get(), "%m/%d/%Y")).split(' ')[0])
-            # subject.demographics.dob = datetime.strptime(self.subject_age.get(), "%m/%d/%Y")
-            # subject.demographics.yob = int(self.subject_age.get().split('/')[-1])
-            # subject.demographics.weight.set("units", str(self.subject_weight.unit.get()))
-        except exception as e:
-            messagebox.showerror("Error!", str(e))
-        # self.session.clearcache()
-        messagebox.showinfo('XNAT-PIC Uploader', 'A new subject is created.') 
-        self.master.destroy()
-        # self.master.quit()
 
 class ExperimentManager():
 
@@ -599,14 +598,6 @@ class ExperimentManager():
             self.master.deiconify()
             return
         try:
-            # project = self.session.projects[self.parent_project.get()]
-            # subject = project.subjects[self.parent_subject.get()]
-            # experiment = subject.experiments[self.experiment_id.get()]
-
-            # Missing a method to create a new experiment object!
-            # experiment = self.session.classes.ExperimentData(
-            #                 parent=subject, label=self.experiment_id.get())
-
             #################################################
             # Method to bypass the experiment object creation
             current_folder = os.path.join(os.getcwd(), "temp/Exp_1").replace("\\", "/")
