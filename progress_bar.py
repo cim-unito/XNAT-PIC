@@ -17,6 +17,7 @@ from tkinter import HORIZONTAL
 # from threading import Thread
 # import time
 
+PATH_IMAGE = "images\\"
 class ProgressBar():
     def __init__(self, root, bar_title):
 
@@ -25,6 +26,7 @@ class ProgressBar():
         self.popup.grab_set() # when you show the popup
         self.popup.geometry("%dx%d+%d+%d" % (500, 100, 700, 500))
         self.popup.resizable(False, False)
+        self.popup.iconbitmap(PATH_IMAGE + "logo3.ico")
         self.popup.title(bar_title)
         self.progress_var = tk.DoubleVar()
         self.bar_length = 400

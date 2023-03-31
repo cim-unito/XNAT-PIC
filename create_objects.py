@@ -28,9 +28,11 @@ class ProjectManager():
         self.add_icon = open_image(PATH_IMAGE + "add_icon.png", 15, 15)
 
         self.master = tk.Toplevel()
+        self.master.grab_set()
         self.master.title("XNAT-PIC Uploader")
         self.master.geometry("+%d+%d" % (300, 250))
         self.master.resizable(False, False)
+        self.master.iconbitmap(PATH_IMAGE + "logo3.ico")
 
         ###########################################################################
         # Project Widgets
@@ -196,6 +198,13 @@ class ProjectManager():
 
     def add_new_investigator(self, *args):
             def update_list(*args):
+                if name.get() == '': 
+                   messagebox.showerror("Error!","Insert the First Name!")
+                   return
+                if surname.get() == '':
+                    messagebox.showerror("Error!","Insert the Last Name!")
+                    return
+
                 investigator = {}
                 investigator['firstname'] = name.get()
                 investigator['lastname'] = surname.get()
@@ -215,9 +224,11 @@ class ProjectManager():
                 investigator_popup.destroy()
 
             investigator_popup = tk.Toplevel()
+            investigator_popup.grab_set()
             investigator_popup.title("New Investigators")
             investigator_popup.geometry("+%d+%d" % (400, 350))
             investigator_popup.resizable(False, False)
+            investigator_popup.iconbitmap(PATH_IMAGE + "logo3.ico")
             name = tk.StringVar()
             name.label = ttk.Label(investigator_popup, text="First Name")
             name.label.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
@@ -252,28 +263,20 @@ class ProjectManager():
             self.master.deiconify()
             return
         try:
-            # project = self.session.projects['Prj_2_dcm']
+
+            prj_progressbar = ttk.Label(self.project_labelframe, text='test')
+            prj_progressbar.grid(row=7, column=0, pady=5, sticky=tk.NSEW)
             project = self.session.classes.ProjectData(
                             name=self.project_id.get(), parent=self.session)
             project.description = self.project_description_entry.get("1.0", END)
             project.keywords = ",".join(self.project_keywords_list)
             self.session.put(os.path.join(project.uri, 'accessibility', self.access_status.get()).replace('\\', '/'))
-            # Missing a method to upload multiple information about pi and investigators
-            # for inv in self.investigators:
-            #     if inv['firstname'] == self.project_investigator.get().split(',')[0] and inv['lastname'] == self.project_investigator.get().split(',')[1]:
-                    # print(self.session.get(project.fulluri, format='json').content)
-                    # self.session.put(os.path.join(project.uri, '/PI/firstname'), query={'firstname': inv['firstname']})
-                    # self.session.clearcache()
-                    # project = self.session.projects['Prj_2_dcm']
-                    # print(project.pi)
-                    # break
-            
+            messagebox.showinfo('XNAT-PIC Uploader', 'A new project is created.')
+            self.master.destroy()
+
         except exception as e:
             messagebox.showerror("Error!", str(e))
         
-        messagebox.showinfo('XNAT-PIC Uploader', 'A new project is created.')
-        self.master.destroy()
-        # self.master.quit()
 
 class SubjectManager():
 
@@ -285,10 +288,12 @@ class SubjectManager():
         self.warning_icon = open_image(PATH_IMAGE + "warning_icon.png", 15, 15)
 
         self.master = tk.Toplevel()
+        self.master.grab_set()
         self.master.title("XNAT-PIC Uploader")
         self.master.geometry("+%d+%d" % (300, 250))
         self.master.resizable(False, False)
-
+        self.master.iconbitmap(PATH_IMAGE + "logo3.ico")
+        
         ###########################################################################
         # Subject Widgets
         ###########################################################################
@@ -450,9 +455,11 @@ class ExperimentManager():
         self.warning_icon = open_image(PATH_IMAGE + "warning_icon.png", 15, 15)
 
         self.master = tk.Toplevel()
+        self.master.grab_set()
         self.master.title("XNAT-PIC Uploader")
         self.master.geometry("+%d+%d" % (300, 250))
         self.master.resizable(False, False)
+        self.master.iconbitmap(PATH_IMAGE + "logo3.ico")
 
         ###########################################################################
         # Experiment Widgets

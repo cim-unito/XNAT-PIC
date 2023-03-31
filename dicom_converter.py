@@ -388,12 +388,12 @@ class Bruker2DicomConverter():
                         ds_temp.ImagesInAcquisition = parameters.get("VisuCoreFrameCount")
                         ds_temp.SliceLocation = list(map(str, visucoreposition[iteration]))[2]
                     else:
-                        ds_temp.ImagePositionPatient = list(map(str, parameters.get("VisuCorePosition")[iteration - 1]))
-                        ds_temp.ImageOrientationPatient = list(map(str, parameters.get("VisuCoreOrientation")[iteration - 1][0:6]))
+                        ds_temp.ImagePositionPatient = list(map(str, parameters.get("VisuCorePosition")[iteration]))
+                        ds_temp.ImageOrientationPatient = list(map(str, parameters.get("VisuCoreOrientation")[iteration][0:6]))
                         ds_temp.SliceThickness = parameters.get("VisuCoreFrameThickness")
                         ds_temp.NumberOfFrames = 1
                         ds_temp.ImagesInAcquisition = parameters.get("VisuCoreFrameCount")
-                        ds_temp.SliceLocation = list(map(str, parameters.get("VisuCorePosition")[iteration - 1]))[2]
+                        ds_temp.SliceLocation = list(map(str, parameters.get("VisuCorePosition")[iteration]))[2]
 
                     # Get other parameters which differ among PV versions
                     
