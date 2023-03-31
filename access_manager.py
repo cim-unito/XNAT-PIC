@@ -35,9 +35,11 @@ class AccessManager():
 
         # Start with a popup to get credentials
         self.popup = ttk.Toplevel(self.root)
+        self.popup.grab_set()
         self.popup.title("XNAT-PIC ~ Login")
         self.popup.geometry("+%d+%d" % (600, 400))
         self.popup.resizable(False, False)
+        #self.popup.iconbitmap(PATH_IMAGE + "logo3.ico")
 
         # Closing window event: if it occurs, the popup must be destroyed and the main frame buttons must be enabled
         def closed_window():
@@ -56,19 +58,7 @@ class AccessManager():
         self.popup.entry_address.var = tk.StringVar()
         self.popup.entry_address["textvariable"] = self.popup.entry_address.var
         self.popup.entry_address.grid(row=1, column=1, padx=2, pady=2)
-
-        def enable_address_modification(*args):
-            if self.popup.modify_address_flag.get() == 1:
-                self.popup.entry_address.configure(state='normal')
-            else:
-                self.popup.entry_address.configure(state='disabled')
-        self.popup.modify_address_flag = tk.IntVar()
-        self.popup.modify_address_btn = ttk.Checkbutton(self.popup.cred_frame, text="Change address", state='disabled', 
-                                                        style="Popup.TCheckbutton",
-                                                        onvalue=1, offvalue=0, variable=self.popup.modify_address_flag)
-        self.popup.modify_address_btn.grid(row=1, column=2, padx=2, pady=2, sticky=tk.W)
-        self.popup.modify_address_flag.trace('w', enable_address_modification)
-        
+       
         # XNAT USER 
         self.popup.label_user = ttk.Label(self.popup.cred_frame, text="Username")
         self.popup.label_user.grid(row=2, column=0, padx=1, ipadx=1, sticky=tk.E)
@@ -112,6 +102,11 @@ class AccessManager():
                 self.popup.toggle_btn.config(state='disabled')
                 self.popup.btn_remember.configure(state='disabled')
         self.popup.entry_psw.var.trace('w', enable_toggle)
+        
+        self.popup.delete_cred = ttk.Label(self.popup.cred_frame, text="Delete Credentials", style="Popup.TLabel", 
+                                        cursor=CURSOR_HAND)
+        self.popup.delete_cred.grid(row=4, column=0, padx=1, ipadx=1)
+        self.popup.delete_cred.bind("<Button-1>", self.delete_credentials)
 
         self.popup.forgot_psw = ttk.Label(self.popup.cred_frame, text="Forgot password", style="Popup.TLabel", 
                                         cursor=CURSOR_HAND)
@@ -155,20 +150,41 @@ class AccessManager():
 
         self.popup.button_quit = ttk.Button(self.popup, text='Quit', command=quit_event, style="MainPopup.TButton")
         self.popup.button_quit.grid(row=2, column=0, padx=10, pady=5, sticky=tk.W)
+    
+    def delete_credentials(self, *args):
+        # Try to remove the existent encrypted file
+        try:
+            dir = os.getcwd().replace('\\', '/')
+            head, tail = os.path.split(dir)
+            os.remove(
+                os.path.join(head, ".XNAT_login_file.aes")
+            )
 
+            self.popup.http.set("http://")
+            self.popup.entry_address.var.set('')
+            self.popup.entry_user.set('')
+            self.popup.entry_psw.var.set('')
+            self.popup.combo_user['values'] = self.get_list_of_users()
+        except FileNotFoundError:
+            pass
+    
     def forgot_psw(self, *args):
         if len(self.popup.entry_address.var.get()) == 0:
            messagebox.showerror("XNAT-PIC Login", "Enter the XNAT web andress!")
         else:
-            forget_uri = str(self.popup.http.get() + self.popup.entry_address.var.get() + "app/template/ForgotLogin.vm#!")
-            webbrowser.open(forget_uri, new=1)
+            forget_uri = str(self.popup.http.get() + self.popup.entry_address.var.get() + "/app/template/ForgotLogin.vm#!")
+            parts = forget_uri.split("//")
+            new_forget_uri = parts[0] + "//" + "/".join(parts[1:])
+            webbrowser.open(new_forget_uri, new=1)
 
     def register(self, *args):
         if len(self.popup.entry_address.var.get()) == 0:
            messagebox.showerror("XNAT-PIC Login", "Enter the XNAT web andress!")
         else:
-            forget_uri = str(self.popup.http.get() + self.popup.entry_address.var.get() + "app/template/Register.vm#!")
-            webbrowser.open(forget_uri, new=1)
+            register_uri = str(self.popup.http.get() + self.popup.entry_address.var.get() + "/app/template/Register.vm#!")
+            parts = register_uri.split("//")
+            new_forget_uri = parts[0] + "//" + "/".join(parts[1:])
+            webbrowser.open(new_forget_uri, new=1)
 
     def get_list_of_users(self):
             # Get the list of registered and stored users
@@ -203,9 +219,7 @@ class AccessManager():
                 # Load stored credentials
                 self.load_saved_credentials()
                 # Disable the button to modify the web address
-                self.popup.entry_address.configure(state='disabled')
-                # Enable the 'Change address' button
-                self.popup.modify_address_btn.configure(state='normal')
+                self.popup.entry_address.configure(state='normal')
                 # Enable the 'Remember me' button
                 self.popup.btn_remember.configure(state='normal')
                 # Enable the 'Show password' toggle button
@@ -239,6 +253,7 @@ class AccessManager():
                 # Read the data
                 data = json.load(credentials_file)
                 # Fill the empty fields
+                self.popup.http.set(data[self.popup.entry_user.get()]['HTTP'])
                 self.popup.entry_address.var.set(data[self.popup.entry_user.get()]['Address'])
                 self.popup.entry_user.set(data[self.popup.entry_user.get()]['Username'])
                 self.popup.entry_psw.var.set(data[self.popup.entry_user.get()]['Password'])
@@ -270,16 +285,7 @@ class AccessManager():
             if self.popup.remember.get() == True:
                 # Save credentials
                 self.save_credentials()
-            else:
-                # Try to remove the existent encrypted file
-                try:
-                    dir = os.getcwd().replace('\\', '/')
-                    head, tail = os.path.split(dir)
-                    os.remove(
-                        os.path.join(head, ".XNAT_login_file.aes")
-                    )
-                except FileNotFoundError:
-                    pass
+
             self.popup.destroy()
 
         except Exception as error:

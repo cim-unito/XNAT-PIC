@@ -196,37 +196,6 @@ class xnat_pic_gui():
                     self.xnat_pic_logo_label = ttk.Label(self.frame, image=self.xnat_pic_logo_light)
                 self.xnat_pic_logo_label.place(relx=0.6, rely=0.3, anchor=tk.CENTER)
 
-            # Load Sun icon to swith to dark/light mode
-            def switch_mode(*args):
-                if self.style_label.get() == 'cerculean':
-                    self.style_label.set('cyborg')
-                    style = MyStyle('cyborg')
-                    style.configure()
-                    self.style = style.get_style()
-                    self.dark_mode_btn.config(image=self.sun_icon_light)
-                    if self.xnat_pic_logo_label.winfo_exists():
-                        self.xnat_pic_logo_label.config(image=self.xnat_pic_logo_light)
-                    elif self.xnat_pic_logo_label.winfo_exists() and self.frame_label.get() in ["Enter", "Main"]:
-                        self.xnat_pic_logo_label = ttk.Label(self.frame, image=self.xnat_pic_logo_light)
-                        self.xnat_pic_logo_label.place(relx=0.3, rely=0.1, anchor=tk.NW, relheight=0.3, relwidth=0.7)
-                    else:
-                        pass
-                    self.frame.update()
-                else:
-                    self.style_label.set('cerculean')
-                    style = MyStyle('cerculean')
-                    style.configure()
-                    self.style = style.get_style()
-                    self.dark_mode_btn.config(image=self.sun_icon_dark)
-                    if self.xnat_pic_logo_label.winfo_exists():
-                        self.xnat_pic_logo_label.config(image=self.xnat_pic_logo_dark)
-                    elif self.xnat_pic_logo_label.winfo_exists() and self.frame_label.get() in ["Enter", "Main"]:
-                        self.xnat_pic_logo_label = ttk.Label(self.frame, image=self.xnat_pic_logo_dark)
-                        self.xnat_pic_logo_label.place(relx=0.3, rely=0.1, anchor=tk.NW, relheight=0.3, relwidth=0.7)
-                    else:
-                        pass
-                    self.frame.update()
-
             # Change font according to window size
             if self.width > int(2/3*self.my_width):
                 self.style.configure('TButton', font = LARGE_FONT)
@@ -564,24 +533,12 @@ class xnat_pic_gui():
                                     cursor=CURSOR_HAND, command=clear_tree, style="WithoutBack.TButton")
             self.clear_tree_btn.place(relx = 0.05, rely = 0.72, anchor = NW)
             Hovertip(self.clear_tree_btn, "Delete tree")
-
-            # Search entry to find objects
-            def scankey(*args):
-                if self.search_var.get() != '':
-                    self.tree_to_convert.find_items(self.search_var.get())
-                else:
-                    self.tree_to_convert.remove_selection()
-                             
+                           
             def selected_object_handler(*args):
                 curItem = self.tree_to_convert.tree.focus()
                 parentItem = self.tree_to_convert.tree.parent(curItem)
                 self.object_folder.set(os.path.join(self.folder_to_convert.get(), self.tree_to_convert.tree.item(parentItem)['text'],
                                     self.tree_to_convert.tree.item(curItem)['text']).replace("\\", "/"))
-                if glob(self.object_folder.get() + '/**/**/**/2dseq', recursive=False) != []:
-                    self.details_btn.config(state='normal')
-                else:
-                    self.details_btn.config(state='disabled')
-
             self.object_folder = tk.StringVar()
 
             # Treeview widget pre_convertion
@@ -717,11 +674,6 @@ class xnat_pic_gui():
                 parentItem = self.tree_converted.tree.parent(curItem)
                 self.object_folder_post.set(os.path.join(self.converted_folder.get(), self.tree_converted.tree.item(parentItem)['text'],
                                     self.tree_converted.tree.item(curItem)['text']).replace("\\", "/"))
-                if glob(self.object_folder_post.get().replace("\\", "/") + '/**/**/*.dcm', recursive=False) != []:
-                    self.details_btn_post.config(state='normal')
-                else:
-                    self.details_btn_post.config(state='disabled')
-
             self.convertion_state.trace('w', tree_thread)
             self.tree_converted.tree.bind("<ButtonRelease-1>", selected_object_handler_post)
 
@@ -833,6 +785,8 @@ class xnat_pic_gui():
                 list_sub = [sub for sub in list_sub if sub.endswith('.ini')==False]
                 # Initialize the list of conversion errors
                 self.conversion_err = []
+                self.conversion_err1 = []
+                self.list_scans_err = []
                 # Loop over subjects
                 for j, dir in enumerate(list_sub, 0):
                     # Show the current step on the progress bar
@@ -858,7 +812,7 @@ class xnat_pic_gui():
                             # Case 2 --> The directory does not exist
                             if current_dst.split('/')[-1].count('_dcm') >= 1:
                                 # Check to avoid already converted folders
-                                self.conversion_err.append(current_folder.split('/')[-1])
+                                self.conversion_err1.append(current_folder.split('/')[-1])
                                 continue
                             else:
                                 # Create the new destination folder
@@ -871,7 +825,8 @@ class xnat_pic_gui():
                         list_exp = os.listdir(current_folder)
                         # Clear list_exp from configuration files (e.g. desktop.ini)
                         list_exp = [exp for exp in list_exp if exp.endswith('.ini')==False]
-
+                        
+                        
                         for k, exp in enumerate(list_exp):
                             print('Converting ' + str(exp))
                             exp_folder = os.path.join(current_folder, exp).replace('\\', '/')
@@ -881,6 +836,12 @@ class xnat_pic_gui():
                             # Start the multiprocessing conversion: one pool per each scan folder
                             with Pool(processes=int(cpu_count() - 1)) as pool:
                                 pool.map(self.converter.convert, list_scans)
+                            
+                            # Delete converted folders that are empty due to exceptions
+                            for scan in list_scans:
+                                if not os.listdir(scan[1]):
+                                    os.rmdir(scan[1])
+                                    self.list_scans_err.append(scan[0])
 
                     # Update the current step of the progress bar
                     progressbar.update_progressbar(j + 1, len(list_sub))
@@ -903,10 +864,21 @@ class xnat_pic_gui():
             
             end_time = time.time()
             print('Total elapsed time: ' + str(end_time - start_time) + ' s')
+            
+            str_excep = ''
+            if not len(self.conversion_err) == 0:
+                str_excep = "Folders not converted because they already exist and the overwrite flag has not been selected!\n\n" + str([str(x) for x in self.conversion_err])[1:-1]
+            str_excep1 = ''
+            if not len(self.list_scans_err) == 0:
+                str_excep1 = "Folders not converted. Check that they are valid Bruker files!\n\n" + str('\n'.join([str(x) for x in self.list_scans_err]))
+            str_excep2 = ''
+            if not len(self.conversion_err1) == 0:
+                str_excep2 = "Folders not converted:\n\n" + str([str(x) for x in self.conversion_err1])[1:-1]
 
-            messagebox.showinfo("XNAT-PIC Converter","The conversion of the project is done!\n\n\n\n"
-                                "Exceptions:\n\n" +
-                                str([str(x) for x in self.conversion_err])[1:-1])
+            messagebox.showinfo("XNAT-PIC Converter","The conversion of the project is finished!\n\n\n\n" + 
+                                str_excep + "\n\n\n\n" +
+                                str_excep1 + "\n\n\n\n" +
+                                str_excep2)
 
             self.convertion_state.set(1)
             enable_buttons([self.exit_btn])   
@@ -957,6 +929,7 @@ class xnat_pic_gui():
 
                 list_exp = os.listdir(self.folder_to_convert.get())
                 list_exp = [exp for exp in list_exp if exp.endswith('.ini') == False]
+                self.list_scans_err = []
                 for k, exp in enumerate(list_exp):
                     print('Converting ' + str(exp))
                     progressbar.show_step(k + 1, len(list_exp))
@@ -969,6 +942,12 @@ class xnat_pic_gui():
                     progressbar.set_caption('Converting ' + str(exp_folder.split('/')[-1]) + ' ...')
                     with Pool(processes=int(cpu_count() - 1)) as pool:
                         pool.map(self.converter.convert, list_scans)
+                        # Delete converted folders that are empty due to exceptions
+                    for scan in list_scans:
+                        if not os.listdir(scan[1]):
+                            os.rmdir(scan[1])
+                            self.list_scans_err.append(scan[0])
+                        
                     progressbar.set_caption('Converting ' + str(exp_folder.split('/')[-1]) + ' ...done!')
 
             start_time = time.time()
@@ -988,7 +967,11 @@ class xnat_pic_gui():
             end_time = time.time()
             print('Total elapsed time: ' + str(end_time - start_time) + ' s')
 
-            messagebox.showinfo("XNAT-PIC Converter","Done! Your subject is successfully converted.")
+            str_excep = ''
+            if not len(self.list_scans_err) == 0:
+                str_excep = "Folders not converted. Check that they are valid Bruker files!\n\n" + str('\n'.join([str(x) for x in self.list_scans_err]))
+
+            messagebox.showinfo("XNAT-PIC Converter","Done! Your subject is successfully converted\n\n\n\n" + str_excep)
             self.convertion_state.set(1)
             enable_buttons([self.exit_btn]) 
 
@@ -1013,10 +996,15 @@ class xnat_pic_gui():
 
             def exp_converter():
                 list_scans = self.converter.get_list_of_folders(self.folder_to_convert.get(), self.exp_dst)
-    
+                
+                self.list_scans_err = []
                 progressbar.set_caption('Converting ' + str(self.folder_to_convert.get().split('/')[-1]) + ' ...')
                 with Pool(processes=int(cpu_count() - 1)) as pool:
                     pool.map(self.converter.convert, list_scans)
+                for scan in list_scans:
+                    if not os.listdir(scan[1]):
+                        os.rmdir(scan[1])
+                        self.list_scans_err.append(scan[0])                
                 progressbar.set_caption('Converting ' + str(self.folder_to_convert.get().split('/')[-1]) + ' ...done!')
 
             start_time = time.time()
@@ -1036,7 +1024,11 @@ class xnat_pic_gui():
             end_time = time.time()
             print('Total elapsed time: ' + str(end_time - start_time) + ' s')
 
-            messagebox.showinfo("XNAT-PIC Converter","Done! Your experiment is successfully converted.")
+            str_excep = ''
+            if not len(self.list_scans_err) == 0:
+                str_excep = "Folders not converted. Check that they are valid Bruker files!\n\n" + str('\n'.join([str(x) for x in self.list_scans_err]))
+
+            messagebox.showinfo("XNAT-PIC Converter","Done! Your experiment is successfully converted\n\n\n\n" + str_excep)
             self.convertion_state.set(1)
             enable_buttons([self.exit_btn])
                  
@@ -1148,7 +1140,7 @@ class xnat_pic_gui():
 
             # Be sure that we call OnFrameConfigure on the right canvas
             self.frame_ID.bind("<Configure>", lambda event, canvas=self.canvas_ID: OnFrameConfigure(canvas))
-            self.label_frame_ID.place(relx = 0.5, rely = 0.25, relheight=0.25, relwidth=0.32, anchor = tk.NW)
+            self.label_frame_ID.place(relx = 0.5, rely = 0.25, relheight=0.25, relwidth=0.37, anchor = tk.NW)
             def OnFrameConfigure(canvas):
                     canvas.configure(scrollregion=canvas.bbox("all"))
 
@@ -1207,7 +1199,7 @@ class xnat_pic_gui():
 
             # Be sure that we call OnFrameConfigure on the right canvas
             self.frame_CV.bind("<Configure>", lambda event, canvas=self.canvas_CV: OnFrameConfigure(canvas))
-            self.label_frame_CV.place(relx = 0.5, rely = 0.60, relheight=0.2, relwidth=0.45, anchor = tk.NW)
+            self.label_frame_CV.place(relx = 0.5, rely = 0.60, relheight=0.2, relwidth=0.43, anchor = tk.NW)
             
             def OnFrameConfigure(canvas):
                     canvas.configure(scrollregion=canvas.bbox("all"))
@@ -1296,7 +1288,7 @@ class xnat_pic_gui():
             Hovertip(self.modify_btn, "Confirm custom variables for multiple subjects/experiments")
 
         def select_button(self, master, press_btn):
-            disable_buttons([self.prj_data_btn, self.sbj_data_btn, self.exp_data_btn])
+            #disable_buttons([self.prj_data_btn, self.sbj_data_btn, self.exp_data_btn])
             # Choose your directory (button and menu)
             self.information_folder = filedialog.askdirectory(parent=master.root, initialdir=os.path.expanduser("~"), title="XNAT-PIC: Select " + press_btn + " directory!")
             if not self.information_folder:
@@ -1612,7 +1604,7 @@ class xnat_pic_gui():
             # Normal entry CV
             for i in range(0, len(self.entries_value_CV)):
                 self.entries_value_CV[i]['state'] = 'normal'
-            
+          
             # The timepoint field remains locked. Only one value can be entered from the entry.
             self.entries_value_CV[1]['state'] = 'disabled'
 
@@ -1746,9 +1738,10 @@ class xnat_pic_gui():
                 # Update the info in the txt file CV
                 for i in array_CV:
                     keyCV = "Subjects" + str(self.entries_variable_CV[i].get())
+                    keyCV1 = "Sessions" + str(self.entries_variable_CV[i].get())
                     new_value_sub = self.entries_value_CV[i].get() 
                     new_value_sub = "" if new_value_sub is None else new_value_sub
-                    tmp_CV.update({keyCV : self.entries_value_CV[i].get()})     
+                    tmp_CV.update({keyCV : new_value_sub, keyCV1 : new_value_sub})    
                     self.entries_variable_CV[i]['state'] = tk.DISABLED
                     self.entries_value_CV[i]['state'] = tk.DISABLED 
                 # Find all the keys for the subject (Sub+Exp) that you want to update
@@ -1756,8 +1749,8 @@ class xnat_pic_gui():
                 for k,v in self.path_list1.items():
                     if str(sub_name) in str(k):
                         path = v.split('/')
-                        sub_name = path[len(path)-2]
-                        if sub_name == str(sub_name):
+                        sub_name1 = path[len(path)-2]
+                        if sub_name == str(sub_name1):
                             keys.append(k)
                 for x in range(len(keys)):
                     my_key = keys[x]           
@@ -2432,7 +2425,6 @@ class xnat_pic_gui():
                     # Check for pre-existent tree
                     if self.tree.tree.exists(0):
                         # # Check for the name of the previous tree
-                        # if self.tree.item(0)['text'] != self.folder_to_upload.get().split('/')[-1]:
                         # If the folder name is changed, then delete the previous tree
                         self.tree.tree.delete(*self.tree.tree.get_children())
 
@@ -2573,14 +2565,6 @@ class xnat_pic_gui():
             self.clear_tree_btn = ttk.Button(self.frame_uploader, image=master.logo_clear,
                                     cursor=CURSOR_HAND, command=clear_tree, style="WithoutBack.TButton")
             self.clear_tree_btn.place(relx = 0.47, rely = 0.25, anchor = NE)
-
-            # Search Bar
-            def scankey(*args):
-                if self.search_var.get() != "":
-                    self.tree.find_items(self.search_var.get())
-                else:
-                    self.tree.remove_selection()
-            self.search_var = tk.StringVar()
 
             # Upload additional files
             self.add_file_flag = tk.IntVar()
