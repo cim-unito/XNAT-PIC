@@ -33,6 +33,7 @@ from access_manager import AccessManager
 from new_project_manager import NewProjectManager, NewSubjectManager, NewExperimentManager
 import itertools
 from Treeview import Treeview
+import xnat
 
 
 PATH_IMAGE = "images\\"
@@ -75,7 +76,10 @@ class xnat_pic_gui():
     def __init__(self, root):
                    
         self.root = root
-        self.root.state('zoomed') # The root widget is adapted to the screen size
+        try:
+            self.root.state('zoomed') # The root widget is adapted to the screen size
+        except:
+            return
         # Define the style of the root widget
         self.style_label = tk.StringVar()
         self.style_label.set('cerculean')
@@ -141,6 +145,8 @@ class xnat_pic_gui():
         self.user_icon = open_image(PATH_IMAGE + "user.png", 20, 20)
         # Load user icon
         self.details_icon = open_image(PATH_IMAGE + "details_icon.png", 15, 15)
+        # Load refresh icon
+        self.refresh_icon = open_image(PATH_IMAGE + "refresh.png", 15, 15)
 
         # Toolbar Menu
         def new_prj():
@@ -2302,6 +2308,7 @@ class xnat_pic_gui():
 
             access_manager = AccessManager(master.root)
             master.root.wait_window(access_manager.popup)
+            self.manager = access_manager.login
 
             if access_manager.connected == False:
                 enable_buttons([master.convert_btn, master.info_btn, master.upload_btn, master.close_btn])
@@ -2309,7 +2316,7 @@ class xnat_pic_gui():
                 destroy_widgets([master.toolbar_menu, master.convert_btn, master.info_btn, master.upload_btn, master.close_btn, master.xnat_pic_logo_label])
                 self.session = access_manager.session
                 self.overall_uploader(master)
-
+            
         def overall_uploader(self, master):
                            
             #################### Create the new frame ####################
@@ -2328,17 +2335,15 @@ class xnat_pic_gui():
             help_menu = ttk.Menu(self.menu, tearoff=0)
 
             home_menu.add_command(label="Home", image = master.logo_home, compound='left', command = lambda: exit_uploader())
-
+            
+            file_menu.add_command(label="Refresh Page", image = master.refresh_icon, compound='left', command = lambda: self.refresh(master))
             file_menu.add_command(label="Clear Tree", image = master.logo_clear, compound='left', command = lambda: clear_tree())
             
-            #exit_menu.add_command(label="Exit", image = master.logo_exit, compound='left', command = lambda: self.exit_metadata(master))
-
             help_menu.add_command(label="Help", image = master.logo_help, compound='left', command = lambda: messagebox.showinfo("XNAT-PIC","Help"))
 
             self.menu.add_cascade(label='Home', menu=home_menu)
             self.menu.add_cascade(label="File", menu=file_menu)
             self.menu.add_cascade(label="About", menu=help_menu)
-            #self.menu.add_cascade(label="Exit", menu=exit_menu)
             master.root.config(menu=self.menu)
 
 
@@ -2351,7 +2356,8 @@ class xnat_pic_gui():
                                                 cursor=CURSOR_HAND)
             self.user_btn.menu = Menu(self.user_btn, tearoff=0)
             self.user_btn["menu"] = self.user_btn.menu
-            self.user_btn.menu.add_command(label="Exit", command=lambda: exit_uploader())
+            
+            self.user_btn.menu.add_command(label="Exit", image = master.logo_exit, compound='left', command=lambda: exit_uploader())
             self.user_btn.place(relx = 0.95, rely = 0.05, anchor = E)
 
             # Initialize variables
@@ -2674,13 +2680,13 @@ class xnat_pic_gui():
             
             # Button to add a new project
             def add_project():
-                disable_buttons([self.new_prj_btn])
+                #disable_buttons([self.new_prj_btn])
                 createdProject = ProjectManager(self.session)
                 master.root.wait_window(createdProject.master)
                 if self.session != "":
                     self.session.clearcache()
                 self.prj.set(createdProject.project_id.get())
-                enable_buttons([self.new_prj_btn])
+                #enable_buttons([self.new_prj_btn])
 
             self.new_prj_btn = ttk.Button(self.frame_uploader, state=tk.DISABLED, style="Secondary.TButton", image=master.logo_add,
                                         command=add_project, cursor=CURSOR_HAND, text="New Project", compound='left')
@@ -2706,14 +2712,14 @@ class xnat_pic_gui():
             
             # Button to add a new subject
             def add_subject():
-                disable_buttons([self.new_prj_btn, self.new_sub_btn])
+                #disable_buttons([self.new_prj_btn, self.new_sub_btn])
                 createdSubject = SubjectManager(self.session)
                 master.root.wait_window(createdSubject.master)
                 if self.session != "":
                     self.session.clearcache()
                 self.prj.set(createdSubject.parent_project.get())
                 self.sub.set(createdSubject.subject_id.get())
-                enable_buttons([self.new_prj_btn, self.new_sub_btn])
+                #enable_buttons([self.new_prj_btn, self.new_sub_btn])
 
             self.new_sub_btn = ttk.Button(self.frame_uploader, state=tk.DISABLED, style="Secondary.TButton", image=master.logo_add,
                                         command=add_subject, cursor=CURSOR_HAND, text="New Subject", compound='left')
@@ -2722,7 +2728,6 @@ class xnat_pic_gui():
 
             #############################################
             ################# Experiment ################
-            
             # Menu
             if self.prj.get() != '--' and self.sub.get() != '--':
                 self.OPTIONS3 = list(self.session.projects[self.prj.get()].subjects[self.sub.get()].experiments.key_map.keys())
@@ -2738,7 +2743,7 @@ class xnat_pic_gui():
             
             # Button to add a new experiment
             def add_experiment():
-                disable_buttons([self.new_prj_btn, self.new_sub_btn, self.new_exp_btn])
+                #disable_buttons([self.new_prj_btn, self.new_sub_btn, self.new_exp_btn])
                 createdExperiment = ExperimentManager(self.session)
                 master.root.wait_window(createdExperiment.master)
                 if self.session != "":
@@ -2761,8 +2766,7 @@ class xnat_pic_gui():
                     self.OPTIONS2 = []
                 self.sub.set(default_value)
                 self.exp.set(default_value)
-                if self.OPTIONS2 != []:
-                    self.subject_list['menu'].delete(0, 'end')
+                self.subject_list['menu'].delete(0, 'end')
                 for key in self.OPTIONS2:
                     self.subject_list['menu'].add_command(label=key, command=lambda var=key:self.sub.set(var))
             def get_experiments(*args):
@@ -2771,8 +2775,7 @@ class xnat_pic_gui():
                 else:
                     self.OPTIONS3 = []
                 self.exp.set(default_value)
-                if self.OPTIONS3 != []:
-                    self.experiment_list['menu'].delete(0, 'end')
+                self.experiment_list['menu'].delete(0, 'end')
                 for key in self.OPTIONS3:
                     self.experiment_list['menu'].add_command(label=key, command=lambda var=key:self.exp.set(var))
 
@@ -2801,8 +2804,6 @@ class xnat_pic_gui():
             self.exit_text.set("Exit")
             self.exit_btn.place(relx = 0.05, rely = 0.9, relwidth=0.1, anchor = NW)
             #############################################
-
-            #############################################
             ################ NEXT Button ################
             def next():
                 if self.press_btn == 0:
@@ -2821,8 +2822,11 @@ class xnat_pic_gui():
                                         command=next, cursor=CURSOR_HAND)
             self.next_text.set("Next")
             self.next_btn.place(relx = 0.95, rely = 0.9, relwidth=0.1, anchor = NE)
-            #############################################
-
+        #############################################
+        ################ Refresh Button ################
+        def refresh(self, master):
+            destroy_widgets([self.frame_uploader])
+            self.overall_uploader(master)
         def check_buttons(self, master, press_btn=0):
 
             def back():

@@ -12,6 +12,7 @@ import ttkbootstrap as ttk
 from access_manager import CURSOR_HAND
 from accessory_functions import disable_buttons
 
+PATH_IMAGE = "images\\"
 
 class CredentialManager():
 
@@ -21,7 +22,7 @@ class CredentialManager():
 
         self.root.title("XNAT-PIC ~ Credentials")
         self.root.geometry("+%d+%d" % (500, 250))
-
+        self.root.iconbitmap(PATH_IMAGE + "logo3.ico")
         # self.popup = ttk.Toplevel(self.root)
         self.popup = ttk.Frame(self.root)
         self.popup.pack(fill='both', expand=1)

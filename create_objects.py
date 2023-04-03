@@ -14,6 +14,7 @@ from datetime import date, datetime
 from logging import exception
 import tkinter.simpledialog
 from progress_bar import ProgressBar
+import time
 
 PATH_IMAGE = "images\\"
 CURSOR_HAND = "hand2"
@@ -327,6 +328,15 @@ class SubjectManager():
         self.subject_id_entry.pack(fill='x', anchor=tk.NW)
 
         def enable_subject_id(*args):
+            self.subject_id_entry.delete(0, 'end')
+            self.subject_gender.set('')
+            self.subject_age_entry.entry.delete(0,END)
+            self.subject_age_entry.entry.insert(0, today)
+            self.subject_weight_entry.delete(0,END)
+            self.subject_weight_entry.insert(0,0)
+            self.subject_weight.unit.set(units[0])
+            self.subject_description_entry.delete(1.0,END)
+            
             if self.parent_project.get() != '':
                 enable_buttons([self.subject_id_entry])
             else:
@@ -352,10 +362,10 @@ class SubjectManager():
         self.subject_age_entry.entry.config(textvariable=self.subject_age)
         self.subject_age_entry.grid(row=3, column=1, padx=5, pady=5, sticky=tk.W)
         def check_date(*args):
-            if self.subject_age.get() > today:
+            newdate2 = time.strptime(today, "%m/%d/%Y")
+            newdate1 = time.strptime(self.subject_age.get(), "%m/%d/%Y") if self.subject_age.get() != '' else newdate2               
+            if newdate1 > newdate2:
                 self.subject_age.set(today)
-            else:
-                pass
         self.subject_age.trace('w', check_date)
 
         # Subject Weight
@@ -414,8 +424,8 @@ class SubjectManager():
                     pass
                 self.submit_btn.config(state='disabled')
         self.subject_id.trace('w', enable_submit)
-
-        #################################################################################
+        
+         #################################################################################
         # Bottom Button
         #################################################################################
         # Exit Button
@@ -504,6 +514,11 @@ class ExperimentManager():
             self.parent_subject_menu['menu'].delete(0, 'end')
             for key in self.list_of_subjects:
                 self.parent_subject_menu['menu'].add_command(label=key, command=lambda var=key:self.parent_subject.set(var))
+            self.experiment_id_entry.delete(0,END)
+            self.experiment_id_entry.config(state='disabled')
+            self.experiment_date_entry.entry.delete(0,END)
+            self.experiment_date_entry.entry.insert(0, today)
+            self.experiment_description_entry.delete(1.0,END)
         self.parent_project.trace('w', get_subject_list)
 
         # Experiment ID
@@ -519,7 +534,11 @@ class ExperimentManager():
             if self.parent_project.get() != '' and self.parent_subject.get() != '' and self.parent_subject.get() != '--':
                 self.experiment_id_entry.config(state='normal')
             else:
+                self.experiment_id_entry.delete(0, 'end')
                 self.experiment_id_entry.config(state='disabled')
+            self.experiment_date_entry.entry.delete(0,END)
+            self.experiment_date_entry.entry.insert(0, today)
+            self.experiment_description_entry.delete(1.0,END)
         self.parent_subject.trace('w', enable_exp_id)
 
         # Experiment Acquisition Date
@@ -534,10 +553,10 @@ class ExperimentManager():
         self.experiment_date_entry.grid(row=3, column=1, padx=5, pady=5, sticky=tk.W)
 
         def check_date(*args):
-            if self.experiment_date.get() > today:
+            newdate2 = time.strptime(today, "%m/%d/%Y")
+            newdate1 = time.strptime(self.experiment_date.get(), "%m/%d/%Y") if self.experiment_date.get() != '' else newdate2 
+            if newdate1 > newdate2:
                 self.experiment_date.set(today)
-            else:
-                pass
         self.experiment_date.trace('w', check_date)
 
         # Experiment Notes
@@ -557,6 +576,11 @@ class ExperimentManager():
             if self.parent_project.get() != '' and self.parent_subject.get() != '' and self.experiment_id.get() != '':
                 if self.experiment_id.get() in list(self.session.projects[self.parent_project.get()].subjects[self.parent_subject.get()].experiments.key_map.keys()):
                     if self.error.get() == "":
+                        try:
+                            if self.error_label.winfo_exists():
+                                self.error_label.destroy()
+                        except:
+                            pass
                         self.error.set("Error")
                         self.error.label = ttk.Label(self.experiment_id_labelframe, image=self.warning_icon,
                                                     text="An Experiment with the same experiment_id within "+ str(self.parent_subject.get()) + 
@@ -592,33 +616,38 @@ class ExperimentManager():
         self.submit_btn.pack(side='right', padx=25, pady=10, anchor=tk.NE)
 
     def create_new_experiment(self):
+        def func_new_exp(*args):
+            try:
+                #################################################
+                # Method to bypass the experiment object creation
+                current_folder = os.path.join(os.getcwd(), "temp/Exp_1").replace("\\", "/")
+                zip_dst = shutil.make_archive("temp", "zip", current_folder) # .zip file of the current subfolder
 
-        result = messagebox.askyesno("XNAT-PIC Uploader", "A new experiment will be created. Are you sure?")
-        if result is False:
-            self.master.deiconify()
-            return
-        try:
-            #################################################
-            # Method to bypass the experiment object creation
-            current_folder = os.path.join(os.getcwd(), "temp/Exp_1").replace("\\", "/")
-            zip_dst = shutil.make_archive("temp", "zip", current_folder) # .zip file of the current subfolder
+                self.session.services.import_(zip_dst,
+                                            overwrite="delete", # Overwrite parameter is important!
+                                            project=self.parent_project.get(),
+                                            subject=self.parent_subject.get(),
+                                            experiment=self.experiment_id.get(),
+                                            content_type='application/zip')
+                self.session.clearcache()
+                experiment = self.session.projects[self.parent_project.get()].subjects[self.parent_subject.get()].experiments[self.experiment_id.get()]
+                for scan in experiment.scans.listing:
+                    scan.delete()
+                # experiment.date = datetime.strptime(self.experiment_date.get(), "%m/%d/%Y")
+                # experiment.note = self.experiment_description_entry.get("1.0", END)
+                
+                os.remove(zip_dst)
+                
+                progressbar_new_exp.stop_progress_bar()
+                self.master.destroy()
+                messagebox.showinfo('XNAT-PIC Uploader', 'A new experiment is created.') 
+                #################################################
+            except exception as e:
+                progressbar_new_exp.stop_progress_bar()
+                self.master.destroy()
+                messagebox.showerror("Error!", str(e))
 
-            self.session.services.import_(zip_dst,
-                                        overwrite="delete", # Overwrite parameter is important!
-                                        project=self.parent_project.get(),
-                                        subject=self.parent_subject.get(),
-                                        experiment=self.experiment_id.get(),
-                                        content_type='application/zip')
-            self.session.clearcache()
-            experiment = self.session.projects[self.parent_project.get()].subjects[self.parent_subject.get()].experiments[self.experiment_id.get()]
-            for scan in experiment.scans.listing:
-                scan.delete()
-            # experiment.date = datetime.strptime(self.experiment_date.get(), "%m/%d/%Y")
-            # experiment.note = self.experiment_description_entry.get("1.0", END)
-            
-            os.remove(zip_dst)
-            #################################################
-        except exception as e:
-            messagebox.showerror("Error!", str(e))
-        messagebox.showinfo('XNAT-PIC Uploader', 'A new experiment is created.') 
-        self.master.destroy()
+
+        progressbar_new_exp = ProgressBar(self.master, "XNAT-PIC Uploader")
+        progressbar_new_exp.start_indeterminate_bar()
+        self.master.after(1000, func_new_exp)
