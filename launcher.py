@@ -2315,6 +2315,8 @@ class xnat_pic_gui():
             else:
                 destroy_widgets([master.toolbar_menu, master.convert_btn, master.info_btn, master.upload_btn, master.close_btn, master.xnat_pic_logo_label])
                 self.session = access_manager.session
+                self.full_andress = access_manager.popup.entry_address_complete
+                self.password = access_manager.popup.entry_password
                 self.overall_uploader(master)
             
         def overall_uploader(self, master):
@@ -2418,7 +2420,7 @@ class xnat_pic_gui():
                 self.folder_to_upload.set(filedialog.askdirectory(parent=master.frame, initialdir=init_dir, 
                                                         title="XNAT-PIC Uploader: Select directory in DICOM format to upload"))
                 if self.folder_to_upload.get() == '':
-                    messagebox.showerror("XNAT-PIC Converter", "Please select a folder.")
+                    #messagebox.showerror("XNAT-PIC Converter", "Please select a folder.")
                     return
                 # Reset and clear the selected_item_path defined from Treeview widget selection
                 self.selected_item_path.set('')
@@ -2825,8 +2827,11 @@ class xnat_pic_gui():
         #############################################
         ################ Refresh Button ################
         def refresh(self, master):
+            self.session = AccessManager.reconnect(self.full_andress, self.session.logged_in_user, self.password)
+            
             destroy_widgets([self.frame_uploader])
             self.overall_uploader(master)
+
         def check_buttons(self, master, press_btn=0):
 
             def back():

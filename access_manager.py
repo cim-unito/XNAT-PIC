@@ -271,7 +271,7 @@ class AccessManager():
 
         # Retireve the complete address
         self.popup.entry_address_complete = str(self.popup.http.get() + self.popup.entry_address.var.get())
-
+        self.popup.entry_password = self.popup.entry_psw.var.get()
         # home = os.path.expanduser("~")
         try:
             # Start a new xnat session
@@ -346,3 +346,17 @@ class AccessManager():
                                     int(os.environ.get('bufferSize1')) * int(os.environ.get('bufferSize2')))
             # Remove the file
             os.remove(decrypted_file)
+
+    def reconnect(full_andress, logged_in_user, password):
+
+        try:
+            # Start a new xnat session
+            session = xnat.connect(
+                full_andress,
+                logged_in_user,
+                password,
+            )
+            return session
+        except Exception as error:
+            messagebox.showerror("Error!", error)
+
