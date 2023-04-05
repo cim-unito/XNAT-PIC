@@ -2437,27 +2437,42 @@ class xnat_pic_gui():
                         self.tree.tree.delete(*self.tree.tree.get_children())
 
                     # Define the main folder into the Treeview object
+                    if self.upload_type.get() == 0 or self.upload_type.get():
+                        self.working_folder = self.folder_to_upload.get()
+                        # Scan the folder to get its tree
+                        subdir = os.listdir(self.working_folder)
+                        # Check for OS configuration files and remove them
+                        subdirectories = [x for x in subdir if x.endswith('.ini') == False]
+                    elif self.upload_type.get() == 1:
+                        self.working_folder = self.folder_to_upload.get().rsplit('/', 1)[0]
+                        # Scan the folder to get its tree
+                        subdir = [str(self.folder_to_upload.get().rsplit('/', 1)[1])]
+                        # Check for OS configuration files and remove them
+                        subdirectories = [x for x in subdir if x.endswith('.ini') == False]
+                    elif self.upload_type.get() == 2:
+                        self.working_folder = self.folder_to_upload.get().rsplit('/', 2)[0]
+                        # Scan the folder to get its tree
+                        subdir = [str(self.folder_to_upload.get().rsplit('/', 2)[1])]
+                        # Check for OS configuration files and remove them
+                        subdirectories = [x for x in subdir if x.endswith('.ini') == False]
+
                     j = 0
                     dict_items[str(j)] = {}
                     dict_items[str(j)]['parent'] = ""
-                    dict_items[str(j)]['text'] = self.folder_to_upload.get().split('/')[-1]
-                    # Scan the folder to get its tree
-                    subdir = os.listdir(self.folder_to_upload.get())
-                    # Check for OS configuration files and remove them
-                    subdirectories = [x for x in subdir if x.endswith('.ini') == False]
+                    dict_items[str(j)]['text'] = self.working_folder.split('/')[-1]
                     total_weight = 0
                     last_edit_time = ''
                     j = 1
                     for sub in subdirectories:
                         
-                        if os.path.isfile(os.path.join(self.folder_to_upload.get(), sub)):
+                        if os.path.isfile(os.path.join(self.working_folder, sub)):
                             # Check for last edit time
-                            edit_time = str(time.strftime("%d/%m/%Y,%H:%M:%S", time.localtime(os.path.getmtime(os.path.join(self.folder_to_upload.get(), sub)))))
+                            edit_time = str(time.strftime("%d/%m/%Y,%H:%M:%S", time.localtime(os.path.getmtime(os.path.join(self.working_folder, sub)))))
                             if last_edit_time == '' or edit_time > last_edit_time:
                                 # Update the last edit time
                                 last_edit_time = edit_time
                             # Check for file dimension
-                            file_weight = round(os.path.getsize(os.path.join(self.folder_to_upload.get(), sub))/1024, 2)
+                            file_weight = round(os.path.getsize(os.path.join(self.working_folder, sub))/1024, 2)
                             total_weight += round(file_weight/1024, 2)
                             # Add the item like a file
                             # Add the item like a file
@@ -2468,7 +2483,7 @@ class xnat_pic_gui():
                             # Update the j counter
                             j += 1
 
-                        elif os.path.isdir(os.path.join(self.folder_to_upload.get(), sub)):
+                        elif os.path.isdir(os.path.join(self.working_folder, sub)):
                             current_weight = 0
                             last_edit_time_lev2 = ''
                             branch_idx = j
@@ -2477,19 +2492,22 @@ class xnat_pic_gui():
                             dict_items[str(j)]['text'] = sub
                             j += 1
                             # Scansiona le directory interne per ottenere il tree CHIUSO
-                            sub_level2 = os.listdir(os.path.join(self.folder_to_upload.get(), sub))
+                            if self.upload_type.get() == 0 or self.upload_type.get() == 1 or self.upload_type.get() == 3:
+                                sub_level2 = os.listdir(os.path.join(self.working_folder, sub))
+                            elif self.upload_type.get() == 2:
+                                sub_level2 = [str(self.folder_to_upload.get().rsplit('/', 2)[2])]
                             subdirectories2 = [x for x in sub_level2 if x.endswith('.ini') == False]
                             for sub2 in subdirectories2:
-                                if os.path.isfile(os.path.join(self.folder_to_upload.get(), sub, sub2)):
+                                if os.path.isfile(os.path.join(self.working_folder, sub, sub2)):
                                     # Check for last edit time
-                                    edit_time = str(time.strftime("%d/%m/%Y,%H:%M:%S", time.localtime(os.path.getmtime(os.path.join(self.folder_to_upload.get(), sub, sub2)))))
+                                    edit_time = str(time.strftime("%d/%m/%Y,%H:%M:%S", time.localtime(os.path.getmtime(os.path.join(self.working_folder, sub, sub2)))))
                                     if last_edit_time_lev2 == '' or edit_time > last_edit_time_lev2:
                                         # Update the last edit time
                                         last_edit_time_lev2 = edit_time
                                     if last_edit_time_lev2 > last_edit_time:
                                         last_edit_time = last_edit_time_lev2
                                     # Check for file dimension
-                                    file_weight = round(os.path.getsize(os.path.join(self.folder_to_upload.get(), sub, sub2))/1024, 2)
+                                    file_weight = round(os.path.getsize(os.path.join(self.working_folder, sub, sub2))/1024, 2)
                                     current_weight += round(file_weight/1024, 2)
                                     # Add the item like a file
                                     dict_items[str(j)] = {}
@@ -2499,28 +2517,28 @@ class xnat_pic_gui():
                                     # Update the j counter
                                     j += 1
 
-                                elif os.path.isdir(os.path.join(self.folder_to_upload.get(), sub, sub2)):
+                                elif os.path.isdir(os.path.join(self.working_folder, sub, sub2)):
                                     # Check for last edit time
-                                    edit_time = str(time.strftime("%d/%m/%Y,%H:%M:%S", time.localtime(os.path.getmtime(os.path.join(self.folder_to_upload.get(), sub, sub2)))))
+                                    edit_time = str(time.strftime("%d/%m/%Y,%H:%M:%S", time.localtime(os.path.getmtime(os.path.join(self.working_folder, sub, sub2)))))
                                     if last_edit_time_lev2 == '' or edit_time > last_edit_time_lev2:
                                         # Update the last edit time
                                         last_edit_time_lev2 = edit_time
                                     if last_edit_time_lev2 > last_edit_time:
                                         last_edit_time = last_edit_time_lev2
 
-                                    folder_size = round(get_dir_size(os.path.join(self.folder_to_upload.get(), sub, sub2))/1024/1024, 2)
+                                    folder_size = round(get_dir_size(os.path.join(self.working_folder, sub, sub2))/1024/1024, 2)
                                     current_weight += folder_size
                                     dict_items[str(j)] = {}
                                     dict_items[str(j)]['parent'] = '1'
                                     dict_items[str(j)]['text'] = sub2
-                                    dict_items[str(j)]['values'] = (edit_time, str(folder_size) + 'MB', "Folder")
+                                    dict_items[str(j)]['values'] = (edit_time, str(folder_size) + 'MB', "Experiment")
                                     j += 1
                                 
                             total_weight += current_weight
-                            dict_items[str(branch_idx)]['values'] = (last_edit_time_lev2, str(round(current_weight, 2)) + "MB", "Folder")
+                            dict_items[str(branch_idx)]['values'] = (last_edit_time_lev2, str(round(current_weight, 2)) + "MB", "Subject")
 
                     # Update the fields of the parent object
-                    dict_items['0']['values'] = (last_edit_time, str(round(total_weight/1024, 2)) + "GB", "Folder")
+                    dict_items['0']['values'] = (last_edit_time, str(round(total_weight/1024, 2)) + "GB", "Project")
                     self.tree.set(dict_items)
             
             # Initialize the folder_to_upload path
@@ -2533,20 +2551,20 @@ class xnat_pic_gui():
             def get_selected_item(*args):
                 selected_item = self.tree.tree.selection()[0]
                 
-                if self.folder_to_upload.get().split('/')[-1] == self.tree.tree.item(selected_item, "text"):
-                    self.selected_item_path.set(self.folder_to_upload.get())
+                if self.working_folder.split('/')[-1] == self.tree.tree.item(selected_item, "text"):
+                    self.selected_item_path.set(self.working_folder)
                 else:
                     parent_item = self.tree.tree.parent(selected_item)
-                    if self.folder_to_upload.get().split('/')[-1] == self.tree.tree.item(parent_item, "text"):
-                        self.selected_item_path.set('/'.join([self.folder_to_upload.get(), 
+                    if self.working_folder.split('/')[-1] == self.tree.tree.item(parent_item, "text"):
+                        self.selected_item_path.set('/'.join([self.working_folder, 
                                 self.tree.tree.item(selected_item, "text")]))
                     else:
                         higher_parent_item = self.tree.tree.parent(parent_item)
-                        if self.folder_to_upload.get().split('/')[-1] == self.tree.tree.item(higher_parent_item, "text"):
-                            self.selected_item_path.set('/'.join([self.folder_to_upload.get(), self.tree.tree.item(parent_item, "text"),
+                        if self.working_folder.split('/')[-1] == self.tree.tree.item(higher_parent_item, "text"):
+                            self.selected_item_path.set('/'.join([self.working_folder, self.tree.tree.item(parent_item, "text"),
                                 self.tree.tree.item(selected_item, "text")]))
             
-            columns = [("#0", "Selected folder"), ("#1", "Last Update"), ("#2", "Size"), ("#3", "Type")]
+            columns = [("#0", "Folder Structure"), ("#1", "Last Update"), ("#2", "Size"), ("#3", "Type")]
             self.tree = Treeview(self.frame_uploader, columns, width=80)
             self.tree.tree.place(relx = 0.05, rely = 0.31, relheight=0.30, relwidth=0.4, anchor = NW)
             self.tree.scrollbar.place(relx = 0.47, rely = 0.31, relheight=0.30, anchor = NE)
@@ -2603,6 +2621,7 @@ class xnat_pic_gui():
                 if self.selected_item_path.get() != '':
                     if self.n_custom_var.get() != 0:
                         try:
+                            print(self.selected_item_path.get() + '/**/*.txt')
                             list_of_files = glob(self.selected_item_path.get() + '/**/*.txt', recursive=False)
                             custom_file = [x for x in list_of_files if 'Custom' in x]
                             custom_variables = read_table(custom_file[0])
