@@ -2437,7 +2437,7 @@ class xnat_pic_gui():
                         self.tree.tree.delete(*self.tree.tree.get_children())
 
                     # Define the main folder into the Treeview object
-                    if self.upload_type.get() == 0 or self.upload_type.get():
+                    if self.upload_type.get() == 0 or self.upload_type.get() == 3:
                         self.working_folder = self.folder_to_upload.get()
                         # Scan the folder to get its tree
                         subdir = os.listdir(self.working_folder)
@@ -2550,7 +2550,8 @@ class xnat_pic_gui():
             # Treeview for folder visualization
             def get_selected_item(*args):
                 selected_item = self.tree.tree.selection()[0]
-                
+                self.type_folder = self.tree.tree.item(selected_item, "values")[2]
+
                 if self.working_folder.split('/')[-1] == self.tree.tree.item(selected_item, "text"):
                     self.selected_item_path.set(self.working_folder)
                 else:
@@ -2609,7 +2610,9 @@ class xnat_pic_gui():
             self.custom_var_list = ttk.OptionMenu(self.custom_var_labelframe, self.n_custom_var, 0, *custom_var_options)
             self.custom_var_list.config(width=2, cursor=CURSOR_HAND)
             self.custom_var_list.grid(row=0, column=0, padx=5, pady=5, sticky=tk.NW)
-            self.custom_var_label = ttk.Label(self.custom_var_labelframe, text="Custom Variables")
+            my_string_var = StringVar()
+            my_string_var.set("Custom Variables")
+            self.custom_var_label = ttk.Label(self.custom_var_labelframe, textvariable=my_string_var, font = 'bold')
             self.custom_var_label.grid(row=0, column=1, padx=2, pady=5, sticky=tk.NW)
 
             # Show Custom Variables
@@ -2621,13 +2624,22 @@ class xnat_pic_gui():
                 if self.selected_item_path.get() != '':
                     if self.n_custom_var.get() != 0:
                         try:
-                            print(self.selected_item_path.get() + '/**/*.txt')
-                            list_of_files = glob(self.selected_item_path.get() + '/**/*.txt', recursive=False)
+                            if str(self.type_folder) == 'Subject':
+                                my_string_var.set("Subject Level")
+                                list_of_files = glob(self.selected_item_path.get() + '/**/**/*.txt', recursive=False)
+                                no_keys = ['Project', 'Subject', 'Experiment', 'Acquisition_date', 'SubjectsCV', 'SessionsCV', 'SessionsGroup', 'SessionsTimepoint', 'SessionsDose']
+                            elif str(self.type_folder) == 'Experiment':
+                                my_string_var.set("Experiment Level")
+                                list_of_files = glob(self.selected_item_path.get() + '/**/*.txt', recursive=False)
+                                no_keys = ['Project', 'Subject', 'Experiment', 'Acquisition_date', 'SubjectsCV', 'SessionsCV', 'SubjectsGroup', 'SubjectsTimepoint', 'SubjectsDose']
+                            else: 
+                                my_string_var.set("Custom Variables")
+                                return
                             custom_file = [x for x in list_of_files if 'Custom' in x]
                             custom_variables = read_table(custom_file[0])
                             info = {}
                             custom_vars = [(key, custom_variables[key]) for key in custom_variables.keys() 
-                                                if key not in ['Project', 'Subject', 'Experiment', 'Acquisition_date', 'SubjectsCV', 'SessionsCV']]
+                                                if key not in no_keys]
                         except:
                             info = {"Project": self.selected_item_path.get().split('/')[-3], 
                                     "Subject": self.selected_item_path.get().split('/')[-2], 
@@ -2641,47 +2653,60 @@ class xnat_pic_gui():
                         entry_list = []
                         for x in range(1, self.n_custom_var.get() + 1):
                             # Custom Variable Label
-                            label_n = ttk.Label(self.custom_var_labelframe, text=custom_vars[x-1][0])
+                            if str(self.type_folder) == 'Subject':
+                                text_label = str(custom_vars[x-1][0]).replace('Subjects','')
+                            elif str(self.type_folder) == 'Experiment':
+                                text_label = str(custom_vars[x-1][0]).replace('Sessions','')
+                            label_n = ttk.Label(self.custom_var_labelframe, text=text_label)
                             label_n.grid(row=x, column=0, padx=5, pady=5, sticky=tk.NW)
                             label_list.append(label_n)
                             # Custom Variable Entry
                             entry_n = ttk.Entry(self.custom_var_labelframe, show='', state='disabled')
                             entry_n.var = tk.StringVar()
-                            entry_n.var.set(custom_vars[x-1][1])
+                            text_entry = str(custom_vars[x-1][1])
+                            text_entry = '' if text_entry == 'None' else text_entry
+                            entry_n.var.set(text_entry)
                             entry_n["textvariable"] = entry_n.var
                             entry_n.grid(row=x, column=1, padx=5, pady=5, sticky=tk.NW)
                             entry_list.append(entry_n)
 
                         # Button to modify the entry of the custom variable
-                        def edit_handler(*args):
-                            enable_buttons(entry_list)
-                            enable_buttons([confirm_button, reject_button])
+                        #def edit_handler(*args):
+                        #    enable_buttons(entry_list)
+                        #    enable_buttons([confirm_button, reject_button])
                              
-                        edit_button = ttk.Button(self.custom_var_labelframe, image=master.logo_edit, command=edit_handler,
-                                                    style="WithoutBack.TButton", cursor=CURSOR_HAND)
-                        edit_button.grid(row=0, column=2, padx=5, pady=5, sticky=tk.NW)
+                        #edit_button = ttk.Button(self.custom_var_labelframe, image=master.logo_edit, command=edit_handler,
+                        #                            style="WithoutBack.TButton", cursor=CURSOR_HAND)
+                        #edit_button.grid(row=0, column=2, padx=5, pady=5, sticky=tk.NW)
 
-                        # Button to confirm changes
-                        def accept_changes(*args):
-                            # Save change on .txt file
-                            data = {}
-                            data.update(info)
-                            for e in range(len(entry_list)):
-                                data[label_list[e]["text"]] = entry_list[e].var.get()
-                            write_table(custom_file[0], data)
-                            display_custom_var()
+                        ## Button to confirm changes
+                        #def accept_changes(*args):
+                        #    # Save change on .txt file
+                        #    try:
+                        #        data = {}
+                        #        data.update(info)
+                        #        for e in range(len(entry_list)):
+                        #            if str(self.type_folder) == 'Subject':
+                        #                new_key = 'Subjects' + str(label_list[e]["text"])
+                        #            if str(self.type_folder) == 'Experiment':
+                        #                new_key = 'Sessions' + str(label_list[e]["text"])
+                        #            data[new_key] = entry_list[e].var.get()
+                        #        write_table(custom_file[0], data)
+                        #        display_custom_var()
+                        #    except Exception as e: 
+                        #       messagebox.showerror("XNAT-PIC Uploader", e)
 
-                        confirm_button = ttk.Button(self.custom_var_labelframe, image=master.logo_accept, command=accept_changes,
-                                                    state='disabled', style="WithoutBack.TButton", cursor=CURSOR_HAND)
-                        confirm_button.grid(row=0, column=3, padx=5, pady=5, sticky=tk.NW)
+                        #confirm_button = ttk.Button(self.custom_var_labelframe, image=master.logo_accept, command=accept_changes,
+                        #                            state='disabled', style="WithoutBack.TButton", cursor=CURSOR_HAND)
+                        #confirm_button.grid(row=0, column=3, padx=5, pady=5, sticky=tk.NW)
 
-                        # Button to abort changes
-                        def reject_changes(*args):
-                            # disable_buttons(entry_list)
-                            display_custom_var()
-                        reject_button = ttk.Button(self.custom_var_labelframe, image=master.logo_delete, command=reject_changes,
-                                                    state='disabled', style="WithoutBack.TButton", cursor=CURSOR_HAND)
-                        reject_button.grid(row=0, column=4, padx=5, pady=5, sticky=tk.NW)
+                        ## Button to abort changes
+                        #def reject_changes(*args):
+                        #    # disable_buttons(entry_list)
+                        #    display_custom_var()
+                        #reject_button = ttk.Button(self.custom_var_labelframe, image=master.logo_delete, command=reject_changes,
+                        #                            state='disabled', style="WithoutBack.TButton", cursor=CURSOR_HAND)
+                        #reject_button.grid(row=0, column=4, padx=5, pady=5, sticky=tk.NW)
 
             self.n_custom_var.trace('w', display_custom_var)
             self.selected_item_path.trace('w', display_custom_var)
@@ -3089,7 +3114,7 @@ class xnat_pic_gui():
                         params['subject_id'] = self.sub.get()
                         if self.exp.get() == '--':
                             self.exp.set('_'.join([subject_data['Project'], subject_data['Subject'], subject_data['Experiment'],
-                                                    subject_data['Group'], subject_data['Timepoint']]).replace(' ', '_'))
+                                                    subject_data['SessionsGroup'], subject_data['SessionsTimepoint']]).replace(' ', '_'))
                         params['experiment_id'] = self.exp.get()
                         for var in subject_data.keys():
                             if var not in ['Project', 'Subject', 'Experiment', 'Acquisition_date']:
@@ -3191,7 +3216,7 @@ class xnat_pic_gui():
                         params['subject_id'] = self.sub.get()
                         if self.exp.get() == '--':
                             self.exp.set('_'.join([subject_data['Project'], subject_data['Subject'], subject_data['Experiment'],
-                                                    subject_data['Group'], subject_data['Timepoint']]).replace(' ', '_'))
+                                                    subject_data['SessionsGroup'], subject_data['SessionsTimepoint']]).replace(' ', '_'))
                         params['experiment_id'] = self.exp.get()
                         for var in subject_data.keys():
                             if var not in ['Project', 'Subject', 'Experiment', 'Acquisition_date']:
