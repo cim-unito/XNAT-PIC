@@ -1292,25 +1292,46 @@ class xnat_pic_gui():
             self.multiple_confirm_btn.config(width = 13)
             self.multiple_confirm_btn.grid(row=4, column=2, padx = 5, pady = 5, sticky=NSEW)
             Hovertip(self.modify_btn, "Confirm custom variables for multiple subjects/experiments")
+            #################### Back button ####################
+            self.back_btn = ttk.Button(self.frame_metadata, text="Back", command = lambda: self.overall_projectdata(master), cursor=CURSOR_HAND, takefocus = 0, state = tk.DISABLED, style = "Secondary1.TButton")
+            self.back_btn.place(relx = 0.05, rely = 0.90, relwidth = 0.15, anchor = tk.NW)
 
         def select_button(self, master, press_btn):
-            #disable_buttons([self.prj_data_btn, self.sbj_data_btn, self.exp_data_btn])
+            disable_buttons([self.prj_data_btn, self.sbj_data_btn, self.exp_data_btn])
             # Choose your directory (button and menu)
             self.information_folder = filedialog.askdirectory(parent=master.root, initialdir=os.path.expanduser("~"), title="XNAT-PIC: Select " + press_btn + " directory!")
             if not self.information_folder:
                 enable_buttons([self.prj_data_btn, self.sbj_data_btn, self.exp_data_btn])
                 return
-            enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SubjectCV, self.SessionCV])
+            enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SubjectCV, self.SessionCV, self.back_btn])
             # Read the data
             if press_btn == "Project":
+                # Check if the selected folder is related to the right conversion flag
+                if glob(self.information_folder + "/**/**/**/**/*.dcm", recursive=False) == [] and glob(self.information_folder + "/**/**/**/**/**/2dseq", recursive=False) == []:
+                    messagebox.showerror("XNAT-PIC Project Data", "The selected folder is not project related.\nPlease select an other directory!")
+                    destroy_widgets([self.frame_metadata])
+                    self.overall_projectdata(master)
+                    return
                 self.project_name = (self.information_folder.rsplit("/",1)[1])
                 params = metadata_params(self.information_folder, value = 0)
                 self.selection = 'Selected Project: ' + self.project_name
             elif press_btn == "Subject":
+                # Check if the selected folder is related to the right conversion flag
+                if glob(self.information_folder + "/**/**/**/*.dcm", recursive=False) == [] and glob(self.information_folder + "/**/**/**/**/2dseq", recursive=False) == []:
+                    messagebox.showerror("XNAT-PIC Project Data", "The selected folder is not subject related.\nPlease select an other directory!")
+                    destroy_widgets([self.frame_metadata])
+                    self.overall_projectdata(master)
+                    return
                 self.subject_name = (self.information_folder.rsplit("/",1)[1])
                 params = metadata_params(self.information_folder, value = 1)
                 self.selection = 'Selected Subject: ' + self.subject_name
             elif press_btn == "Experiment":
+                # Check if the selected folder is related to the right conversion flag
+                if glob(self.information_folder + "/**/**/**/*.dcm", recursive=False) == [] and glob(self.information_folder + "/**/**/**/**/2dseq", recursive=False) == []:
+                    messagebox.showerror("XNAT-PIC Project Data", "The selected folder is not experiment related.\nPlease select an other directory!")
+                    destroy_widgets([self.frame_metadata])
+                    self.overall_projectdata(master)
+                    return
                 self.experiment_name = (self.information_folder.rsplit("/",1)[1])
                 params = metadata_params(self.information_folder, value = 2)
                 self.selection = 'Selected Experiment: ' + self.experiment_name
@@ -2421,6 +2442,22 @@ class xnat_pic_gui():
                                                         title="XNAT-PIC Uploader: Select directory in DICOM format to upload"))
                 if self.folder_to_upload.get() == '':
                     #messagebox.showerror("XNAT-PIC Converter", "Please select a folder.")
+                    return
+                # Check if the selected folder is related to the right conversion flag
+                if self.upload_type.get() == 0 and glob(self.folder_to_upload.get() + "/**/**/**/**/*.dcm", recursive=False) == []:
+                    messagebox.showerror("XNAT-PIC Converter", "The selected folder is not project related.\nPlease select an other directory!")
+                    destroy_widgets([self.frame_uploader])
+                    self.overall_uploader(master)
+                    return
+                if self.upload_type.get() == 1 and glob(self.folder_to_upload.get() + "/**/**/**/*.dcm", recursive=False) == []:
+                    messagebox.showerror("XNAT-PIC Converter", "The selected folder is not subject related.\nPlease select an other directory!")
+                    destroy_widgets([self.frame_uploader])
+                    self.overall_uploader(master)
+                    return
+                if self.upload_type.get() == 2 and glob(self.folder_to_upload.get() + "/**/**/*.dcm", recursive=False) == []:
+                    messagebox.showerror("XNAT-PIC Converter", "The selected folder is not experiment related.\nPlease select an other directory!")
+                    destroy_widgets([self.frame_uploader])
+                    self.overall_uploader(master)
                     return
                 # Reset and clear the selected_item_path defined from Treeview widget selection
                 self.selected_item_path.set('')
