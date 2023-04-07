@@ -1167,18 +1167,39 @@ class xnat_pic_gui():
 
             #####################################################################
             # Choose at which level to add the custom variables
-            self.label_level = ttk.LabelFrame(self.frame_metadata, text="Custom Variables", padding = 5, bootstyle="primary") 
-            self.label_level.place(relx = 0.05, rely = 0.6, relwidth = 0.34, anchor = tk.NW)
+            self.label_frame_level = ttk.LabelFrame(self.frame_metadata, text="Custom Variables", padding = 5, bootstyle="primary") 
+            #self.label_level.place(relx = 0.05, rely = 0.6, relwidth = 0.34, anchor = tk.NW)
             
-            self.label = ttk.Label(self.label_level, text="Add custom variable(s) to:")
+            # Scroll bar in the Label frame CV
+            self.canvas_level = tk.Canvas(self.label_frame_level)
+            self.frame_level = tk.Frame(self.canvas_level)
+            
+            self.vsb_level = ttk.Scrollbar(self.label_frame_level, orient="vertical", command=self.canvas_level.yview)
+            self.canvas_level.configure(yscrollcommand=self.vsb_level.set)  
+            self.hsb_level = ttk.Scrollbar(self.label_frame_level, orient="horizontal", command=self.canvas_level.xview)
+            self.canvas_level.configure(xscrollcommand=self.hsb_level.set)     
+            
+            self.vsb_level.pack(side="right", fill="y")
+            self.hsb_level.pack(side="bottom", fill="x")
+            self.canvas_level.pack(side = LEFT, fill = BOTH, expand = 1)
+            self.canvas_level.create_window((0,0), window=self.frame_level, anchor="nw")
+
+            # Be sure that we call OnFrameConfigure on the right canvas
+            self.frame_level.bind("<Configure>", lambda event, canvas=self.canvas_level: OnFrameConfigure(canvas))
+            self.label_frame_level.place(relx = 0.05, rely = 0.6, relheight = 0.2, relwidth = 0.34, anchor = tk.NW)
+            
+            def OnFrameConfigure(canvas):
+                    canvas.configure(scrollregion=canvas.bbox("all"))
+
+            self.label = ttk.Label(self.frame_level, text="Add custom variable(s) to:")
             self.label.grid(row=0, column=0, padx = 5, pady = 5, sticky=W)
             # Subject level
             self.level_CV = tk.StringVar()
-            self.SubjectCV = ttk.Radiobutton(self.label_level, text="Subjects", variable = self.level_CV, 
+            self.SubjectCV = ttk.Radiobutton(self.frame_level, text="Subjects", variable = self.level_CV, 
                                                            value = "Subjects", style="Popup.TRadiobutton")   
             self.SubjectCV.grid(row=1, column=0, padx = 5, pady = 5, sticky=W)
             # Session level     
-            self.SessionCV = ttk.Radiobutton(self.label_level, text="Sessions", variable = self.level_CV, 
+            self.SessionCV = ttk.Radiobutton(self.frame_level, text="Sessions", variable = self.level_CV, 
                                                            value = "Sessions", state='disabled', style="Popup.TRadiobutton")   
             self.SessionCV.grid(row=2, column=0, padx = 5, pady = 5, sticky=W)
             
@@ -1266,28 +1287,28 @@ class xnat_pic_gui():
             self.dose_menu['state'] = 'disabled'
             self.dose_menu.grid(row=2, column=2, padx = 5, pady = 5, sticky=W)
             
-            self.sep1 = ttk.Separator(self.label_level, bootstyle="primary")
+            self.sep1 = ttk.Separator(self.frame_level, bootstyle="primary")
             self.sep1.grid(row=3, column=0, padx = 5, pady = 5, sticky=EW)
-            self.lab1 = ttk.Label(self.label_level, text='Actions:', bootstyle="primary")
+            self.lab1 = ttk.Label(self.frame_level, text='Actions:', bootstyle="primary")
             self.lab1.grid(row=3, column=1, padx = 5, pady = 5, sticky=N)
-            self.sep2 = ttk.Separator(self.label_level, bootstyle="primary")
+            self.sep2 = ttk.Separator(self.frame_level, bootstyle="primary")
             self.sep2.grid(row=3, column=2, padx = 5, pady = 5, sticky=EW)
 
 
             #################### Modify the metadata ####################
-            self.modify_btn = ttk.Button(self.label_level, text="Modify", command = lambda: self.modify_metadata(), cursor=CURSOR_HAND, takefocus = 0, state = tk.DISABLED, style = "Secondary1.TButton")
+            self.modify_btn = ttk.Button(self.frame_level, text="Modify", command = lambda: self.modify_metadata(), cursor=CURSOR_HAND, takefocus = 0, state = tk.DISABLED, style = "Secondary1.TButton")
             #self.modify_btn.place(relx=0.39, rely=0.60, anchor=tk.NE, relwidth=0.22)
             self.modify_btn.config(width = 13)
             self.modify_btn.grid(row=4, column=0, padx = 5, pady = 5, sticky=NSEW)
             Hovertip(self.modify_btn, "Edit the custom variables")
             #################### Confirm the metadata ####################
-            self.confirm_btn = ttk.Button(self.label_level, text="Confirm", command = lambda: self.confirm_metadata(), cursor=CURSOR_HAND, takefocus = 0, state = tk.DISABLED, style = "Secondary1.TButton")
+            self.confirm_btn = ttk.Button(self.frame_level, text="Confirm", command = lambda: self.confirm_metadata(), cursor=CURSOR_HAND, takefocus = 0, state = tk.DISABLED, style = "Secondary1.TButton")
             #self.confirm_btn.place(relx=0.39, rely=0.70, anchor=tk.NE, relwidth=0.22)
             self.confirm_btn.config(width = 13)
             self.confirm_btn.grid(row=4, column=1, padx = 5, pady = 5, sticky=NSEW)
             Hovertip(self.modify_btn, "Confirm the custom variables for the selected subject/experiment")
             #################### Confirm multiple metadata ####################
-            self.multiple_confirm_btn = ttk.Button(self.label_level, text="Confirm +", command = lambda: self.confirm_multiple_metadata(master), cursor=CURSOR_HAND, takefocus = 0, state = tk.DISABLED, style = "Secondary1.TButton")
+            self.multiple_confirm_btn = ttk.Button(self.frame_level, text="Confirm +", command = lambda: self.confirm_multiple_metadata(master), cursor=CURSOR_HAND, takefocus = 0, state = tk.DISABLED, style = "Secondary1.TButton")
             #self.multiple_confirm_btn.place(relx=0.39, rely=0.80, anchor=tk.NE, relwidth=0.22)
             self.multiple_confirm_btn.config(width = 13)
             self.multiple_confirm_btn.grid(row=4, column=2, padx = 5, pady = 5, sticky=NSEW)
