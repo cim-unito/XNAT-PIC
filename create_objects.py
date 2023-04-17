@@ -15,6 +15,7 @@ from logging import exception
 import tkinter.simpledialog
 from progress_bar import ProgressBar
 import time
+from idlelib.tooltip import Hovertip
 
 PATH_IMAGE = "images\\"
 CURSOR_HAND = "hand2"
@@ -77,12 +78,15 @@ class ProjectManager():
         self.private_access_btn = ttk.Radiobutton(self.access_labelframe, text="Private", variable=self.access_status,
                                                     value='private')
         self.private_access_btn.pack(side='left', expand=True, padx=0, pady=5)
+        Hovertip(self.private_access_btn,'Only you and study members will be able to access study data.')
         self.protected_access_btn = ttk.Radiobutton(self.access_labelframe, text="Protected", variable=self.access_status,
                                                     value='protected')
         self.protected_access_btn.pack(side='left', expand=True, padx=0, pady=5)
+        Hovertip(self.protected_access_btn,'All users will be able to see your study title and description, but only collaborators you approve will be able to analyze and download data.')
         self.public_access_btn = ttk.Radiobutton(self.access_labelframe, text="Public", variable=self.access_status,
                                                     value='public')
         self.public_access_btn.pack(side='left', expand=True, padx=0, pady=5)
+        Hovertip(self.public_access_btn,'All users will be able to access study data for analysis and download.')
         self.access_status.set('private')
 
         # DESCRIPTION

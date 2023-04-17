@@ -225,7 +225,7 @@ class xnat_pic_gui():
         self.enter_btn = ttk.Button(self.frame, text="ENTER",
                              command=enter_handler,
                             cursor=CURSOR_HAND, bootstyle="primary")
-        self.enter_btn.place(relx=0.6, rely=0.6, anchor=tk.CENTER, relwidth=0.2)
+        self.enter_btn.place(relx=0.6, rely=0.6, anchor=tk.CENTER, relwidth=0.21)
         
         # Call the resize_window method if the window size is changed by the user
         self.frame.bind("<Configure>", resize_window)
@@ -278,21 +278,21 @@ class xnat_pic_gui():
         # Convert files Bruker2DICOM
         self.convert_btn = ttk.Button(self.frame, text="DICOM Converter",
                                     command=partial(self.bruker2dicom_conversion, self), cursor=CURSOR_HAND)
-        self.convert_btn.place(relx=0.6, rely=0.5, anchor=tk.CENTER, relwidth=0.2)
+        self.convert_btn.place(relx=0.6, rely=0.5, anchor=tk.CENTER, relwidth=0.21)
         Hovertip(self.convert_btn,'Convert images from Bruker ParaVision format to DICOM standard')
         
         # Fill in the info
-        self.info_btn = ttk.Button(self.frame, text="Project Data", 
+        self.info_btn = ttk.Button(self.frame, text="Edit Custom Variables", 
                                     command=partial(self.metadata, self), cursor=CURSOR_HAND)
-        self.info_btn.place(relx=0.6, rely=0.6, anchor=tk.CENTER, relwidth=0.2)
-        Hovertip(self.info_btn,'Fill in the information about the acquisition')
+        self.info_btn.place(relx=0.6, rely=0.6, anchor=tk.CENTER, relwidth=0.21)
+        Hovertip(self.info_btn,'Fill information regarding group, timepoint, etc.')
 
         # Upload files
         def upload_callback(*args):
             self.XNATUploader(self)
         self.upload_btn = ttk.Button(self.frame, text="Uploader",
                                         command=upload_callback, cursor=CURSOR_HAND)
-        self.upload_btn.place(relx=0.6, rely=0.7, anchor=tk.CENTER, relwidth=0.2)
+        self.upload_btn.place(relx=0.6, rely=0.7, anchor=tk.CENTER, relwidth=0.21)
         Hovertip(self.upload_btn,'Upload DICOM images to XNAT')
 
         # Close button
@@ -418,14 +418,20 @@ class xnat_pic_gui():
                 if self.conv_flag.get() == 0:
                     if glob(self.folder_to_convert.get() + '/**/**/**/**/**/2dseq', recursive=False) == []:
                         messagebox.showerror("XNAT-PIC Converter", "The selected folder is not project related.\nPlease select an other directory.")
+                        disable_buttons([self.next_btn])
+                        clear_tree()
                         return
                 elif self.conv_flag.get() == 1:
                     if glob(self.folder_to_convert.get() + '/**/**/**/**/2dseq', recursive=False) == []:
                         messagebox.showerror("XNAT-PIC Converter", "The selected folder is not subject related.\nPlease select an other directory.")
+                        disable_buttons([self.next_btn])
+                        clear_tree()
                         return
                 elif self.conv_flag.get() == 2:
                     if glob(self.folder_to_convert.get() + '/**/**/**/2dseq', recursive=False) == []:
                         messagebox.showerror("XNAT-PIC Converter", "The selected folder is not experiment related.\nPlease select an other directory.")
+                        disable_buttons([self.next_btn])
+                        clear_tree()
                         return
                 # Reset convertion_state parameter
                 self.convertion_state.set(0)
@@ -685,7 +691,7 @@ class xnat_pic_gui():
 
             # EXIT Button 
             def exit_converter():
-                result = messagebox.askquestion("XNAT-PIC Converter", "Do you want to exit?", icon='warning')
+                result = messagebox.askquestion("XNAT-PIC Converter", "Do you want to go back to home?", icon='warning')
                 if result == 'yes':
                     # Destroy all the existent widgets (Button, Checkbutton, ...)
                     destroy_widgets([self.frame_converter, self.menu])
@@ -695,7 +701,7 @@ class xnat_pic_gui():
             self.exit_text = tk.StringVar()
             self.exit_btn = ttk.Button(self.frame_converter, cursor=CURSOR_HAND,
                                     textvariable=self.exit_text,  style="Secondary1.TButton", command=exit_converter)
-            self.exit_text.set('Exit')
+            self.exit_text.set('Home')
             self.exit_btn.place(relx = 0.05, rely = 0.9, relwidth=0.15, anchor = NW)
 
             # NEXT Button
@@ -723,7 +729,7 @@ class xnat_pic_gui():
 
                 enable_buttons([self.exit_btn])
 
-            self.next_btn = ttk.Button(self.frame_converter, text="Next", cursor=CURSOR_HAND,  style="Secondary1.TButton", command=next_btn_handler,
+            self.next_btn = ttk.Button(self.frame_converter, text="Convert", cursor=CURSOR_HAND,  style="Secondary1.TButton", command=next_btn_handler,
                                     state='disabled')
             self.next_btn.place(relx = 0.95, rely = 0.9, relwidth=0.15, anchor = NE)
 
@@ -772,7 +778,7 @@ class xnat_pic_gui():
                 return
 
             if glob(self.folder_to_convert.get() + '/**/**/**/**/**/2dseq', recursive=False) == []:
-                messagebox.showerror("XNAT-PIC Converter", "The selected folder is not project related")
+                messagebox.showerror("XNAT-PIC Converter", "The selected folder is not project related!")
                 return
             
             master.root.deiconify()
@@ -1050,7 +1056,7 @@ class xnat_pic_gui():
         def overall_projectdata(self, master):
             
             # Create new frame
-            master.frame_label.set("ProjectData")
+            master.frame_label.set("Edit Custom Variables")
             
             # Menu bar
             self.menu = ttk.Menu(master.root)
@@ -1089,7 +1095,7 @@ class xnat_pic_gui():
             self.frame_metadata = ttk.Frame(master.frame, style="Hidden.TLabelframe")
             self.frame_metadata.place(relx = 0.2, rely= 0, relheight=1, relwidth=0.8, anchor=tk.NW)
             # Frame Title
-            self.frame_title = ttk.Label(self.frame_metadata, text="XNAT-PIC Project Data", style='Title.TLabel')
+            self.frame_title = ttk.Label(self.frame_metadata, text="Edit Custom Variables", style='Title.TLabel')
             self.frame_title.place(relx = 0.5, rely = 0.05, anchor = CENTER)
             
             # Select a  Project
@@ -1314,8 +1320,16 @@ class xnat_pic_gui():
             self.multiple_confirm_btn.grid(row=4, column=2, padx = 5, pady = 5, sticky=NSEW)
             Hovertip(self.modify_btn, "Confirm custom variables for multiple subjects/experiments")
             #################### Back button ####################
-            self.back_btn = ttk.Button(self.frame_metadata, text="Back", command = lambda: self.overall_projectdata(master), cursor=CURSOR_HAND, takefocus = 0, state = tk.DISABLED, style = "Secondary1.TButton")
+            self.back_btn = ttk.Button(self.frame_metadata, text="Back", command = lambda: self.back_action(master), cursor=CURSOR_HAND, takefocus = 0, state = tk.DISABLED, style = "Secondary1.TButton")
             self.back_btn.place(relx = 0.05, rely = 0.90, relwidth = 0.15, anchor = tk.NW)
+        
+        def back_action(self, master):
+            try:
+                destroy_widgets([self.frame_metadata, self.menu])
+                self.overall_projectdata(master)
+            except Exception as e:
+                messagebox.showerror("XNAT-PIC", 'Error:' + str(e))
+                raise
 
         def select_button(self, master, press_btn):
             disable_buttons([self.prj_data_btn, self.sbj_data_btn, self.exp_data_btn])
@@ -2331,7 +2345,7 @@ class xnat_pic_gui():
             
         # #################### Exit the metadata ####################
         def exit_metadata(self, master):
-            result = messagebox.askquestion("Exit", "Do you want to exit?", icon='warning')
+            result = messagebox.askquestion("Exit", "Do you want to go back to home?", icon='warning')
             if result == 'yes':
                 destroy_widgets([self.frame_metadata, self.menu])
                 master.root.after(1500, xnat_pic_gui.choose_your_action(master))
@@ -2466,17 +2480,17 @@ class xnat_pic_gui():
                     return
                 # Check if the selected folder is related to the right conversion flag
                 if self.upload_type.get() == 0 and glob(self.folder_to_upload.get() + "/**/**/**/**/*.dcm", recursive=False) == []:
-                    messagebox.showerror("XNAT-PIC Converter", "The selected folder is not project related.\nPlease select an other directory!")
+                    messagebox.showerror("XNAT-PIC Uploader", "The selected folder is not project related.\nPlease select an other directory!")
                     destroy_widgets([self.frame_uploader])
                     self.overall_uploader(master)
                     return
                 if self.upload_type.get() == 1 and glob(self.folder_to_upload.get() + "/**/**/**/*.dcm", recursive=False) == []:
-                    messagebox.showerror("XNAT-PIC Converter", "The selected folder is not subject related.\nPlease select an other directory!")
+                    messagebox.showerror("XNAT-PIC Uploader", "The selected folder is not subject related.\nPlease select an other directory!")
                     destroy_widgets([self.frame_uploader])
                     self.overall_uploader(master)
                     return
                 if self.upload_type.get() == 2 and glob(self.folder_to_upload.get() + "/**/**/*.dcm", recursive=False) == []:
-                    messagebox.showerror("XNAT-PIC Converter", "The selected folder is not experiment related.\nPlease select an other directory!")
+                    messagebox.showerror("XNAT-PIC Uploader", "The selected folder is not experiment related.\nPlease select an other directory!")
                     destroy_widgets([self.frame_uploader])
                     self.overall_uploader(master)
                     return
@@ -2889,7 +2903,7 @@ class xnat_pic_gui():
             #############################################
             ################ EXIT Button ################
             def exit_uploader(*args):
-                result = messagebox.askquestion("XNAT-PIC Uploader", "Do you want to exit?", icon='warning')
+                result = messagebox.askquestion("XNAT-PIC Uploader", "Do you want to go back to home?", icon='warning')
                 if result == 'yes':
                     # Destroy all the existent widgets (Button, OptionMenu, ...)
                     destroy_widgets([self.frame_uploader])
@@ -2903,10 +2917,10 @@ class xnat_pic_gui():
                     xnat_pic_gui.choose_your_action(master)
 
             self.exit_text = tk.StringVar() 
-            self.exit_btn = ttk.Button(self.frame_uploader, textvariable=self.exit_text, cursor=CURSOR_HAND)
+            self.exit_btn = ttk.Button(self.frame_uploader, textvariable=self.exit_text, cursor=CURSOR_HAND, style="Secondary1.TButton")
             self.exit_btn.configure(command=exit_uploader)
-            self.exit_text.set("Exit")
-            self.exit_btn.place(relx = 0.05, rely = 0.9, relwidth=0.1, anchor = NW)
+            self.exit_text.set("Home")
+            self.exit_btn.place(relx = 0.05, rely = 0.9, relwidth=0.15, anchor = NW)
             #############################################
             ################ NEXT Button ################
             def next():
@@ -2923,9 +2937,9 @@ class xnat_pic_gui():
 
             self.next_text = tk.StringVar() 
             self.next_btn = ttk.Button(self.frame_uploader, textvariable=self.next_text, state='disabled',
-                                        command=next, cursor=CURSOR_HAND)
-            self.next_text.set("Next")
-            self.next_btn.place(relx = 0.95, rely = 0.9, relwidth=0.1, anchor = NE)
+                                        command=next, cursor=CURSOR_HAND, style="Secondary1.TButton")
+            self.next_text.set("Upload")
+            self.next_btn.place(relx = 0.95, rely = 0.9, relwidth=0.15, anchor = NE)
         #############################################
         ################ Refresh Button ################
         def refresh(self, master):
@@ -3326,6 +3340,7 @@ class xnat_pic_gui():
 
                 except Exception as e: 
                     messagebox.showerror("XNAT-PIC Uploader", e)
+                    raise
 
                 # Restore main frame buttons
                 messagebox.showinfo("XNAT-PIC Uploader","Done! Your experiment is uploaded on XNAT platform.")

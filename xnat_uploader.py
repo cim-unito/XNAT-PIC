@@ -48,21 +48,22 @@ class Dicom2XnatUploader():
         print('Elapsed time for conversion: ' + str(end_time - start_time) + ' s')
 
     def upload(self, params):
-
-        folder_to_upload = params['folder_to_upload']
-        project_id = params['project_id']
-        subject_id = params['subject_id']
-        experiment_id = params['experiment_id']
-        flag = params['custom_var_flag']
-
-        print('Uploading ' + str(folder_to_upload.split('/')[-2]) + ' to ' + str(project_id))
-
-        project = self.session.classes.ProjectData(
-                                        name=project_id, parent=self.session)
-        subject = self.session.classes.SubjectData(
-                                        parent=project, label=subject_id)
-
+    
         try:
+            folder_to_upload = params['folder_to_upload']
+            project_id = params['project_id']
+            subject_id = params['subject_id']
+            experiment_id = params['experiment_id']
+            flag = params['custom_var_flag']
+
+            print('Uploading ' + str(folder_to_upload.split('/')[-2]) + ' to ' + str(project_id))
+
+            project = self.session.classes.ProjectData(
+                                            name=project_id, parent=self.session)
+            subject = self.session.classes.SubjectData(
+                                            parent=project, label=subject_id)
+
+
             zip_dst = shutil.make_archive(folder_to_upload.split('/')[-2], "zip", folder_to_upload) # .zip file of the current subfolder
 
             self.session.services.import_(zip_dst,
@@ -94,8 +95,10 @@ class Dicom2XnatUploader():
             messagebox.showerror("XNAT-PIC - Uploader", e)
             try:
                 os.remove(zip_dst)
-            except:
-                pass
+                raise
+            except Exception as e1: 
+                messagebox.showerror("XNAT-PIC - Uploader", e1)
+                raise
 
 class FileUploader():
 
