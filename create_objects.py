@@ -280,11 +280,11 @@ class ProjectManager():
                 progressbar_new_prj.stop_progress_bar()
                 self.master.destroy()
                 messagebox.showinfo('XNAT-PIC Uploader', 'A new project is created.')
-            except exception as e:
+            except:
                 progressbar_new_prj.stop_progress_bar()
-                self.master.destroy()
-                messagebox.showerror("Error!", str(e))
-
+                self.master.grab_set()
+                messagebox.showerror("Error!", "Invalid project name. Use another name for your project!")
+            
         progressbar_new_prj = ProgressBar(self.master, "XNAT-PIC Uploader")
         progressbar_new_prj.start_indeterminate_bar()
         self.master.after(1000, func_new_prj)
@@ -455,10 +455,10 @@ class SubjectManager():
                 progressbar_new_sub.stop_progress_bar()
                 self.master.destroy()
                 messagebox.showinfo('XNAT-PIC Uploader', 'A new subject is created.') 
-            except exception as e:
+            except:
                 progressbar_new_sub.stop_progress_bar()
-                self.master.destroy()
-                messagebox.showerror("Error!", str(e))
+                self.master.grab_set()
+                messagebox.showerror("Error!", "Invalid subject name. Use another name for your subject!")
         progressbar_new_sub = ProgressBar(self.master, "XNAT-PIC Uploader")
         progressbar_new_sub.start_indeterminate_bar()
         self.master.after(1000, func_new_sub)
@@ -646,10 +646,10 @@ class ExperimentManager():
                 self.master.destroy()
                 messagebox.showinfo('XNAT-PIC Uploader', 'A new experiment is created.') 
                 #################################################
-            except exception as e:
+            except:
                 progressbar_new_exp.stop_progress_bar()
-                self.master.destroy()
-                messagebox.showerror("Error!", str(e))
+                self.master.grab_set()
+                messagebox.showerror("Error!", "Invalid experiment name. Use another name for your experiment!")
 
 
         progressbar_new_exp = ProgressBar(self.master, "XNAT-PIC Uploader")

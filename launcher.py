@@ -3094,7 +3094,7 @@ class xnat_pic_gui():
                                 params['experiment_id'] = self.exp.get()
 
                             progressbar.set_caption('Uploading ' + str(self.sub.get()) + ' ...')
-
+                            
                             self.uploader.upload(params)
                             # Check for Results folder
                             if self.add_file_flag.get() == 1:

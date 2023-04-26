@@ -95,10 +95,8 @@ class Dicom2XnatUploader():
             messagebox.showerror("XNAT-PIC - Uploader", e)
             try:
                 os.remove(zip_dst)
-                raise
-            except Exception as e1: 
-                messagebox.showerror("XNAT-PIC - Uploader", e1)
-                raise
+            except: 
+                pass
 
 class FileUploader():
 
