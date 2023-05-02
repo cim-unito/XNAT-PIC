@@ -54,7 +54,7 @@ class Dicom2XnatUploader():
             project_id = params['project_id']
             subject_id = params['subject_id']
             experiment_id = params['experiment_id']
-            flag = params['custom_var_flag']
+            #flag = params['custom_var_flag']
 
             print('Uploading ' + str(folder_to_upload.split('/')[-2]) + ' to ' + str(project_id))
 
@@ -76,14 +76,14 @@ class Dicom2XnatUploader():
             experiment = self.session.projects[project_id].subjects[subject_id].experiments[experiment_id]
             subject = self.session.projects[project_id].subjects[subject_id]
 
-            print('Updating ' + str(flag) + ' custom variables...')
+            print('Updating custom variables...')
             count = 0
             for var in params.keys():
-                if var not in ['project_id', 'subject_id', 'folder_to_upload', 'experiment_id', 'custom_var_flag', 'SubjectsCV', 'SubjectsGroup', 'SubjectsTimepoint',
+                if var not in ['project_id', 'subject_id', 'folder_to_upload', 'experiment_id', 'SubjectsCV', 'SubjectsGroup', 'SubjectsTimepoint',
                                 'SubjectsDose', 'SessionsCV']:
                     expfield = var.replace('Sessions', '')           
                     experiment.fields[expfield.lower()] = params[var]
-                if var not in ['project_id', 'subject_id', 'folder_to_upload', 'experiment_id', 'custom_var_flag', 'SubjectsCV', 'SessionsGroup', 'SessionsTimepoint',
+                if var not in ['project_id', 'subject_id', 'folder_to_upload', 'experiment_id', 'SubjectsCV', 'SessionsGroup', 'SessionsTimepoint',
                                 'SessionsDose', 'SessionsCV']:
                     subfield = var.replace('Subjects', '') 
                     subject.fields[subfield.lower()] = params[var]
@@ -92,7 +92,7 @@ class Dicom2XnatUploader():
             os.remove(zip_dst)
 
         except Exception as e: 
-            messagebox.showerror("XNAT-PIC - Uploader", e)
+            messagebox.showwarning("XNAT-PIC - Uploader", e)
             try:
                 os.remove(zip_dst)
             except: 
