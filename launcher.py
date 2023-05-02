@@ -34,6 +34,7 @@ from new_project_manager import NewProjectManager, NewSubjectManager, NewExperim
 import itertools
 from Treeview import Treeview
 import xnat
+from operator import * 
 
 
 PATH_IMAGE = "images\\"
@@ -719,10 +720,69 @@ class xnat_pic_gui():
                     self.sbj_convertion(master)
     
                 elif self.conv_flag.get() == 2:
-                    self.converted_folder.set(os.path.join('/'.join(self.folder_to_convert.get().split('/')[:-2])  + '_dcm', 
-                                                '/'.join(self.folder_to_convert.get().split('/')[-2:])))
-                    disable_buttons([self.exit_btn, self.next_btn])
-                    self.exp_convertion(master)
+                    # Popup
+                    self.popup_experiment = ttk.Toplevel()
+                    self.popup_experiment.title("XNAT-PIC ~ Converter")
+                    master.root.eval(f'tk::PlaceWindow {str(self.popup_experiment)} center')
+                    self.popup_experiment.resizable(False, False)
+                    self.popup_experiment.grab_set()
+                    
+                    # If you want the logo 
+                    self.popup_experiment.iconbitmap(PATH_IMAGE + "logo3.ico")
+
+                    # Select the subjects to copy the custom variables to
+                    self.popup_experiment_frame = ttk.LabelFrame(self.popup_experiment, text="Destination path", style="Popup.TLabelframe")
+                    self.popup_experiment_frame.grid(row=1, column=0, padx=10, pady=5, sticky=tk.E+tk.W+tk.N+tk.S, columnspan=2)
+
+                    # Label     
+                    self.popup_experiment.label = ttk.Label(self.popup_experiment_frame, text="Select the destination path of the converted folder:")  
+                    self.popup_experiment.label.grid(row=1, column=0, padx=10, pady=10, sticky=tk.W)
+
+                    # List of destination path
+                    # The user has the structure prj, sub, exp
+                    self.flag_dest_path = IntVar()
+                    text_prj_sub_exp = os.path.join('/'.join(self.folder_to_convert.get().split('/')[:-2])  + '_dcm', 
+                                                '/'.join(self.folder_to_convert.get().split('/')[-2:]))
+                    ttk.Radiobutton(self.popup_experiment_frame, variable=self.flag_dest_path, value=1,
+                                    text=text_prj_sub_exp.replace("\\","/"), cursor=CURSOR_HAND).grid(row=2, column=0, padx = 5, pady = 5, sticky=W)
+                    # The user has only the experiment to convert
+                    text_exp = self.folder_to_convert.get() + '_dcm'
+                    ttk.Radiobutton(self.popup_experiment_frame, variable=self.flag_dest_path, value=2,
+                                    text=text_exp, cursor=CURSOR_HAND).grid(row=3, column=0, padx = 5, pady = 5, sticky=W)
+                    self.flag_dest_path.set(1)
+
+                    def convert_exp():
+                        try:
+                            self.popup_experiment.destroy()
+                        except:
+                            pass
+                        popup_exp_value = self.flag_dest_path.get()
+                        
+                        if popup_exp_value == 1:
+                            self.converted_folder.set(text_prj_sub_exp)
+                        elif popup_exp_value ==2:
+                            self.converted_folder.set(text_exp)
+
+                        disable_buttons([self.exit_btn, self.next_btn])
+                        self.exp_convertion(master)
+                    self.popup_experiment.button_ok = ttk.Button(self.popup_experiment, image = master.logo_accept,
+                                                command = convert_exp , cursor=CURSOR_HAND)
+                    self.popup_experiment.button_ok.grid(row=2, column=1, padx=10, pady=5, sticky=NW)
+                    # If the popup is closed, it re-enables the buttons
+                    def enable():
+                        try:
+                            self.popup_experiment.destroy()
+                        except:
+                            pass
+                        destroy_widgets([self.frame_converter])
+                        self.overall_converter(master)
+                        
+                    self.popup_experiment.button_cancel = ttk.Button(self.popup_experiment, image = master.logo_delete,
+                                                        command = enable, cursor=CURSOR_HAND)
+                    self.popup_experiment.button_cancel.grid(row=2, column=0, padx=10, pady=5, sticky=NE)
+
+                    self.popup_experiment.protocol('WM_DELETE_WINDOW', enable)    
+
                        
                 else:
                     self.converted_folder.set('')
@@ -2494,6 +2554,12 @@ class xnat_pic_gui():
                     destroy_widgets([self.frame_uploader])
                     self.overall_uploader(master)
                     return
+                # if (self.upload_type.get() == 1 or self.upload_type.get() == 2) and (glob(self.folder_to_upload.get() + "/**/**/**/*.dcm", recursive=False) == [] and
+                #                                                                       glob(self.folder_to_upload.get() + "/**/**/*.dcm", recursive=False) == []):
+                #     messagebox.showerror("XNAT-PIC Uploader", "The selected folder does not contain DICOM files!")
+                #     destroy_widgets([self.frame_uploader])
+                #     self.overall_uploader(master)
+                #     return
                 # Reset and clear the selected_item_path defined from Treeview widget selection
                 self.selected_item_path.set('')
 
@@ -2676,12 +2742,12 @@ class xnat_pic_gui():
             self.custom_var_labelframe.place(relx = 0.53, rely = 0.31, relheight=0.30, relwidth = 0.42, anchor = NW)
             
             # Custom Variables
-            self.n_custom_var = tk.IntVar()
-            self.n_custom_var.set(3)
-            custom_var_options = list(range(0, 4))
-            self.custom_var_list = ttk.OptionMenu(self.custom_var_labelframe, self.n_custom_var, 0, *custom_var_options)
-            self.custom_var_list.config(width=2, cursor=CURSOR_HAND)
-            self.custom_var_list.grid(row=0, column=0, padx=5, pady=5, sticky=tk.NW)
+            # self.n_custom_var = tk.IntVar()
+            # self.n_custom_var.set(3)
+            # custom_var_options = list(range(0, 4))
+            # self.custom_var_list = ttk.OptionMenu(self.custom_var_labelframe, self.n_custom_var, 0, *custom_var_options)
+            # self.custom_var_list.config(width=2, cursor=CURSOR_HAND)
+            # self.custom_var_list.grid(row=0, column=0, padx=5, pady=5, sticky=tk.NW)
             my_string_var = StringVar()
             my_string_var.set("Custom Variables")
             self.custom_var_label = ttk.Label(self.custom_var_labelframe, textvariable=my_string_var, font = 'bold')
@@ -2694,93 +2760,120 @@ class xnat_pic_gui():
                         widget.destroy()
 
                 if self.selected_item_path.get() != '':
-                    if self.n_custom_var.get() != 0:
-                        try:
-                            if str(self.type_folder) == 'Subject':
-                                my_string_var.set("Subject Level")
-                                list_of_files = glob(self.selected_item_path.get() + '/**/**/*.txt', recursive=False)
-                                no_keys = ['Project', 'Subject', 'Experiment', 'Acquisition_date', 'SubjectsCV', 'SessionsCV', 'SessionsGroup', 'SessionsTimepoint', 'SessionsDose']
-                            elif str(self.type_folder) == 'Experiment':
-                                my_string_var.set("Experiment Level")
-                                list_of_files = glob(self.selected_item_path.get() + '/**/*.txt', recursive=False)
-                                no_keys = ['Project', 'Subject', 'Experiment', 'Acquisition_date', 'SubjectsCV', 'SessionsCV', 'SubjectsGroup', 'SubjectsTimepoint', 'SubjectsDose']
-                            else: 
-                                my_string_var.set("Custom Variables")
-                                return
-                            custom_file = [x for x in list_of_files if 'Custom' in x]
-                            custom_variables = read_table(custom_file[0])
-                            info = {}
-                            custom_vars = [(key, custom_variables[key]) for key in custom_variables.keys() 
-                                                if key not in no_keys]
-                        except:
-                            info = {"Project": self.selected_item_path.get().split('/')[-3], 
-                                    "Subject": self.selected_item_path.get().split('/')[-2], 
-                                    "Experiment": self.selected_item_path.get().split('/')[-1], 
-                                    "Acquisition_date": "", 
-                                    "SubjectsCV": "",
-                                    "SessionsCV": ""}
-                            custom_vars = [("SubjectsGroup", ""), ("SubjectsTimepoint", ""), ("SubjectsDose", ""),("SessionsGroup", ""), ("SessionsTimepoint", ""), ("SessionsDose", "")]
-                            custom_file = [os.path.join(self.selected_item_path.get(), 'MR', self.selected_item_path.get().split('/')[-1] + "_Custom_Variables.txt")]
-                        label_list = []
-                        entry_list = []
-                        for x in range(1, self.n_custom_var.get() + 1):
+                #if self.n_custom_var.get() != 0:
+                    try:
+                        if str(self.type_folder) == 'Subject':
+                            my_string_var.set("Subject Level")
+                            list_of_files = glob(self.selected_item_path.get() + '/**/**/*custom_variables.txt', recursive=False)
+                            no_keys = ['Project', 'Subject', 'Experiment', 'Acquisition_date', 'SubjectsCV', 'SessionsCV', 'SessionsGroup', 'SessionsTimepoint', 'SessionsDose']
+                        elif str(self.type_folder) == 'Experiment':
+                            my_string_var.set("Experiment Level")
+                            list_of_files = glob(self.selected_item_path.get() + '/**/*custom_variables.txt', recursive=False)
+                            no_keys = ['Project', 'Subject', 'Experiment', 'Acquisition_date', 'SubjectsCV', 'SessionsCV', 'SubjectsGroup', 'SubjectsTimepoint', 'SubjectsDose']
+                        else: 
+                            my_string_var.set("Custom Variables")
+                            return
+                        custom_file = [x for x in list_of_files if 'Custom' in x]
+                        custom_variables = read_table(custom_file[0])
+                        info = {}
+                        custom_vars = [(key, custom_variables[key]) for key in custom_variables.keys() 
+                                            if key not in no_keys]
+                    except:
+                        info = {"Project": self.selected_item_path.get().split('/')[-3], 
+                                "Subject": self.selected_item_path.get().split('/')[-2], 
+                                "Experiment": self.selected_item_path.get().split('/')[-1], 
+                                "Acquisition_date": "", 
+                                "SubjectsCV": "",
+                                "SessionsCV": ""}
+                        if str(self.type_folder) == 'Subject':
+                            custom_vars = [("SubjectsGroup", ""), ("SubjectsTimepoint", ""), ("SubjectsDose", "")]
+                        elif str(self.type_folder) == 'Experiment':
+                            custom_vars = [("SessionsGroup", ""), ("SessionsTimepoint", ""), ("SessionsDose", "")]
+                        custom_file = [os.path.join(self.selected_item_path.get(), 'MR', self.selected_item_path.get().split('/')[-1] + "_Custom_Variables.txt")]
+                    label_list = []
+                    entry_list = []
+                    num_custom_variables = 0
+                    for x, my_var in enumerate(custom_vars):
+                        if my_var[1] != None and my_var[1] != 'None' and my_var[1] != '' :
+                            num_custom_variables += 1
                             # Custom Variable Label
                             if str(self.type_folder) == 'Subject':
-                                text_label = str(custom_vars[x-1][0]).replace('Subjects','')
+                                text_label = str(custom_vars[x][0]).replace('Subjects','')
                             elif str(self.type_folder) == 'Experiment':
-                                text_label = str(custom_vars[x-1][0]).replace('Sessions','')
+                                text_label = str(custom_vars[x][0]).replace('Sessions','')
                             label_n = ttk.Label(self.custom_var_labelframe, text=text_label)
-                            label_n.grid(row=x, column=0, padx=5, pady=5, sticky=tk.NW)
+                            label_n.grid(row=x+1, column=0, padx=5, pady=5, sticky=tk.NW)
                             label_list.append(label_n)
                             # Custom Variable Entry
                             entry_n = ttk.Entry(self.custom_var_labelframe, show='', state='disabled')
                             entry_n.var = tk.StringVar()
-                            text_entry = str(custom_vars[x-1][1])
+                            text_entry = str(custom_vars[x][1])
                             text_entry = '' if text_entry == 'None' else text_entry
                             entry_n.var.set(text_entry)
                             entry_n["textvariable"] = entry_n.var
-                            entry_n.grid(row=x, column=1, padx=5, pady=5, sticky=tk.NW)
+                            entry_n.grid(row=x+1, column=1, padx=5, pady=5, sticky=tk.NW)
                             entry_list.append(entry_n)
 
                         # Button to modify the entry of the custom variable
-                        #def edit_handler(*args):
-                        #    enable_buttons(entry_list)
-                        #    enable_buttons([confirm_button, reject_button])
+                        def edit_handler(*args):
+                            self.label_list1 = []
+                            self.entry_list1 = []
+                            all_custom_variables = len(custom_vars)
+                            for x in range(1, all_custom_variables+1):
+                                # Custom Variable Label
+                                if str(self.type_folder) == 'Subject':
+                                    text_label = str(custom_vars[x-1][0]).replace('Subjects','')
+                                elif str(self.type_folder) == 'Experiment':
+                                    text_label = str(custom_vars[x-1][0]).replace('Sessions','')
+                                label_n1 = ttk.Label(self.custom_var_labelframe, text=text_label)
+                                label_n1.grid(row=x, column=0, padx=5, pady=5, sticky=tk.NW)
+                                self.label_list1.append(label_n1)
+                                # Custom Variable Entry
+                                entry_n1 = ttk.Entry(self.custom_var_labelframe, show='', state='disabled')
+                                entry_n1.var = tk.StringVar()
+                                text_entry1 = str(custom_vars[x-1][1])
+                                text_entry1 = '' if text_entry1 == 'None' else text_entry1
+                                entry_n1.var.set(text_entry1)
+                                entry_n1["textvariable"] = entry_n1.var
+                                entry_n1.grid(row=x, column=1, padx=5, pady=5, sticky=tk.NW)
+                                self.entry_list1.append(entry_n1)
+                            enable_buttons(self.entry_list1)
+                            enable_buttons([confirm_button, reject_button])
                              
-                        #edit_button = ttk.Button(self.custom_var_labelframe, image=master.logo_edit, command=edit_handler,
-                        #                            style="WithoutBack.TButton", cursor=CURSOR_HAND)
-                        #edit_button.grid(row=0, column=2, padx=5, pady=5, sticky=tk.NW)
+                        edit_button = ttk.Button(self.custom_var_labelframe, image=master.logo_edit, command=edit_handler,
+                                                   style="WithoutBack.TButton", cursor=CURSOR_HAND)
+                        edit_button.grid(row=0, column=2, padx=5, pady=5, sticky=tk.NW)
 
-                        ## Button to confirm changes
-                        #def accept_changes(*args):
-                        #    # Save change on .txt file
-                        #    try:
-                        #        data = {}
-                        #        data.update(info)
-                        #        for e in range(len(entry_list)):
-                        #            if str(self.type_folder) == 'Subject':
-                        #                new_key = 'Subjects' + str(label_list[e]["text"])
-                        #            if str(self.type_folder) == 'Experiment':
-                        #                new_key = 'Sessions' + str(label_list[e]["text"])
-                        #            data[new_key] = entry_list[e].var.get()
-                        #        write_table(custom_file[0], data)
-                        #        display_custom_var()
-                        #    except Exception as e: 
-                        #       messagebox.showerror("XNAT-PIC Uploader", e)
+                        # Button to confirm changes
+                        def accept_changes(*args):
+                           # Save change on .txt file
+                           try:
+                               data = {}
+                               data.update(info)
+                               for e in range(len(self.entry_list1)):
+                                   if str(self.type_folder) == 'Subject':
+                                       new_key = 'Subjects' + str(self.label_list1[e]["text"])
+                                   if str(self.type_folder) == 'Experiment':
+                                       new_key = 'Sessions' + str(self.label_list1[e]["text"])
+                                   data[new_key] = self.entry_list1[e].var.get()
+                               write_table(custom_file[0], data)
+                               display_custom_var()
+                           except Exception as e: 
+                              messagebox.showerror("XNAT-PIC Uploader", e)
 
-                        #confirm_button = ttk.Button(self.custom_var_labelframe, image=master.logo_accept, command=accept_changes,
-                        #                            state='disabled', style="WithoutBack.TButton", cursor=CURSOR_HAND)
-                        #confirm_button.grid(row=0, column=3, padx=5, pady=5, sticky=tk.NW)
+                        confirm_button = ttk.Button(self.custom_var_labelframe, image=master.logo_accept, command=accept_changes,
+                                                   state='disabled', style="WithoutBack.TButton", cursor=CURSOR_HAND)
+                        confirm_button.grid(row=0, column=3, padx=5, pady=5, sticky=tk.NW)
 
-                        ## Button to abort changes
-                        #def reject_changes(*args):
-                        #    # disable_buttons(entry_list)
-                        #    display_custom_var()
-                        #reject_button = ttk.Button(self.custom_var_labelframe, image=master.logo_delete, command=reject_changes,
-                        #                            state='disabled', style="WithoutBack.TButton", cursor=CURSOR_HAND)
-                        #reject_button.grid(row=0, column=4, padx=5, pady=5, sticky=tk.NW)
+                        # Button to abort changes
+                        def reject_changes(*args):
+                           # disable_buttons(entry_list)
+                           display_custom_var()
+                        reject_button = ttk.Button(self.custom_var_labelframe, image=master.logo_delete, command=reject_changes,
+                                                   state='disabled', style="WithoutBack.TButton", cursor=CURSOR_HAND)
+                        reject_button.grid(row=0, column=4, padx=5, pady=5, sticky=tk.NW)
 
-            self.n_custom_var.trace('w', display_custom_var)
+            #self.n_custom_var.trace('w', display_custom_var)
             self.selected_item_path.trace('w', display_custom_var)
             #############################################
             ################# Project ###################
@@ -3058,7 +3151,7 @@ class xnat_pic_gui():
                             params = {}
                             params['folder_to_upload'] = exp
                             params['project_id'] = self.prj.get()
-                            params['custom_var_flag'] = self.n_custom_var.get()
+                            #params['custom_var_flag'] = self.n_custom_var.get()
                             # Check for existing custom variables file
                             
                             try:
@@ -3167,7 +3260,7 @@ class xnat_pic_gui():
                     params = {}
                     params['folder_to_upload'] = exp
                     params['project_id'] = self.prj.get()
-                    params['custom_var_flag'] = self.n_custom_var.get()
+                    #params['custom_var_flag'] = self.n_custom_var.get()
                     # Check for existing custom variables file
                     try:
                         # If the custom variables file is available
@@ -3268,7 +3361,7 @@ class xnat_pic_gui():
                     params = {}
                     params['folder_to_upload'] = experiment_to_upload
                     params['project_id'] = self.prj.get()
-                    params['custom_var_flag'] = self.n_custom_var.get()
+                    #params['custom_var_flag'] = self.n_custom_var.get()
                     # Check for existing custom variables file
                     try:
                         # If the custom variables file is available
