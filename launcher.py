@@ -913,7 +913,9 @@ class xnat_pic_gui():
                             for scan in list_scans:
                                 if not os.listdir(scan[1]):
                                     os.rmdir(scan[1])
-                                    self.list_scans_err.append(scan[0])
+                                    split_path_list = scan[0].rsplit('/',4)
+                                    split_path_str = '/'.join(split_path_list[1:])
+                                    self.list_scans_err.append(".../" + split_path_str)
 
                     # Update the current step of the progress bar
                     progressbar.update_progressbar(j + 1, len(list_sub))
@@ -939,13 +941,13 @@ class xnat_pic_gui():
             
             str_excep = ''
             if not len(self.conversion_err) == 0:
-                str_excep = "Folders not converted because they already exist and the overwrite flag has not been selected!\n\n" + str([str(x) for x in self.conversion_err])[1:-1]
+                str_excep = "Scans not converted because they already exist and the overwrite flag has not been selected:\n\n" + str([str(x) for x in self.conversion_err])[1:-1]
             str_excep1 = ''
             if not len(self.list_scans_err) == 0:
-                str_excep1 = "Folders not converted. Check that they are valid Bruker files!\n\n" + str('\n'.join([str(x) for x in self.list_scans_err]))
+                str_excep1 = "Scans not converted (check that they are valid Bruker files):\n\n" + str('\n'.join([str(x) for x in self.list_scans_err]))
             str_excep2 = ''
             if not len(self.conversion_err1) == 0:
-                str_excep2 = "Folders not converted:\n\n" + str([str(x) for x in self.conversion_err1])[1:-1]
+                str_excep2 = "Scans not converted:\n\n" + str([str(x) for x in self.conversion_err1])[1:-1]
 
             messagebox.showinfo("XNAT-PIC Converter","The conversion of the project is finished!\n\n\n\n" + 
                                 str_excep + "\n\n\n\n" +
@@ -1018,7 +1020,9 @@ class xnat_pic_gui():
                     for scan in list_scans:
                         if not os.listdir(scan[1]):
                             os.rmdir(scan[1])
-                            self.list_scans_err.append(scan[0])
+                            split_path_list = scan[0].rsplit('/',3)
+                            split_path_str = '/'.join(split_path_list[1:])
+                            self.list_scans_err.append(".../" + split_path_str)
                         
                     progressbar.set_caption('Converting ' + str(exp_folder.split('/')[-1]) + ' ...done!')
 
@@ -1041,7 +1045,7 @@ class xnat_pic_gui():
 
             str_excep = ''
             if not len(self.list_scans_err) == 0:
-                str_excep = "Folders not converted. Check that they are valid Bruker files!\n\n" + str('\n'.join([str(x) for x in self.list_scans_err]))
+                str_excep = "Scans not converted (check that they are valid Bruker files):\n\n" + str('\n'.join([str(x) for x in self.list_scans_err]))
 
             messagebox.showinfo("XNAT-PIC Converter","Done! Your subject is successfully converted\n\n\n\n" + str_excep)
             self.convertion_state.set(1)
@@ -1076,7 +1080,9 @@ class xnat_pic_gui():
                 for scan in list_scans:
                     if not os.listdir(scan[1]):
                         os.rmdir(scan[1])
-                        self.list_scans_err.append(scan[0])                
+                        split_path_list = scan[0].rsplit('/',2)
+                        split_path_str = '/'.join(split_path_list[1:])
+                        self.list_scans_err.append(".../" + split_path_str)                
                 progressbar.set_caption('Converting ' + str(self.folder_to_convert.get().split('/')[-1]) + ' ...done!')
 
             start_time = time.time()
@@ -1098,7 +1104,7 @@ class xnat_pic_gui():
 
             str_excep = ''
             if not len(self.list_scans_err) == 0:
-                str_excep = "Folders not converted. Check that they are valid Bruker files!\n\n" + str('\n'.join([str(x) for x in self.list_scans_err]))
+                str_excep = "Scans not converted (check that they are valid Bruker files):\n\n" + str('\n'.join([str(x) for x in self.list_scans_err]))
 
             messagebox.showinfo("XNAT-PIC Converter","Done! Your experiment is successfully converted\n\n\n\n" + str_excep)
             self.convertion_state.set(1)
