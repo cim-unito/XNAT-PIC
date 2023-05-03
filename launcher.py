@@ -2581,24 +2581,11 @@ class xnat_pic_gui():
                         self.tree.tree.delete(*self.tree.tree.get_children())
 
                     # Define the main folder into the Treeview object
-                    if self.upload_type.get() == 0 or self.upload_type.get() == 3:
-                        self.working_folder = self.folder_to_upload.get()
-                        # Scan the folder to get its tree
-                        subdir = os.listdir(self.working_folder)
-                        # Check for OS configuration files and remove them
-                        subdirectories = [x for x in subdir if x.endswith('.ini') == False]
-                    elif self.upload_type.get() == 1:
-                        self.working_folder = self.folder_to_upload.get().rsplit('/', 1)[0]
-                        # Scan the folder to get its tree
-                        subdir = [str(self.folder_to_upload.get().rsplit('/', 1)[1])]
-                        # Check for OS configuration files and remove them
-                        subdirectories = [x for x in subdir if x.endswith('.ini') == False]
-                    elif self.upload_type.get() == 2:
-                        self.working_folder = self.folder_to_upload.get().rsplit('/', 2)[0]
-                        # Scan the folder to get its tree
-                        subdir = [str(self.folder_to_upload.get().rsplit('/', 2)[1])]
-                        # Check for OS configuration files and remove them
-                        subdirectories = [x for x in subdir if x.endswith('.ini') == False]
+                    self.working_folder = self.folder_to_upload.get()
+                    # Scan the folder to get its tree
+                    subdir = os.listdir(self.working_folder)
+                    # Check for OS configuration files and remove them
+                    subdirectories = [x for x in subdir if x.endswith('.ini') == False]
 
                     j = 0
                     dict_items[str(j)] = {}
@@ -2858,11 +2845,16 @@ class xnat_pic_gui():
                                data.update(info)
                                for e in range(len(self.entry_list1)):
                                    if str(self.type_folder) == 'Subject':
-                                       new_key = 'Subjects' + str(self.label_list1[e]["text"])
+                                       new_key_sub = 'Subjects' + str(self.label_list1[e]["text"])
+                                       data[new_key_sub] = self.entry_list1[e].var.get()
+                                       if self.entry_list1[e].var.get() != "":
+                                            new_key_ses = 'Sessions' + str(self.label_list1[e]["text"])
+                                            data[new_key_ses] = self.entry_list1[e].var.get()
                                    if str(self.type_folder) == 'Experiment':
                                        new_key = 'Sessions' + str(self.label_list1[e]["text"])
-                                   data[new_key] = self.entry_list1[e].var.get()
-                               write_table(custom_file[0], data)
+                                       data[new_key] = self.entry_list1[e].var.get()
+                               for custom_path_file in custom_file:        
+                                write_table(custom_path_file, data)
                                display_custom_var()
                            except Exception as e: 
                               messagebox.showerror("XNAT-PIC Uploader", e)

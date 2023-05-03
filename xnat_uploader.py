@@ -81,12 +81,14 @@ class Dicom2XnatUploader():
             for var in params.keys():
                 if var not in ['project_id', 'subject_id', 'folder_to_upload', 'experiment_id', 'SubjectsCV', 'SubjectsGroup', 'SubjectsTimepoint',
                                 'SubjectsDose', 'SessionsCV']:
-                    expfield = var.replace('Sessions', '')           
-                    experiment.fields[expfield.lower()] = params[var]
+                    expfield = var.replace('Sessions', '')  
+                    exp_field = '' if params[var] == 'None' or params[var] == None else params[var]         
+                    experiment.fields[expfield.lower()] = exp_field
                 if var not in ['project_id', 'subject_id', 'folder_to_upload', 'experiment_id', 'SubjectsCV', 'SessionsGroup', 'SessionsTimepoint',
                                 'SessionsDose', 'SessionsCV']:
                     subfield = var.replace('Subjects', '') 
-                    subject.fields[subfield.lower()] = params[var]
+                    sub_field = '' if params[var] == 'None' or params[var] == None else params[var]         
+                    subject.fields[subfield.lower()] = sub_field
                     count += 1
 
             os.remove(zip_dst)
