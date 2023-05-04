@@ -2560,6 +2560,7 @@ class xnat_pic_gui():
                     destroy_widgets([self.frame_uploader])
                     self.overall_uploader(master)
                     return
+
                 # if (self.upload_type.get() == 1 or self.upload_type.get() == 2) and (glob(self.folder_to_upload.get() + "/**/**/**/*.dcm", recursive=False) == [] and
                 #                                                                       glob(self.folder_to_upload.get() + "/**/**/*.dcm", recursive=False) == []):
                 #     messagebox.showerror("XNAT-PIC Uploader", "The selected folder does not contain DICOM files!")
@@ -2579,98 +2580,184 @@ class xnat_pic_gui():
                         # # Check for the name of the previous tree
                         # If the folder name is changed, then delete the previous tree
                         self.tree.tree.delete(*self.tree.tree.get_children())
+                    if self.chkvar_entire_prj.get():
+                        # Define the main folder into the Treeview object
+                        if self.upload_type.get() == 0 or self.upload_type.get() == 3:
+                            self.working_folder = self.folder_to_upload.get()
+                            # Scan the folder to get its tree
+                            subdir = os.listdir(self.working_folder)
+                            # Check for OS configuration files and remove them
+                            subdirectories = [x for x in subdir if x.endswith('.ini') == False]
+                        elif self.upload_type.get() == 1:
+                            self.working_folder = self.folder_to_upload.get().rsplit('/', 1)[0]
+                            # Scan the folder to get its tree
+                            subdir = [str(self.folder_to_upload.get().rsplit('/', 1)[1])]
+                            # Check for OS configuration files and remove them
+                            subdirectories = [x for x in subdir if x.endswith('.ini') == False]
+                        elif self.upload_type.get() == 2:
+                            self.working_folder = self.folder_to_upload.get().rsplit('/', 2)[0]
+                            # Scan the folder to get its tree
+                            subdir = [str(self.folder_to_upload.get().rsplit('/', 2)[1])]
+                            # Check for OS configuration files and remove them
+                            subdirectories = [x for x in subdir if x.endswith('.ini') == False]
 
-                    # Define the main folder into the Treeview object
-                    self.working_folder = self.folder_to_upload.get()
-                    # Scan the folder to get its tree
-                    subdir = os.listdir(self.working_folder)
-                    # Check for OS configuration files and remove them
-                    subdirectories = [x for x in subdir if x.endswith('.ini') == False]
+                        j = 0
+                        dict_items[str(j)] = {}
+                        dict_items[str(j)]['parent'] = ""
+                        dict_items[str(j)]['text'] = self.working_folder.split('/')[-1]
+                        j = 1
+                        for sub in subdirectories:
+                            
+                            if os.path.isfile(os.path.join(self.working_folder, sub)):
+                                # Add the item like a file
+                                dict_items[str(j)] = {}
+                                dict_items[str(j)]['parent'] = '0'
+                                dict_items[str(j)]['text'] = sub
+                                dict_items[str(j)]['values'] = ("File")
+                                # Update the j counter
+                                j += 1
 
-                    j = 0
-                    dict_items[str(j)] = {}
-                    dict_items[str(j)]['parent'] = ""
-                    dict_items[str(j)]['text'] = self.working_folder.split('/')[-1]
-                    total_weight = 0
-                    last_edit_time = ''
-                    j = 1
-                    for sub in subdirectories:
+                            elif os.path.isdir(os.path.join(self.working_folder, sub)):
+                                branch_idx = j
+                                dict_items[str(j)] = {}
+                                dict_items[str(j)]['parent'] = '0'
+                                dict_items[str(j)]['text'] = sub
+                                j += 1
+                                # Scansiona le directory interne per ottenere il tree CHIUSO
+                                if self.upload_type.get() == 0 or self.upload_type.get() == 1 or self.upload_type.get() == 3:
+                                    sub_level2 = os.listdir(os.path.join(self.working_folder, sub))
+                                elif self.upload_type.get() == 2:
+                                    sub_level2 = [str(self.folder_to_upload.get().rsplit('/', 2)[2])]
+                                subdirectories2 = [x for x in sub_level2 if x.endswith('.ini') == False]
+                                for sub2 in subdirectories2:
+                                    if os.path.isfile(os.path.join(self.working_folder, sub, sub2)):
+                                        # Add the item like a file
+                                        dict_items[str(j)] = {}
+                                        dict_items[str(j)]['parent'] = '1'
+                                        dict_items[str(j)]['text'] = sub2
+                                        dict_items[str(j)]['values'] = ("File")
+                                        # Update the j counter
+                                        j += 1
+
+                                    elif os.path.isdir(os.path.join(self.working_folder, sub, sub2)):
+                                        dict_items[str(j)] = {}
+                                        dict_items[str(j)]['parent'] = '1'
+                                        dict_items[str(j)]['text'] = sub2
+                                        dict_items[str(j)]['values'] = ("Experiment")
+                                        j += 1
+                                    
+                                dict_items[str(branch_idx)]['values'] = ("Subject")
+
+                        # Update the fields of the parent object
+                        dict_items['0']['values'] = ("Project")
+                        self.tree.set(dict_items)
+                    else:
+                        # Treeview for the project or experiment
+                        if self.upload_type.get() == 0 or self.upload_type.get() == 2:
+
+                            self.working_folder = self.folder_to_upload.get()
+                            # Scan the folder to get its tree
+                            subdir = os.listdir(self.working_folder)
+                            # Check for OS configuration files and remove them
+                            subdirectories = [x for x in subdir if x.endswith('.ini') == False]
                         
-                        if os.path.isfile(os.path.join(self.working_folder, sub)):
-                            # Check for last edit time
-                            edit_time = str(time.strftime("%d/%m/%Y,%H:%M:%S", time.localtime(os.path.getmtime(os.path.join(self.working_folder, sub)))))
-                            if last_edit_time == '' or edit_time > last_edit_time:
-                                # Update the last edit time
-                                last_edit_time = edit_time
-                            # Check for file dimension
-                            file_weight = round(os.path.getsize(os.path.join(self.working_folder, sub))/1024, 2)
-                            total_weight += round(file_weight/1024, 2)
-                            # Add the item like a file
-                            # Add the item like a file
+                            j = 0
                             dict_items[str(j)] = {}
-                            dict_items[str(j)]['parent'] = '0'
-                            dict_items[str(j)]['text'] = sub
-                            dict_items[str(j)]['values'] = (edit_time, str(file_weight) + "KB", "File")
-                            # Update the j counter
-                            j += 1
-
-                        elif os.path.isdir(os.path.join(self.working_folder, sub)):
-                            current_weight = 0
-                            last_edit_time_lev2 = ''
-                            branch_idx = j
-                            dict_items[str(j)] = {}
-                            dict_items[str(j)]['parent'] = '0'
-                            dict_items[str(j)]['text'] = sub
-                            j += 1
-                            # Scansiona le directory interne per ottenere il tree CHIUSO
-                            if self.upload_type.get() == 0 or self.upload_type.get() == 1 or self.upload_type.get() == 3:
-                                sub_level2 = os.listdir(os.path.join(self.working_folder, sub))
-                            elif self.upload_type.get() == 2:
-                                sub_level2 = [str(self.folder_to_upload.get().rsplit('/', 2)[2])]
-                            subdirectories2 = [x for x in sub_level2 if x.endswith('.ini') == False]
-                            for sub2 in subdirectories2:
-                                if os.path.isfile(os.path.join(self.working_folder, sub, sub2)):
-                                    # Check for last edit time
-                                    edit_time = str(time.strftime("%d/%m/%Y,%H:%M:%S", time.localtime(os.path.getmtime(os.path.join(self.working_folder, sub, sub2)))))
-                                    if last_edit_time_lev2 == '' or edit_time > last_edit_time_lev2:
-                                        # Update the last edit time
-                                        last_edit_time_lev2 = edit_time
-                                    if last_edit_time_lev2 > last_edit_time:
-                                        last_edit_time = last_edit_time_lev2
-                                    # Check for file dimension
-                                    file_weight = round(os.path.getsize(os.path.join(self.working_folder, sub, sub2))/1024, 2)
-                                    current_weight += round(file_weight/1024, 2)
+                            dict_items[str(j)]['parent'] = ""
+                            dict_items[str(j)]['text'] = self.working_folder.split('/')[-1]
+                            j = 1
+                            for sub in subdirectories:
+                                
+                                if os.path.isfile(os.path.join(self.working_folder, sub)):
                                     # Add the item like a file
                                     dict_items[str(j)] = {}
-                                    dict_items[str(j)]['parent'] = '1'
-                                    dict_items[str(j)]['text'] = sub2
-                                    dict_items[str(j)]['values'] = (edit_time, str(file_weight) + "KB", "File")
+                                    dict_items[str(j)]['parent'] = '0'
+                                    dict_items[str(j)]['text'] = sub
+                                    dict_items[str(j)]['values'] = ("File")
                                     # Update the j counter
                                     j += 1
 
-                                elif os.path.isdir(os.path.join(self.working_folder, sub, sub2)):
-                                    # Check for last edit time
-                                    edit_time = str(time.strftime("%d/%m/%Y,%H:%M:%S", time.localtime(os.path.getmtime(os.path.join(self.working_folder, sub, sub2)))))
-                                    if last_edit_time_lev2 == '' or edit_time > last_edit_time_lev2:
-                                        # Update the last edit time
-                                        last_edit_time_lev2 = edit_time
-                                    if last_edit_time_lev2 > last_edit_time:
-                                        last_edit_time = last_edit_time_lev2
-
-                                    folder_size = round(get_dir_size(os.path.join(self.working_folder, sub, sub2))/1024/1024, 2)
-                                    current_weight += folder_size
+                                elif os.path.isdir(os.path.join(self.working_folder, sub)):
+                                    branch_idx = j
                                     dict_items[str(j)] = {}
-                                    dict_items[str(j)]['parent'] = '1'
-                                    dict_items[str(j)]['text'] = sub2
-                                    dict_items[str(j)]['values'] = (edit_time, str(folder_size) + 'MB', "Experiment")
+                                    dict_items[str(j)]['parent'] = '0'
+                                    dict_items[str(j)]['text'] = sub
                                     j += 1
-                                
-                            total_weight += current_weight
-                            dict_items[str(branch_idx)]['values'] = (last_edit_time_lev2, str(round(current_weight, 2)) + "MB", "Subject")
+                                    # Scansiona le directory interne per ottenere il tree CHIUSO
+                                    sub_level2 = os.listdir(os.path.join(self.working_folder, sub))
+                                    subdirectories2 = [x for x in sub_level2 if x.endswith('.ini') == False]
+                                    for sub2 in subdirectories2:
+                                        if os.path.isfile(os.path.join(self.working_folder, sub, sub2)):
+                                            # Add the item like a file
+                                            dict_items[str(j)] = {}
+                                            dict_items[str(j)]['parent'] = '1'
+                                            dict_items[str(j)]['text'] = sub2
+                                            dict_items[str(j)]['values'] = ("File")
+                                            # Update the j counter
+                                            j += 1
 
-                    # Update the fields of the parent object
-                    dict_items['0']['values'] = (last_edit_time, str(round(total_weight/1024, 2)) + "GB", "Project")
-                    self.tree.set(dict_items)
+                                        elif os.path.isdir(os.path.join(self.working_folder, sub, sub2)):
+                                            dict_items[str(j)] = {}
+                                            dict_items[str(j)]['parent'] = '1'
+                                            dict_items[str(j)]['text'] = sub2
+                                            if self.upload_type.get() == 0:
+                                                dict_items[str(j)]['values'] = ("Experiment")
+                                            elif self.upload_type.get() == 2:
+                                                dict_items[str(j)]['values'] = ("Scan")
+                                            j += 1
+                                    if self.upload_type.get() == 0:    
+                                        dict_items[str(branch_idx)]['values'] = ("Subject")
+                                    elif self.upload_type.get() == 2:    
+                                        dict_items[str(branch_idx)]['values'] = ("Imaging-Technique")
+
+                            # Update the fields of the parent object
+                            if self.upload_type.get() == 0:
+                                dict_items['0']['values'] = ("Project")
+                            if self.upload_type.get() == 2:
+                                dict_items['0']['values'] = ("Experiment")
+                            
+                            self.tree.set(dict_items)
+                        # Treeview for the subject
+                        if self.upload_type.get() == 1:
+
+                            self.working_folder = self.folder_to_upload.get()
+                            subdir = [str(self.folder_to_upload.get().rsplit('/', 1)[1])]
+                            # Check for OS configuration files and remove them
+                            subdirectories = [x for x in subdir if x.endswith('.ini') == False]
+                            # Scan the folder to get its tree
+                            subdir = os.listdir(self.working_folder)
+                            # Check for OS configuration files and remove them
+                            subdirectories = [x for x in subdir if x.endswith('.ini') == False]
+                        
+                            j = 0
+                            dict_items[str(j)] = {}
+                            dict_items[str(j)]['parent'] = ""
+                            dict_items[str(j)]['text'] = self.working_folder.split('/')[-1]
+                            j = 1
+                            for sub in subdirectories:
+                                
+                                if os.path.isfile(os.path.join(self.working_folder, sub)):
+                                    # Add the item like a file
+                                    dict_items[str(j)] = {}
+                                    dict_items[str(j)]['parent'] = '0'
+                                    dict_items[str(j)]['text'] = sub
+                                    dict_items[str(j)]['values'] = ("File")
+                                    # Update the j counter
+                                    j += 1
+
+                                elif os.path.isdir(os.path.join(self.working_folder, sub)):
+                                    branch_idx = j
+                                    dict_items[str(j)] = {}
+                                    dict_items[str(j)]['parent'] = '0'
+                                    dict_items[str(j)]['text'] = sub
+                                    j += 1
+
+                                        
+                                    dict_items[str(branch_idx)]['values'] = ("Experiment")
+
+                            # Update the fields of the parent object
+                            dict_items['0']['values'] = ("Subject")
+                            self.tree.set(dict_items)
             
             # Initialize the folder_to_upload path
             self.folder_to_upload = tk.StringVar()
@@ -2681,7 +2768,7 @@ class xnat_pic_gui():
             # Treeview for folder visualization
             def get_selected_item(*args):
                 selected_item = self.tree.tree.selection()[0]
-                self.type_folder = self.tree.tree.item(selected_item, "values")[2]
+                self.type_folder = self.tree.tree.item(selected_item, "values")[0]
 
                 if self.working_folder.split('/')[-1] == self.tree.tree.item(selected_item, "text"):
                     self.selected_item_path.set(self.working_folder)
@@ -2696,7 +2783,7 @@ class xnat_pic_gui():
                             self.selected_item_path.set('/'.join([self.working_folder, self.tree.tree.item(parent_item, "text"),
                                 self.tree.tree.item(selected_item, "text")]))
             
-            columns = [("#0", "Folder Structure"), ("#1", "Last Update"), ("#2", "Size"), ("#3", "Type")]
+            columns = [("#0", "Folder"), ("#1", "Type")]
             self.tree = Treeview(self.frame_uploader, columns, width=80)
             self.tree.tree.place(relx = 0.05, rely = 0.31, relheight=0.30, relwidth=0.4, anchor = NW)
             self.tree.scrollbar.place(relx = 0.47, rely = 0.31, relheight=0.30, anchor = NE)
@@ -2723,12 +2810,17 @@ class xnat_pic_gui():
             self.clear_tree_btn = ttk.Button(self.frame_uploader, image=master.logo_clear,
                                     cursor=CURSOR_HAND, command=clear_tree, style="WithoutBack.TButton")
             self.clear_tree_btn.place(relx = 0.47, rely = 0.25, anchor = NE)
-
+            
+            # See the entire project
+            self.chkvar_entire_prj = tk.BooleanVar()
+            self.chkvar_entire_prj.set(False)
+            self.chkbtn_entire_prj = ttk.Checkbutton(self.frame_uploader, text="View the project structure", variable=self.chkvar_entire_prj, command=folder_selected_handler, state='disabled', bootstyle="round-toggle", cursor=CURSOR_HAND)
+            self.chkbtn_entire_prj.place(relx = 0.29, rely = 0.25, anchor = NW)
             # Upload additional files
             self.add_file_flag = tk.IntVar()
             self.add_file_btn = ttk.Checkbutton(self.frame_uploader, variable=self.add_file_flag, onvalue=1, offvalue=0, 
                                 text="Additional Files", state='disabled', bootstyle="round-toggle", cursor=CURSOR_HAND)
-            self.add_file_btn.place(relx = 0.29, rely = 0.25, anchor = NW)
+            self.add_file_btn.place(relx = 0.53, rely = 0.25, anchor = NW)
             
             # Label Frame Uploader Custom Variables
             self.custom_var_labelframe = ttk.Labelframe(self.frame_uploader, text = 'Custom Variables')
@@ -3055,7 +3147,7 @@ class xnat_pic_gui():
             if press_btn == 0:
                 # Disable main buttons
                 disable_buttons([self.prj_btn, self.sub_btn, self.exp_btn, self.file_btn])
-                enable_buttons([self.project_list, self.new_prj_btn, self.select_folder_button, self.add_file_btn])
+                enable_buttons([self.project_list, self.new_prj_btn, self.select_folder_button, self.add_file_btn, self.chkbtn_entire_prj])
                 working_text = 'Upload Project'
                 # Enable NEXT button only if all the requested fields are filled
                 def enable_next(*args):
@@ -3069,7 +3161,7 @@ class xnat_pic_gui():
             elif press_btn == 1:
                 # Disable main buttons
                 disable_buttons([self.prj_btn, self.sub_btn, self.exp_btn, self.file_btn])
-                enable_buttons([self.project_list, self.new_prj_btn, self.select_folder_button, self.add_file_btn])
+                enable_buttons([self.project_list, self.new_prj_btn, self.select_folder_button, self.add_file_btn, self.chkbtn_entire_prj])
                 working_text = 'Upload Subject'
                 # Enable NEXT button only if all the requested fields are filled
                 def enable_next(*args):
@@ -3084,7 +3176,7 @@ class xnat_pic_gui():
                 # Disable main buttons
                 disable_buttons([self.prj_btn, self.sub_btn, self.exp_btn, self.file_btn])
                 enable_buttons([self.project_list, self.new_prj_btn, self.select_folder_button,
-                                self.subject_list, self.new_sub_btn, self.add_file_btn])
+                                self.subject_list, self.new_sub_btn, self.add_file_btn, self.chkbtn_entire_prj])
                 working_text = 'Upload Experiment'
                 # Enable NEXT button only if all the requested fields are filled
                 def enable_next(*args):
@@ -3100,7 +3192,7 @@ class xnat_pic_gui():
                 disable_buttons([self.prj_btn, self.sub_btn, self.exp_btn, self.file_btn])
                 enable_buttons([self.project_list, self.new_prj_btn, self.select_folder_button,
                                 self.subject_list, self.new_sub_btn,
-                                self.experiment_list, self.new_exp_btn, self.add_file_btn])
+                                self.experiment_list, self.new_exp_btn, self.add_file_btn, self.chkbtn_entire_prj])
                 working_text = 'Upload File'
                 # Enable NEXT button only if all the requested fields are filled
                 def enable_next(*args):
