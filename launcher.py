@@ -2584,23 +2584,18 @@ class xnat_pic_gui():
                         # Define the main folder into the Treeview object
                         if self.upload_type.get() == 0 or self.upload_type.get() == 3:
                             self.working_folder = self.folder_to_upload.get()
-                            # Scan the folder to get its tree
-                            subdir = os.listdir(self.working_folder)
-                            # Check for OS configuration files and remove them
-                            subdirectories = [x for x in subdir if x.endswith('.ini') == False]
                         elif self.upload_type.get() == 1:
                             self.working_folder = self.folder_to_upload.get().rsplit('/', 1)[0]
-                            # Scan the folder to get its tree
-                            subdir = [str(self.folder_to_upload.get().rsplit('/', 1)[1])]
-                            # Check for OS configuration files and remove them
-                            subdirectories = [x for x in subdir if x.endswith('.ini') == False]
                         elif self.upload_type.get() == 2:
                             self.working_folder = self.folder_to_upload.get().rsplit('/', 2)[0]
-                            # Scan the folder to get its tree
-                            subdir = [str(self.folder_to_upload.get().rsplit('/', 2)[1])]
-                            # Check for OS configuration files and remove them
-                            subdirectories = [x for x in subdir if x.endswith('.ini') == False]
-
+                        # Scan the folder to get its tree
+                        subdir = os.listdir(self.working_folder)
+                        # Check for OS configuration files and remove them
+                        subdirectories = [x for x in subdir if x.endswith('.ini') == False]
+                        # Check if there are CV 
+                        CV_exist_prj = glob(self.working_folder + '/**/**/**/*custom_variables.txt', recursive=False)
+                        text_CV_prj = 'No' if CV_exist_prj == [] else 'Yes'
+                        
                         j = 0
                         dict_items[str(j)] = {}
                         dict_items[str(j)]['parent'] = ""
@@ -2624,12 +2619,10 @@ class xnat_pic_gui():
                                 dict_items[str(j)]['text'] = sub
                                 j += 1
                                 # Scansiona le directory interne per ottenere il tree CHIUSO
-                                if self.upload_type.get() == 0 or self.upload_type.get() == 1 or self.upload_type.get() == 3:
-                                    sub_level2 = os.listdir(os.path.join(self.working_folder, sub))
-                                elif self.upload_type.get() == 2:
-                                    sub_level2 = [str(self.folder_to_upload.get().rsplit('/', 2)[2])]
+                                sub_level2 = os.listdir(os.path.join(self.working_folder, sub))
                                 subdirectories2 = [x for x in sub_level2 if x.endswith('.ini') == False]
                                 for sub2 in subdirectories2:
+                                    list_CV_sub = []
                                     if os.path.isfile(os.path.join(self.working_folder, sub, sub2)):
                                         # Add the item like a file
                                         dict_items[str(j)] = {}
@@ -2640,16 +2633,21 @@ class xnat_pic_gui():
                                         j += 1
 
                                     elif os.path.isdir(os.path.join(self.working_folder, sub, sub2)):
+                                        tmp_exp_path = os.path.join(self.working_folder, sub, sub2)
+                                        CV_exist_exp =  glob(tmp_exp_path + '/**/*custom_variables.txt', recursive=False)
+                                        text_CV_exp = 'No' if CV_exist_exp == [] else 'Yes'
+                                        list_CV_sub.append(text_CV_exp)
                                         dict_items[str(j)] = {}
                                         dict_items[str(j)]['parent'] = '1'
                                         dict_items[str(j)]['text'] = sub2
                                         dict_items[str(j)]['values'] = ("Experiment")
                                         j += 1
-                                    
-                                dict_items[str(branch_idx)]['values'] = ("Subject")
+
+                                text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'Yes'
+                                dict_items[str(branch_idx)]['values'] = ("Subject", text_CV_exp)
 
                         # Update the fields of the parent object
-                        dict_items['0']['values'] = ("Project")
+                        dict_items['0']['values'] = ("Project", text_CV_prj)
                         self.tree.set(dict_items)
                     else:
                         # Treeview for the project or experiment
@@ -2687,6 +2685,7 @@ class xnat_pic_gui():
                                     sub_level2 = os.listdir(os.path.join(self.working_folder, sub))
                                     subdirectories2 = [x for x in sub_level2 if x.endswith('.ini') == False]
                                     for sub2 in subdirectories2:
+                                        list_CV_sub = []
                                         if os.path.isfile(os.path.join(self.working_folder, sub, sub2)):
                                             # Add the item like a file
                                             dict_items[str(j)] = {}
@@ -2701,20 +2700,29 @@ class xnat_pic_gui():
                                             dict_items[str(j)]['parent'] = '1'
                                             dict_items[str(j)]['text'] = sub2
                                             if self.upload_type.get() == 0:
+                                                tmp_exp_path = os.path.join(self.working_folder, sub, sub2)
+                                                CV_exist_exp =  glob(tmp_exp_path + '/**/*custom_variables.txt', recursive=False)
+                                                text_CV_exp = 'No' if CV_exist_exp == [] else 'Yes'
+                                                list_CV_sub.append(text_CV_exp)
                                                 dict_items[str(j)]['values'] = ("Experiment")
                                             elif self.upload_type.get() == 2:
                                                 dict_items[str(j)]['values'] = ("Scan")
                                             j += 1
                                     if self.upload_type.get() == 0:    
-                                        dict_items[str(branch_idx)]['values'] = ("Subject")
+                                        text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'Yes'
+                                        dict_items[str(branch_idx)]['values'] = ("Subject", text_CV_exp)
                                     elif self.upload_type.get() == 2:    
                                         dict_items[str(branch_idx)]['values'] = ("Imaging-Technique")
 
                             # Update the fields of the parent object
                             if self.upload_type.get() == 0:
-                                dict_items['0']['values'] = ("Project")
+                                CV_exist_prj = glob(self.working_folder + '/**/**/**/*custom_variables.txt', recursive=False)
+                                text_CV_prj = 'No' if CV_exist_prj == [] else 'Yes'
+                                dict_items['0']['values'] = ("Project", text_CV_prj)
                             if self.upload_type.get() == 2:
-                                dict_items['0']['values'] = ("Experiment")
+                                CV_exist = glob(self.working_folder + '/**/*custom_variables.txt', recursive=False)
+                                text_CV = 'No' if CV_exist == [] else 'Yes'
+                                dict_items['0']['values'] = ("Experiment", text_CV)
                             
                             self.tree.set(dict_items)
                         # Treeview for the subject
@@ -2735,7 +2743,7 @@ class xnat_pic_gui():
                             dict_items[str(j)]['text'] = self.working_folder.split('/')[-1]
                             j = 1
                             for sub in subdirectories:
-                                
+                                list_CV_sub = []
                                 if os.path.isfile(os.path.join(self.working_folder, sub)):
                                     # Add the item like a file
                                     dict_items[str(j)] = {}
@@ -2746,17 +2754,21 @@ class xnat_pic_gui():
                                     j += 1
 
                                 elif os.path.isdir(os.path.join(self.working_folder, sub)):
+                                    tmp_exp_path = os.path.join(self.working_folder, sub)
+                                    CV_exist_exp =  glob(tmp_exp_path + '/**/*custom_variables.txt', recursive=False)
+                                    text_CV_exp = 'No' if CV_exist_exp == [] else 'Yes'
+                                    list_CV_sub.append(text_CV_exp)
                                     branch_idx = j
                                     dict_items[str(j)] = {}
                                     dict_items[str(j)]['parent'] = '0'
                                     dict_items[str(j)]['text'] = sub
                                     j += 1
-
                                         
                                     dict_items[str(branch_idx)]['values'] = ("Experiment")
 
                             # Update the fields of the parent object
-                            dict_items['0']['values'] = ("Subject")
+                            text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'Yes'
+                            dict_items['0']['values'] = ("Subject", text_CV_exp)
                             self.tree.set(dict_items)
             
             # Initialize the folder_to_upload path
@@ -2783,7 +2795,7 @@ class xnat_pic_gui():
                             self.selected_item_path.set('/'.join([self.working_folder, self.tree.tree.item(parent_item, "text"),
                                 self.tree.tree.item(selected_item, "text")]))
             
-            columns = [("#0", "Folder"), ("#1", "Type")]
+            columns = [("#0", "Folder"), ("#1", "Type"), ("#2", "Custom Variables")]
             self.tree = Treeview(self.frame_uploader, columns, width=80)
             self.tree.tree.place(relx = 0.05, rely = 0.31, relheight=0.30, relwidth=0.4, anchor = NW)
             self.tree.scrollbar.place(relx = 0.47, rely = 0.31, relheight=0.30, anchor = NE)
@@ -2814,7 +2826,7 @@ class xnat_pic_gui():
             # See the entire project
             self.chkvar_entire_prj = tk.BooleanVar()
             self.chkvar_entire_prj.set(False)
-            self.chkbtn_entire_prj = ttk.Checkbutton(self.frame_uploader, text="View the project structure", variable=self.chkvar_entire_prj, command=folder_selected_handler, state='disabled', bootstyle="round-toggle", cursor=CURSOR_HAND)
+            self.chkbtn_entire_prj = ttk.Checkbutton(self.frame_uploader, text="View the entire project", variable=self.chkvar_entire_prj, command=folder_selected_handler, state='disabled', bootstyle="round-toggle", cursor=CURSOR_HAND)
             self.chkbtn_entire_prj.place(relx = 0.29, rely = 0.25, anchor = NW)
             # Upload additional files
             self.add_file_flag = tk.IntVar()
