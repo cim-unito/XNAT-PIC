@@ -24,58 +24,45 @@
 
 
 <!-- PROJECT LOGO -->
-<br />
 <p align="center">
-  <a href="https://github.com/szullino/XNAT-PIC">
-    <img src="images/logo-xnat-pic.png" alt="Logo" width="700"/>
+  <a href="https://www.eurobioimaging.eu/">
+    <img src="images/EUBI_LOGO.jpg" alt="Logo" width="700"/>
   </a>
-
-  <h3 align="center"><b>XNAT-PIC</b></h3>
-
-  <p align="center">
-    Extending XNAT to Preclinical Imaging Centers
-    <br />
-    <a href="https://github.com/szullino/XNAT-PIC"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/szullino/XNAT-PIC">View Demo</a>
-    ·
-    <a href="https://github.com/szullino/XNAT-PIC/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/szullino/XNAT-PIC/issues">Request Feature</a>
-  </p>
 </p>
 
+# XNAT-PIC
 
+XNAT for Preclinical Imaging Centers (XNAT-PIC) is a free and open-source Windows desktop application, which offers several tools to expand the XNAT core functionalities to support
+the preclinical imaging community and to promote open science practices.
 
 <!-- TABLE OF CONTENTS -->
-<details open="open">
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#citation">Citation</a></li>
-    <li><a href="#media">Media</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#funding">Funding</a></li>
-    <li><a href="#acknowledgements">Acknowledgements</a></li>
-  </ol>
-</details>
+
+## Table of Contents
+<ol>
+  <li>
+    <a href="#about">About</a>
+    <ul>
+      <li><a href="#built-with">Built With</a></li>
+    </ul>
+  </li>
+  <li>
+    <a href="#getting-started">Getting Started</a>
+    <ul>
+      <li><a href="#prerequisites">Prerequisites</a></li>
+      <li><a href="#installation">Installation</a></li>
+    </ul>
+  </li>
+  <li><a href="#usage">Usage</a></li>
+  <li><a href="#roadmap">Roadmap</a></li>
+  <li><a href="#contributing">Contributing</a></li>
+  <li><a href="#license">License</a></li>
+  <li><a href="#citation">Citation</a></li>
+  <li><a href="#media">Media</a></li>
+  <li><a href="#contact">Contact</a></li>
+  <li><a href="#funding">Funding</a></li>
+  <li><a href="#acknowledgements">Acknowledgements</a></li>
+</ol>
+
 
 
 
