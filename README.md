@@ -69,11 +69,9 @@ the preclinical imaging community and to promote open science practices.
 
 **XNAT for Preclinical Imaging Centers (XNAT-PIC)** has been developed to expand XNAT's basic functionalities to preclinical imaging and consists of:
 
-1. **Custom Variables**, an interface to manage project components according to their features such as group, timepoint, dose, ...
-1. **MRI2DICOM**, a Magnetic Resonance Imaging (MRI) converter from ParaVision® (Bruker, Inc. Billerica, MA) file format to DICOM standard.
-2. **XNAT-PIC Uploader** to import multimodal DICOM image datasets to XNAT.
-3. **XNAT-PIC Pipelines** for analysing single or multiple subjects within the same project in XNAT.
-
+1. **Grouping Annotation Interface** to efficiently cope with different experimental protocols by labelling subjects with dedicated Custom Variables to manage several types of cohorts (e.g. treated/untreated, timepoints, doses, etc..).
+2. **MRI2DICOM Converter** to convert Bruker raw data to DICOM standard, including DICOM tags for new MRI modalities, such as Chemical Exchange Saturation Transfer (CEST)
+3. **Uploader** to easily import DICOM image datasets into the XNAT platform. It supports upload of whole projects, or of sessions, subjects and experiments (scans).
 
 ## Built With
 
