@@ -24,11 +24,9 @@
 
 
 <!-- PROJECT LOGO -->
-<p align="center">
   <a href="https://www.eurobioimaging.eu/">
-    <img src="images/EUBI_LOGO.jpg" alt="Logo" width="700"/>
+    <img src="images/EUBI_LOGO.jpg" alt="Logo" width="500"/>
   </a>
-</p>
 
 # XNAT-PIC
 
@@ -63,17 +61,11 @@ the preclinical imaging community and to promote open science practices.
   <li><a href="#acknowledgements">Acknowledgements</a></li>
 </ol>
 
-
-
-
 <!-- ABOUT THE PROJECT -->
 # About
 
 <!-- ![XNAT-PIC](images/XNAT-PIC.png) -->
-<p align="center">
-  <img src="images/XNAT-PIC.png" width="800" height="350" title="XNAT-PIC"
-       >
-</p>
+<img src="images/workflow.PNG" width="750" height="260" title="XNAT-PIC">
 
 **XNAT for Preclinical Imaging Centers (XNAT-PIC)** has been developed to expand XNAT's basic functionalities to preclinical imaging and consists of:
 
@@ -89,7 +81,6 @@ XNAT-PIC has been built by using the following major frameworks:
 
 * [XNAT](https://www.xnat.org/)
 * [Python](https://www.python.org/)
-* [MATLAB Engine API for Python](https://www.mathworks.com/help/matlab/matlab_external/get-started-with-matlab-engine-for-python.html)
 
 <!-- GETTING STARTED -->
 # Getting Started
