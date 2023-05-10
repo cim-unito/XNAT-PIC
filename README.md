@@ -26,8 +26,8 @@
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
-  <a href="https://github.com/szullino/XNAT-PIC">
-    <img src="images/logo-xnat-pic.png" alt="Logo" width="700"/>
+  <a href="https://www.eurobioimaging.eu/">
+    <img src="images/EUBI_LOGO.jpg" alt="Logo" width="700"/>
   </a>
 
   <h3 align="center"><b>XNAT-PIC</b></h3>
