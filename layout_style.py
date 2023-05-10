@@ -27,6 +27,7 @@ TEXT_LBL_COLOR = "black"
 BG_BTN_COLOR = "#E5EAF0"
 BG_LBL_COLOR = "black"
 DISABLE_LBL_COLOR = '#D3D3D3'
+MAIN_TITLE_FONT = ("Helvetica", 50, "underline")
 TITLE_FONT = ("Inkfree", 36, "italic")
 UNDERTITLE_FONT = ("Inkfree", 24, "italic")
 LARGE_FONT = ("Calibri", 22, "bold")
@@ -65,12 +66,13 @@ class MyStyle():
         self.style.map("Keyword.TButton", background=[("active", theme_colors[self.style_name]["colors"]["bg"])], foreground=[("active", theme_colors[self.style_name]["colors"]["primary"])])
 
         # Configure Labels
+        self.style.configure("MainTitle.TLabel", font=MAIN_TITLE_FONT, foreground=theme_colors[self.style_name]["colors"]["primary"])
         self.style.configure("Title.TLabel", background=theme_colors[self.style_name]["colors"]["bg"], foreground=theme_colors[self.style_name]["colors"]["info"], font=TITLE_FONT)
         self.style.configure("Popup.TLabel", background=theme_colors[self.style_name]["colors"]["bg"], foreground=theme_colors[self.style_name]["colors"]["primary"], font=ATTACHED_FONT)
         self.style.configure("UnderTitle.TLabel", background=theme_colors[self.style_name]["colors"]["bg"], foreground="black", font=UNDERTITLE_FONT)
         self.style.configure("Error.TLabel", font=KEYWORD_FONT, foreground=theme_colors[self.style_name]["colors"]["danger"])
         self.style.configure("SubTitle.TLabel", font=SMALL_FONT, foreground=theme_colors[self.style_name]["colors"]["primary"])
-
+        
         # Configure OptionMenus
         self.style.configure("TMenubutton", background=theme_colors[self.style_name]["colors"]["bg"], foreground=theme_colors[self.style_name]["colors"]["primary"],
                                             arrowcolor=theme_colors[self.style_name]["colors"]["primary"])
@@ -83,6 +85,8 @@ class MyStyle():
 
         # Configure Labelframes
         self.style.configure("Hidden.TLabelframe", background=theme_colors[self.style_name]["colors"]["bg"], foreground=theme_colors[self.style_name]["colors"]["bg"], borderwidth=0, padding=0)
+
+        self.style.configure('TSeparator', padding=(0, 15, 0, 15), borderwidth=4)
 
     def get_style(self):
         return self.style
