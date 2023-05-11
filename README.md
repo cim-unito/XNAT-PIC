@@ -201,41 +201,44 @@ Please, **cite these repositories** by using: <br>
 Molecular Imaging Center<br>
 Department of Molecular Biotechnology and Health Sciences <br>
 <a  href="https://en.unito.it/">
-    <img src="images/unito_logo.png" alt="Logo" width="220"/> <br>
+    <img src="images/logo_unito.jpg" alt="Logo" width="220"/> <br>
   </a>
-  Via Nizza 52 | 10126 Torino, Italy<br>
+Via Nizza 52 | 10126 Torino, Italy<br>
 francesco.gammaraccio@unito.it | T +39 011 670 6473
   
-**Francesco Gammaraccio** <br> [![LinkedIn][linkedin-shield]][linkedin-url] [![Publons][publons-shield]][publons-url] [![Twitter][twitter-shield]][twitter-url]<br>
+**Kranthi Thej Kandula** <br>
 Molecular Imaging Center<br>
 Department of Molecular Biotechnology and Health Sciences <br>
 <a  href="https://en.unito.it/">
-    <img src="https://innovazione.zipnews.it/wp-content/uploads/sites/6/2017/07/unito.png" alt="Logo" width="220"/> <br>
+    <img src="images/logo_unito.jpg" alt="Logo" width="220"/> <br>
   </a>
   Via Nizza 52 | 10126 Torino, Italy<br>
-francesco.gammaraccio@unito.it | T +39 011 670 6473 
+kranthithej.kandula@unito.it | T +39 011 670 6473
 
-
-<!-- ACKNOWLEDGEMENTS -->
-## Funding
-
-<a href="https://www.eurobioimaging.eu/">
-    <img src="images/Euro-BioImaging_logo.png" alt="Logo" width="220"/> &nbsp;&nbsp;&nbsp;
-  </a>
-
+<!-- Funding -->
+# Funding
+European Union’s Horizon 2020 research and innovation programme under grant agreements #824087 (EOSC-
+LIFE project), #965345 (HealthyCloud project), #101058427 (EOSC4Cancer project) and # 1011100633
+(EUCAIM project).
+  
 <a href="https://www.eosc-life.eu/">
     <img src="images/eosclogo.png" alt="Logo" width="100"/>&nbsp;&nbsp;&nbsp;
   </a>
 
-<a href="https://www.corbel-project.eu/home.html/">
-    <img src="images/corbel_logo.png" alt="Logo" width="100"/> &nbsp;&nbsp;&nbsp;
+<a href="https://healthycloud.eu/">
+    <img src="images/healthycloud-social.jpg" alt="Logo" width="100"/> &nbsp;&nbsp;&nbsp;
   </a>
 
-<a href="http://www.glint-project.eu/">
-    <img src="images/glintlogo.png" alt="Logo" width="100"/>
+<a href="https://eosc4cancer.eu/">
+    <img src="images/eosc4cancer.png" alt="Logo" width="100"/>
+  </a>
+  
+<a href="https://eucanimage.eu/">
+    <img src="images/eucaim_logo.png" alt="Logo" width="100"/>
   </a>
 
-## Acknowledgments
+<!-- ACKNOWLEDGEMENTS -->
+# Acknowledgments
 
 * Alessandro Paglialonga: https://github.com/pagli17
 * Stefan Klein, Hakim Achterberg and Marcel Koek - Biomedical Imaging Group Rotterdam, Erasmus Medical Center, Rotterdam
