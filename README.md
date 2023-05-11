@@ -239,7 +239,7 @@ LIFE project), #965345 (HealthyCloud project), #101058427 (EOSC4Cancer project) 
     <img src="images/eucaim_logo.png" alt="Logo" width="100"/>
   </a>
 
-<!-- ACKNOWLEDGEMENTS -->
+<!-- acknowledgements -->
 # Acknowledgments
 
 * Alessandro Paglialonga: https://github.com/pagli17
