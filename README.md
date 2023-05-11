@@ -117,7 +117,7 @@ If you need help with the XNAT installation, please get in touch with us! <br>
    ```sh
    pip install -r requirements.txt
    ```
-
+<!-- Stand-alone SW -->
 # Stand-alone 
 
 XNAT-PIC is available for download and immediately usable without requiring additional configurations on the [Molecular Imaging Center - University of Turin website](https://www.cim.unito.it/website/research/research_xnat.php).
@@ -146,34 +146,6 @@ When uploading DICOM images to XNAT the user can also adopt a more complex struc
   </a>
 
 For more information about custom variables in XNAT, please visit: https://wiki.xnat.org/documentation/how-to-use-xnat/creating-and-managing-projects/adding-custom-variables-to-xnat-projects
-
-### XNAT-PIC Pipelines
-If you wish to use the pipelines developed in XNAT-PIC, you have two options accordingly to your profile:
-1. generic XNAT users can sign up to our CIM-XNAT instance at http://cim-xnat.unito.it, upload the MR image datasets to be analyzed and add the pipelines to their own projects.<br>
-_More information can be found here: [Adding Pipelines to your Project](https://wiki.xnat.org/documentation/how-to-use-xnat/adding-pipelines-to-your-project)_ 
-
-2. XNAT admins can download the XNAT-PIC pipelines from https://github.com/szullino/XNAT-PIC-Pipelines, install and register them in their own XNAT instance.<br>
-_More information can be found here: [Installing Pipelines in XNAT](https://wiki.xnat.org/documentation/xnat-administration/configuring-the-pipeline-engine/installing-pipelines-in-xnat)_<br>
-
-In this second case, you need to create the following XNAT format config file, named `.central.cfg`, to be placed at a default location.
-```
-{"server": "your_xnat_url", "user": "user", "password": "your_xnat_password"}
-```
-The path of your `.central.cfg` file must be replaced in the following scripts `REST_XNAT_Getscans_bytype.py`, `download_project_scans_of_type.py`, and `upload_XNAT_files.py`.
-
-To run a pipeline in XNAT, please follow this guide: https://wiki.xnat.org/documentation/how-to-use-xnat/running-pipelines-in-xnat <br>
-
-This table shows a **list of the XNAT-PIC Pipelines** currently available:
-
-| Name  | Description |
-| ------------- | ------------- |
-| Process_DWI  | Pipeline processes DWI map  |
-| Process_DWI project  | Pipeline processes all DWI maps in a project  |
-| Process_T1w_SR |	Pipeline processes T1 Saturation Recovery map |
-| Process_T1w_SR_project	| Pipeline processes all T1 Saturation Recovery maps in a project |
-| Process_T2w	| Pipeline processes T2 map |
-| Process_T2w_project	| Pipeline processes T2 maps in a project |
-| Mask_Average | Pipeline computes a mean value in a Region of Interest of a parametric map |
 
 <!-- ROADMAP -->
 ## Roadmap
@@ -224,15 +196,6 @@ Please, **cite these repositories** by using: <br>
 [![](https://img.youtube.com/vi/cpEcfIJJqCo/0.jpg)](https://youtu.be/cpEcfIJJqCo "")
 <!-- CONTACT -->
 ## Contact
-
-**Riccardo Gambino** <br> [![LinkedIn][linkedin-shield]][linkedin-url] [![Publons][publons-shield]][publons-url] [![Twitter][twitter-shield]][twitter-url]<br>
-Molecular Imaging Center<br>
-Department of Molecular Biotechnology and Health Sciences <br>
-<a  href="https://en.unito.it/">
-    <img src="https://innovazione.zipnews.it/wp-content/uploads/sites/6/2017/07/unito.png" alt="Logo" width="220"/> <br>
-  </a>
-  Via Nizza 52 | 10126 Torino, Italy<br>
-riccardo.gambino@unito.it | T +39 011 670 6473 
   
 **Francesco Gammaraccio** <br> [![LinkedIn][linkedin-shield]][linkedin-url] [![Publons][publons-shield]][publons-url] [![Twitter][twitter-shield]][twitter-url]<br>
 Molecular Imaging Center<br>
