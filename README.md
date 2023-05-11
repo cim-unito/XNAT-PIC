@@ -134,7 +134,7 @@ $ python launcher.py
 Users can then click on:
 
 * **DICOM Converter** to convert the ParaVision® (Bruker, Inc. Billerica, MA) raw data to DICOM standard. The converter needs to know the directory of the project in ParaVision® format. Once the process is over, a new folder with the DICOM images will be created in the same directory.
-* * **Edit Custom Variables** to open an interface designed with features and functions that allow users to easily group
+* **Edit Custom Variables** to open an interface designed with features and functions that allow users to easily group
 and categorize information regarding preclinical images.
 * **Uploader** to import the MR image sessions to XNAT, if your images are already in DICOM The DICOM image dataset can be then uploaded to XNAT. XNAT-PIC Uploader can upload a single subject or multiple subjects. You need to provide the XNAT webpage address and the login details. Then users can create a new project or select a pre-existing one in the drop-down menu, browse to the directory and type the number of custom variables. A pop-up window notifies the user once the process is complete. 
 
@@ -148,12 +148,12 @@ When uploading DICOM images to XNAT the user can also adopt a more complex struc
 For more information about custom variables in XNAT, please visit: https://wiki.xnat.org/documentation/how-to-use-xnat/creating-and-managing-projects/adding-custom-variables-to-xnat-projects
 
 <!-- ROADMAP -->
-## Roadmap
+# Roadmap
 
 Please visit [open issues](https://github.com/ricgambino/XNAT-PIC/issues) for a list of proposed features (and known issues).
 
 <!-- CONTRIBUTING -->
-## Contributing
+# Contributing
 
 Contributions are **greatly appreciated**. <br>
 If you wish to help us in improving the XNAT-PIC project, please follow these instructions.
@@ -167,17 +167,17 @@ If you wish to help us in improving the XNAT-PIC project, please follow these in
 Thank you!
 
 <!-- LICENSE -->
-## License
+# License
 
 XNAT-PIC is distributed under the terms of the GNU General Public License (GPL) v3 or any later version as stated by the Free Software Foundation. See [`LICENSE`](https://github.com/szullino/XNAT-PIC-Readme/blob/master/LICENSE.txt) for more information.
   
 <!-- LINKS -->
-## Links
+# Links
   
 XNAT-PIC was built using [ttkbootstrap](https://github.com/israel-dryer/ttkbootstrap/) theme extension and [Icons8](https://icons8.com/) icons.
 
 <!-- CITATION -->
-## Citation
+# Citation
 
 Please, **cite these repositories** by using: <br>
 
@@ -194,8 +194,17 @@ Please, **cite these repositories** by using: <br>
 
 * "XNAT-PIC: expanding XNAT for image archiving and processing to Preclinical Imaging Centers". Demonstrator 5 from Populating EOSC-Life: Success stories for the Demonstrators – Session 1 from January 13, 2021.<br>
 [![](https://img.youtube.com/vi/cpEcfIJJqCo/0.jpg)](https://youtu.be/cpEcfIJJqCo "")
+  
 <!-- CONTACT -->
-## Contact
+# Contact
+**Francesco Gammaraccio** <br>
+Molecular Imaging Center<br>
+Department of Molecular Biotechnology and Health Sciences <br>
+<a  href="https://en.unito.it/">
+    <img src="images/unito_logo.png" alt="Logo" width="220"/> <br>
+  </a>
+  Via Nizza 52 | 10126 Torino, Italy<br>
+francesco.gammaraccio@unito.it | T +39 011 670 6473
   
 **Francesco Gammaraccio** <br> [![LinkedIn][linkedin-shield]][linkedin-url] [![Publons][publons-shield]][publons-url] [![Twitter][twitter-shield]][twitter-url]<br>
 Molecular Imaging Center<br>
