@@ -57,7 +57,7 @@ the preclinical imaging community and to promote open science practices.
   <li><a href="#license">License</a></li>
   <li><a href="#LINKS">LINKS</a></li>
   <li><a href="#citation">Citation</a></li>
-  <li><a href="#News & Media">News & Media</a></li>
+  <li><a href="#News">News & Media</a></li>
   <li><a href="#contact">Contact</a></li>
   <li><a href="#funding">Funding</a></li>
   <li><a href="#acknowledgements">Acknowledgements</a></li>
@@ -184,7 +184,7 @@ Please, **cite these repositories** by using: <br>
 
 * S. Zullino, A. Paglialonga, W. Dastrù, D. L. Longo, S. Aime. XNAT-PIC: Extending XNAT to Preclinical Imaging Centers, 2021. DOI: https://arxiv.org/abs/2103.02044
 
-<!-- News & Media -->
+<!--News-->
 # News & Media
 
 * "Demonstrator 5: XNAT-PIC: expanding XNAT for image archiving and processing to Preclinical Imaging Centers". EOSC-Life website, https://www.eosc-life.eu/d5/
