@@ -60,7 +60,7 @@ the preclinical imaging community and to promote open science practices.
   <li><a href="#news">News</a></li>
   <li><a href="#contact">Contact</a></li>
   <li><a href="#funding">Funding</a></li>
-  <li><a href="#acknowledgements">Acknowledgements</a></li>
+  <li><a href="#acknowledgments">Acknowledgments</a></li>
 </ol>
 
 <!-- ABOUT THE PROJECT -->
@@ -232,14 +232,14 @@ LIFE project), #965345 (HealthyCloud project), #101058427 (EOSC4Cancer project) 
   </a>
 
 <a href="https://eosc4cancer.eu/">
-    <img src="images/eosc4cancer.png" alt="Logo" width="300"/>
+    <img src="images/eosc4cancer.png" alt="Logo" width="280"/>
   </a>
   
 <a href="https://eucanimage.eu/">
     <img src="images/eucaim_logo.png" alt="Logo" width="200"/>
   </a>
 
-<!-- Acknowledgements -->
+<!-- Acknowledgments -->
 # Acknowledgments
   
 * Alessandro Paglialonga: https://github.com/pagli17
