@@ -241,6 +241,7 @@ LIFE project), #965345 (HealthyCloud project), #101058427 (EOSC4Cancer project) 
 
 <!-- Acknowledgements -->
 # Acknowledgments
+  
 * Alessandro Paglialonga: https://github.com/pagli17
 * Stefan Klein, Hakim Achterberg and Marcel Koek - Biomedical Imaging Group Rotterdam, Erasmus Medical Center, Rotterdam
 * Matteo Caffini, “Project-Beat--Pyhton”: https://github.com/mcaffini/Project-Beat---Python
