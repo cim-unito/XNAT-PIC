@@ -232,7 +232,7 @@ LIFE project), #965345 (HealthyCloud project), #101058427 (EOSC4Cancer project) 
   </a>
 
 <a href="https://eosc4cancer.eu/">
-    <img src="images/eosc4cancer.png" alt="Logo" width="300"/>
+    <img src="images/eosc4cancer.png" alt="Logo" width="250"/>
   </a>
   
 <a href="https://eucanimage.eu/">
