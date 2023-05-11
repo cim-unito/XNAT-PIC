@@ -119,9 +119,10 @@ If you need help with the XNAT installation, please get in touch with us! <br>
 
 ## Stand-alone Software
 
+XNAT-PIC is available for download and immediately usable without requiring additional configurations on the [Molecular Imaging Center](https://www.cim.unito.it/website/research/research_xnat.php) - University of Turin website.
+
 <!-- USAGE EXAMPLES -->
 ## Usage
-
 
 ### MRI2DICOM and XNAT-PIC Uploader
 
