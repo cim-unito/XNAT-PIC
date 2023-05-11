@@ -96,7 +96,6 @@ Make sure you have the following softwares and packages in place:
 * [Requests 2.23.0](https://pypi.org/project/requests/2.23.0)
 * [opencv-python 4.4.0.40](https://pypi.org/project/opencv-python/4.4.0.40/)
 * [nibabel 3.1.1](https://pypi.org/project/nibabel/3.1.1/)
-* [dcmrtstruct2nii 1.0.19](https://pypi.org/project/dcmrtstruct2nii/1.0.19)
 
 ## Prerequisites
 XNAT-PIC requires an XNAT instance to work with, therefore you first need to install XNAT on a local desktop or server. XNAT-PIC has been designed and tested for **XNAT 1.8.7.1**: we recommend to install this version. You can find the XNAT installation guide at the following link https://wiki.xnat.org/documentation/getting-started-with-xnat/xnat-installation-guide.
@@ -108,92 +107,16 @@ If you need help with the XNAT installation, please get in touch with us! <br>
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/szullino/XNAT-PIC
+   git clone https://github.com/cim-unito/XNAT-PIC.git
    ```
 
 2. Install [Python 3.7.6](https://docs.python.org/release/3.7.6/) or, alternatively, [Anaconda](https://www.anaconda.com/) 
 
-Once you have Python up and running, you can install the following libraries. Again, we recommend to install the indicated versions as XNAT-PIC has not been tested to work with the latest releases.
-For any issue, please contact us.
-
-3. Install [Numpy 1.15.4](https://pypi.org/project/numpy/1.15.4/)
-
+3. Install Python Packages from the requirements file with the following command:
    ```sh
-   pip install numpy==1.15.4
+   pip install -r requirements.txt
    ```
 
-   
-4. Install [pydicom 1.2.1](https://pypi.org/project/pydicom/1.2.1/)
-
-   ```sh
-   pip install pydicom==1.2.1
-   ```
-   
-
-5. Install [xnatpy 0.3.22](https://pypi.org/project/xnat/0.3.22)
-
-   ```sh
-   pip install xnatpy==0.4.3
-   ```
-
-6. Install [pyAesCrypt 0.4.3](https://pypi.org/project/pyAesCrypt/0.4.3)
-
-   ```sh
-   pip install pyAesCrypt==0.4.3
-   ```
-
-###  XNAT-PIC Pipelines
-
-
-1. Clone the repo
-   ```sh
-   git clone https://github.com/szullino/XNAT-PIC-pipelines
-   ```
-
-Follow these instructions to set up the XNAT-PIC Pipelines:
-
-1. Create a [Python 2.7 virtual environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html)
-
-2. Install [Requests 2.23.0](https://pypi.org/project/requests/2.23.0)
-
-   ```sh
-   pip install requests==2.23.0
-   ```
-
-3. Install [pyxnat 1.2.1.0.post3](https://pypi.org/project/pyxnat/1.2.1.0.post3/)
-
-   ```sh
-   pip install pyxnat==1.2.1.0.post3
-   ```
-4. Install the [MATLAB Engine API for Python](https://www.mathworks.com/help/matlab/matlab_external/get-started-with-matlab-engine-for-python.html)
-
-In particular, for the *Mask_Average* XNAT-PIC Pipeline you need to install Python 3.8.3 and the following libraries:
-
-2. Install [numpy 1.18.5](https://pypi.org/project/numpy/1.18.5/)
-
-   ```sh
-   pip install numpy==1.18.5
-   ```
-
-
-3. Install [opencv-python 4.4.0.40](https://pypi.org/project/opencv-python/4.4.0.40/)
-
-   ```sh
-   pip install opencv-python==4.4.0.40
-   ```
-
-4. Install [nibabel 3.1.1](https://pypi.org/project/nibabel/3.1.1/)
-
-   ```sh
-   pip install nibabel==3.1.1
-   ```
-
-5. Install [dcmrtstruct2nii 1.0.19](https://pypi.org/project/dcmrtstruct2nii/1.0.19)
-
-   ```sh
-   pip install dcmrtstruct2nii==1.0.19
-   ```
-   
 ## Stand-alone Software
 
 <!-- USAGE EXAMPLES -->
