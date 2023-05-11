@@ -50,6 +50,7 @@ the preclinical imaging community and to promote open science practices.
       <li><a href="#installation">Installation</a></li>
     </ul>
   </li>
+  <li><a href="#stand-alone software">Stand-alone SW</a></li>
   <li><a href="#usage">Usage</a></li>
   <li><a href="#roadmap">Roadmap</a></li>
   <li><a href="#contributing">Contributing</a></li>
@@ -117,24 +118,25 @@ If you need help with the XNAT installation, please get in touch with us! <br>
    pip install -r requirements.txt
    ```
 
-## Stand-alone Software
+# Stand-alone Software
 
-XNAT-PIC is available for download and immediately usable without requiring additional configurations on the [Molecular Imaging Center](https://www.cim.unito.it/website/research/research_xnat.php) - University of Turin website.
+XNAT-PIC is available for download and immediately usable without requiring additional configurations on the [Molecular Imaging Center - University of Turin website](https://www.cim.unito.it/website/research/research_xnat.php).
 
 <!-- USAGE EXAMPLES -->
-## Usage
+# Usage
 
-### MRI2DICOM and XNAT-PIC Uploader
-
-You can launch MRI2DICOM and the XNAT-PIC Uploader by running `launcher.py` in your Python IDE or via operating system command-line or terminal:
+You can launch XNAT-PIC by running `launcher.py` in your Python IDE or via operating system command-line or terminal:
 
 ```
 $ python launcher.py
 ```
 
-Users can then click on **MRI2DICOM** to convert the ParaVision® (Bruker, Inc. Billerica, MA) raw data to DICOM standard  or on the **XNAT-PIC Uploader** to import the MR image sessions to XNAT, if your images are already in DICOM. In the first case, the converter needs to know the directory of the project in ParaVision® format. Once the process is over, a new folder with the DICOM images will be created in the same directory.
+Users can then click on:
 
-The DICOM image dataset can be then uploaded to XNAT. XNAT-PIC Uploader can upload a single subject or multiple subjects. You need to provide the XNAT webpage address and the login details. Then users can create a new project or select a pre-existing one in the drop-down menu, browse to the directory and type the number of custom variables. A pop-up window notifies the user once the process is complete. 
+* **DICOM Converter** to convert the ParaVision® (Bruker, Inc. Billerica, MA) raw data to DICOM standard. The converter needs to know the directory of the project in ParaVision® format. Once the process is over, a new folder with the DICOM images will be created in the same directory.
+* * **Edit Custom Variables** to open an interface designed with features and functions that allow users to easily group
+and categorize information regarding preclinical images.
+* **Uploader** to import the MR image sessions to XNAT, if your images are already in DICOM The DICOM image dataset can be then uploaded to XNAT. XNAT-PIC Uploader can upload a single subject or multiple subjects. You need to provide the XNAT webpage address and the login details. Then users can create a new project or select a pre-existing one in the drop-down menu, browse to the directory and type the number of custom variables. A pop-up window notifies the user once the process is complete. 
 
 When uploading DICOM images to XNAT the user can also adopt a more complex structure that automatically sets **custom variables** (up to 3) and their values. For example, this data tree structure corresponds to the following custom variables and values:
 
@@ -173,13 +175,10 @@ This table shows a **list of the XNAT-PIC Pipelines** currently available:
 | Process_T2w_project	| Pipeline processes T2 maps in a project |
 | Mask_Average | Pipeline computes a mean value in a Region of Interest of a parametric map |
 
-
-
 <!-- ROADMAP -->
 ## Roadmap
 
 Please visit [open issues](https://github.com/ricgambino/XNAT-PIC/issues) for a list of proposed features (and known issues).
-
 
 <!-- CONTRIBUTING -->
 ## Contributing
