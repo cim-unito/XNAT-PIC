@@ -50,7 +50,7 @@ the preclinical imaging community and to promote open science practices.
       <li><a href="#installation">Installation</a></li>
     </ul>
   </li>
-  <li><a href="#stand-alone software">Stand-alone SW</a></li>
+  <li><a href="#stand-alone">Stand-alone SW</a></li>
   <li><a href="#usage">Usage</a></li>
   <li><a href="#roadmap">Roadmap</a></li>
   <li><a href="#contributing">Contributing</a></li>
@@ -118,7 +118,7 @@ If you need help with the XNAT installation, please get in touch with us! <br>
    pip install -r requirements.txt
    ```
 
-# Stand-alone Software
+# Stand-alone 
 
 XNAT-PIC is available for download and immediately usable without requiring additional configurations on the [Molecular Imaging Center - University of Turin website](https://www.cim.unito.it/website/research/research_xnat.php).
 
