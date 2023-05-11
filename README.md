@@ -86,21 +86,20 @@ XNAT-PIC has been built by using the following major frameworks:
 This section contains instructions on **setting up XNAT-PIC** on your computer, in both Linux and Windows OS.<br>
 Make sure you have the following softwares and packages in place:
 
-* [XNAT 1.7.6](https://www.xnat.org/)
+* [XNAT 1.8.7.1](https://www.xnat.org/)
 * [Python 3.7.6 and Python 2.7](https://www.python.org/)
 * [Numpy 1.15.4](https://pypi.org/project/numpy/1.15.4/) and [Numpy 1.18.5](https://pypi.org/project/numpy/1.18.5/) 
 * [pyAesCrypt 0.4.3](https://pypi.org/project/pyAesCrypt/0.4.3)
 * [Pydicom 1.2.1](https://pypi.org/project/pydicom/1.2.1)
-* [xnatpy 0.3.22](https://pypi.org/project/xnat/0.3.22)
+* [xnatpy 0.4.3](https://pypi.org/project/xnat/0.3.22)
 * [pyxnat-1.2.1.0.post3](https://pypi.org/project/pyxnat/1.2.1.0.post3/)
 * [Requests 2.23.0](https://pypi.org/project/requests/2.23.0)
 * [opencv-python 4.4.0.40](https://pypi.org/project/opencv-python/4.4.0.40/)
 * [nibabel 3.1.1](https://pypi.org/project/nibabel/3.1.1/)
 * [dcmrtstruct2nii 1.0.19](https://pypi.org/project/dcmrtstruct2nii/1.0.19)
-* [MATLAB Engine API for Python](https://www.mathworks.com/help/matlab/matlab_external/get-started-with-matlab-engine-for-python.html)
 
 ## Prerequisites
-XNAT-PIC requires an XNAT instance to work with, therefore you first need to install XNAT on a local desktop or server. XNAT-PIC has been designed and tested for **XNAT 1.7.6**: we recommend to install this version. You can find the XNAT installation guide at the following link https://wiki.xnat.org/documentation/getting-started-with-xnat/xnat-installation-guide.
+XNAT-PIC requires an XNAT instance to work with, therefore you first need to install XNAT on a local desktop or server. XNAT-PIC has been designed and tested for **XNAT 1.8.7.1**: we recommend to install this version. You can find the XNAT installation guide at the following link https://wiki.xnat.org/documentation/getting-started-with-xnat/xnat-installation-guide.
 If you need help with the XNAT installation, please get in touch with us! <br>
 
 ## Installation
@@ -134,7 +133,7 @@ For any issue, please contact us.
 5. Install [xnatpy 0.3.22](https://pypi.org/project/xnat/0.3.22)
 
    ```sh
-   pip install xnatpy==0.3.22
+   pip install xnatpy==0.4.3
    ```
 
 6. Install [pyAesCrypt 0.4.3](https://pypi.org/project/pyAesCrypt/0.4.3)
