@@ -134,10 +134,10 @@ $ python launcher.py
 
 Users can then click on:
 
-* **DICOM Converter** to convert the ParaVision® (Bruker, Inc. Billerica, MA) raw data to DICOM standard. The converter needs to know the directory of the project in ParaVision® format. Once the process is over, a new folder with the DICOM images will be created in the same directory.
+* **DICOM Converter** to convert the ParaVision® (Bruker, Inc. Billerica, MA) raw data to DICOM standard. The converter needs to know the directory of the project in ParaVision® format. Once the process is over, a new folder with the DICOM images will be created in the same directory
 * **Edit Custom Variables** to open an interface designed with features and functions that allow users to easily group
-and categorize information regarding preclinical images.
-* **Uploader** to import the MR image sessions to XNAT, if your images are already in DICOM The DICOM image dataset can be then uploaded to XNAT. XNAT-PIC Uploader can upload a single subject or multiple subjects. You need to provide the XNAT webpage address and the login details. Then users can create a new project or select a pre-existing one in the drop-down menu, browse to the directory and type the number of custom variables. A pop-up window notifies the user once the process is complete. 
+and categorize information regarding preclinical images
+* **Uploader** to import the MR image sessions to XNAT, if your images are already in DICOM The DICOM image dataset can be then uploaded to XNAT. XNAT-PIC Uploader can upload a single subject or multiple subjects. You need to provide the XNAT webpage address and the login details. Then users can create a new project or select a pre-existing one in the drop-down menu, browse to the directory and type the number of custom variables. A pop-up window notifies the user once the process is complete 
 
 When uploading DICOM images to XNAT the user can also adopt a more complex structure that automatically sets **custom variables** (up to 3) and their values. For example, this data tree structure corresponds to the following custom variables and values:
 
