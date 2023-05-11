@@ -228,20 +228,19 @@ LIFE project), #965345 (HealthyCloud project), #101058427 (EOSC4Cancer project) 
   </a>
 
 <a href="https://healthycloud.eu/">
-    <img src="images/healthycloud-social.jpg" alt="Logo" width="100"/> &nbsp;&nbsp;&nbsp;
+    <img src="images/healthycloud-social.jpg" alt="Logo" width="200"/> &nbsp;&nbsp;&nbsp;
   </a>
 
 <a href="https://eosc4cancer.eu/">
-    <img src="images/eosc4cancer.png" alt="Logo" width="100"/>
+    <img src="images/eosc4cancer.png" alt="Logo" width="300"/>
   </a>
   
 <a href="https://eucanimage.eu/">
-    <img src="images/eucaim_logo.png" alt="Logo" width="100"/>
+    <img src="images/eucaim_logo.png" alt="Logo" width="200"/>
   </a>
 
-<!-- acknowledgements -->
+<!-- Acknowledgements -->
 # Acknowledgments
-
 * Alessandro Paglialonga: https://github.com/pagli17
 * Stefan Klein, Hakim Achterberg and Marcel Koek - Biomedical Imaging Group Rotterdam, Erasmus Medical Center, Rotterdam
 * Matteo Caffini, “Project-Beat--Pyhton”: https://github.com/mcaffini/Project-Beat---Python
