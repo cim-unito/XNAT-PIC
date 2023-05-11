@@ -55,8 +55,9 @@ the preclinical imaging community and to promote open science practices.
   <li><a href="#roadmap">Roadmap</a></li>
   <li><a href="#contributing">Contributing</a></li>
   <li><a href="#license">License</a></li>
+  <li><a href="#LINKS">LINKS</a></li>
   <li><a href="#citation">Citation</a></li>
-  <li><a href="#media">Media</a></li>
+  <li><a href="#News & Media">News & Media</a></li>
   <li><a href="#contact">Contact</a></li>
   <li><a href="#funding">Funding</a></li>
   <li><a href="#acknowledgements">Acknowledgements</a></li>
@@ -173,7 +174,7 @@ XNAT-PIC is distributed under the terms of the GNU General Public License (GPL) 
   
 <!-- LINKS -->
 # Links
-  
+
 XNAT-PIC was built using [ttkbootstrap](https://github.com/israel-dryer/ttkbootstrap/) theme extension and [Icons8](https://icons8.com/) icons.
 
 <!-- CITATION -->
@@ -183,7 +184,8 @@ Please, **cite these repositories** by using: <br>
 
 * S. Zullino, A. Paglialonga, W. Dastrù, D. L. Longo, S. Aime. XNAT-PIC: Extending XNAT to Preclinical Imaging Centers, 2021. DOI: https://arxiv.org/abs/2103.02044
 
-## News & Media
+<!-- News & Media -->
+# News & Media
 
 * "Demonstrator 5: XNAT-PIC: expanding XNAT for image archiving and processing to Preclinical Imaging Centers". EOSC-Life website, https://www.eosc-life.eu/d5/
 
