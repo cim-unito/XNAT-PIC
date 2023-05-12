@@ -148,7 +148,7 @@ class xnat_pic_gui():
         self.details_icon = open_image(PATH_IMAGE + "details_icon.png", 15, 15)
         # Load refresh icon
         self.refresh_icon = open_image(PATH_IMAGE + "refresh.png", 15, 15)
-
+        
         # Toolbar Menu
         def new_prj():
             project_manager = NewProjectManager(self.root)
@@ -195,19 +195,23 @@ class xnat_pic_gui():
             # Load XNAT-PIC Logo
             #self.xnat_pic_logo_dark = open_image(PATH_IMAGE + "XNAT-PIC_logo.png", 2*self.width/5, self.height/3)
             self.xnat_pic_logo_light = open_image(PATH_IMAGE + "XNAT-PIC-logo-light.png", 2*self.width/5, self.height/3)
-            
+            # Load EuroBioimaging icon
+            self.eubi_icon = open_image(PATH_IMAGE + "Euro-BioImaging_logo.png", 7*self.width/20, self.height/4)
+
             if self.frame_label.get() in ["Enter", "Main"]:
                 if self.style_label.get() == 'cerculean':
-                    self.xnat_pic_logo_label = ttk.Label(self.frame, text="XNAT for Preclinical Imaging Centers", style = "MainTitle.TLabel", justify='center')
+                    self.xnat_pic_logo_label = ttk.Label(self.frame, text="Image dataset transfer to XNAT \nfor preclinical imaging centers", style = "MainTitle.TLabel", justify='center')
+                    self.eurobioimaging_logo_label = ttk.Label(self.frame, image=self.eubi_icon)
                 else:
                     self.xnat_pic_logo_label = ttk.Label(self.frame, image=self.xnat_pic_logo_light)
-                self.xnat_pic_logo_label.place(relx=0.6, rely=0.3, anchor=tk.CENTER)
+                self.xnat_pic_logo_label.place(relx=0.6, rely=0.34, anchor=tk.CENTER)
+                self.eurobioimaging_logo_label.place(relx=0.6, rely=0.10, anchor=tk.CENTER)
 
             # Change font according to window size
             if self.width > int(2/3*self.my_width):
                 self.style.configure('TButton', font = LARGE_FONT)
                 self.style.configure('Title.TLabel', font = ("Inkfree", 36, "italic"))
-                self.style.configure("MainTitle.TLabel", font = ("Helvetica", 50))
+                self.style.configure("MainTitle.TLabel", font = ("Helvetica", 36))
 
             elif self.width > int(self.my_width/3) and self.width < int(2/3*self.my_width):
                 self.style.configure('TButton', font = SMALL_FONT)
@@ -272,7 +276,7 @@ class xnat_pic_gui():
 
         if self.xnat_pic_logo_label.winfo_exists() == 0:
             if self.style_label.get() == 'cerculean':
-                self.xnat_pic_logo_label = ttk.Label(self.frame, text="XNAT for Preclinical Imaging Centers", style = "MainTitle.TLabel", justify='center')
+                self.xnat_pic_logo_label = ttk.Label(self.frame, text="Image dataset transfer to XNAT \nfor preclinical imaging centers", style = "MainTitle.TLabel", justify='center')
             else:
                 self.xnat_pic_logo_label = ttk.Label(self.frame, image=self.xnat_pic_logo_light)
             self.xnat_pic_logo_label.place(relx=0.6, rely=0.3, anchor=tk.CENTER)
