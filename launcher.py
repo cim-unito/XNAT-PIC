@@ -277,9 +277,11 @@ class xnat_pic_gui():
         if self.xnat_pic_logo_label.winfo_exists() == 0:
             if self.style_label.get() == 'cerculean':
                 self.xnat_pic_logo_label = ttk.Label(self.frame, text="Image dataset transfer to XNAT \nfor preclinical imaging centers", style = "MainTitle.TLabel", justify='center')
+                self.eurobioimaging_logo_label = ttk.Label(self.frame, image=self.eubi_icon)
             else:
                 self.xnat_pic_logo_label = ttk.Label(self.frame, image=self.xnat_pic_logo_light)
-            self.xnat_pic_logo_label.place(relx=0.6, rely=0.3, anchor=tk.CENTER)
+            self.xnat_pic_logo_label.place(relx=0.6, rely=0.34, anchor=tk.CENTER)
+            self.eurobioimaging_logo_label.place(relx=0.6, rely=0.10, anchor=tk.CENTER)
 
         self.frame_label.set("Main")
         # Action buttons           
