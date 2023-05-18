@@ -363,6 +363,10 @@ class xnat_pic_gui():
 
             # Convert Project
             def prj_conv_handler(*args):
+                if self.tree_to_convert.tree.exists(0):
+                    self.tree_to_convert.tree.delete(*self.tree_to_convert.tree.get_children())
+                if self.tree_converted.tree.exists(0):
+                    self.tree_converted.tree.delete(*self.tree_converted.tree.get_children())
                 self.conv_flag.set(0)
                 self.check_buttons(master, press_btn=0)
             self.prj_conv_btn = ttk.Button(self.frame_converter, text="Convert Project", 
@@ -372,6 +376,10 @@ class xnat_pic_gui():
 
             # Convert Subject
             def sbj_conv_handler(*args):
+                if self.tree_to_convert.tree.exists(0):
+                    self.tree_to_convert.tree.delete(*self.tree_to_convert.tree.get_children())
+                if self.tree_converted.tree.exists(0):
+                    self.tree_converted.tree.delete(*self.tree_converted.tree.get_children())
                 self.conv_flag.set(1)
                 self.check_buttons(master, press_btn=1)
             self.sbj_conv_btn = ttk.Button(self.frame_converter, text="Convert Subject",
@@ -381,6 +389,10 @@ class xnat_pic_gui():
 
             # Convert Experiment
             def exp_conv_handler(*args):
+                if self.tree_to_convert.tree.exists(0):
+                    self.tree_to_convert.tree.delete(*self.tree_to_convert.tree.get_children())
+                if self.tree_converted.tree.exists(0):
+                    self.tree_converted.tree.delete(*self.tree_converted.tree.get_children())
                 self.conv_flag.set(2)
                 self.check_buttons(master, press_btn=2)
             self.exp_conv_btn = ttk.Button(self.frame_converter, text="Convert Experiment",
@@ -691,13 +703,7 @@ class xnat_pic_gui():
             self.tree_converted.tree.place(relx = 0.95, rely = 0.48, relheight=0.2, relwidth=0.35, anchor = NE)
             self.tree_converted.scrollbar.place(relx = 0.58, rely = 0.48, relheight=0.2, anchor = NE)
 
-            def selected_object_handler_post(*args):
-                curItem = self.tree_converted.tree.focus()
-                parentItem = self.tree_converted.tree.parent(curItem)
-                self.object_folder_post.set(os.path.join(self.converted_folder.get(), self.tree_converted.tree.item(parentItem)['text'],
-                                    self.tree_converted.tree.item(curItem)['text']).replace("\\", "/"))
             self.convertion_state.trace('w', tree_thread)
-            self.tree_converted.tree.bind("<ButtonRelease-1>", selected_object_handler_post)
 
             # EXIT Button 
             def exit_converter():
@@ -722,11 +728,68 @@ class xnat_pic_gui():
                     self.prj_convertion(master)
      
                 elif self.conv_flag.get() == 1:
-                    conv_folder = str(os.path.join('/'.join(self.folder_to_convert.get().split('/')[:-1])  + '_dcm', 
-                                                self.folder_to_convert.get().split('/')[-1]))
-                    self.converted_folder.set(conv_folder.replace("\\",'/'))
-                    disable_buttons([self.exit_btn, self.next_btn])
-                    self.sbj_convertion(master)
+                   # Popup
+                    self.popup_subject = ttk.Toplevel()
+                    self.popup_subject.title("XNAT-PIC ~ Converter")
+                    master.root.eval(f'tk::PlaceWindow {str(self.popup_subject)} center')
+                    self.popup_subject.resizable(False, False)
+                    self.popup_subject.grab_set()
+                    
+                    # If you want the logo 
+                    self.popup_subject.iconbitmap(PATH_IMAGE + "logo3.ico")
+
+                    # Select the subjects to copy the custom variables to
+                    self.popup_subject_frame = ttk.LabelFrame(self.popup_subject, text="Destination path", style="Popup.TLabelframe")
+                    self.popup_subject_frame.grid(row=1, column=0, padx=10, pady=5, sticky=tk.E+tk.W+tk.N+tk.S, columnspan=2)
+
+                    # Label     
+                    self.popup_subject.label = ttk.Label(self.popup_subject_frame, text="Select the destination path of the converted folder:")  
+                    self.popup_subject.label.grid(row=1, column=0, padx=10, pady=10, sticky=tk.W)
+
+                    # List of destination path
+                    # The user has the structure prj, sub, exp
+                    self.flag_dest_path = IntVar()
+                    text_prj_sub_exp = os.path.join('/'.join(self.folder_to_convert.get().split('/')[:-1])  + '_dcm', 
+                                                '/'.join(self.folder_to_convert.get().split('/')[-1:]))
+                    ttk.Radiobutton(self.popup_subject_frame, variable=self.flag_dest_path, value=1,
+                                    text=text_prj_sub_exp.replace("\\","/"), cursor=CURSOR_HAND).grid(row=2, column=0, padx = 5, pady = 5, sticky=W)
+                    # The user has only the experiment to convert
+                    text_sub = self.folder_to_convert.get() + '_dcm'
+                    ttk.Radiobutton(self.popup_subject_frame, variable=self.flag_dest_path, value=2,
+                                    text=text_sub, cursor=CURSOR_HAND).grid(row=3, column=0, padx = 5, pady = 5, sticky=W)
+                    self.flag_dest_path.set(1)
+
+                    def convert_sub():
+                        try:
+                            self.popup_subject.destroy()
+                        except:
+                            pass
+                        popup_exp_value = self.flag_dest_path.get()
+                        
+                        if popup_exp_value == 1:
+                            self.converted_folder.set(text_prj_sub_exp)
+                        elif popup_exp_value ==2:
+                            self.converted_folder.set(text_sub)
+
+                        disable_buttons([self.exit_btn, self.next_btn])
+                        self.sbj_convertion(master)
+                    self.popup_subject.button_ok = ttk.Button(self.popup_subject, image = master.logo_accept,
+                                                command = convert_sub , cursor=CURSOR_HAND)
+                    self.popup_subject.button_ok.grid(row=2, column=1, padx=10, pady=5, sticky=NW)
+                    # If the popup is closed, it re-enables the buttons
+                    def enable():
+                        try:
+                            self.popup_subject.destroy()
+                        except:
+                            pass
+                        destroy_widgets([self.frame_converter])
+                        self.overall_converter(master)
+                        
+                    self.popup_subject.button_cancel = ttk.Button(self.popup_subject, image = master.logo_delete,
+                                                        command = enable, cursor=CURSOR_HAND)
+                    self.popup_subject.button_cancel.grid(row=2, column=0, padx=10, pady=5, sticky=NE)
+
+                    self.popup_subject.protocol('WM_DELETE_WINDOW', enable)  
     
                 elif self.conv_flag.get() == 2:
                     # Popup
@@ -950,7 +1013,7 @@ class xnat_pic_gui():
             
             str_excep = ''
             if not len(self.conversion_err) == 0:
-                str_excep = "Scans not converted because they already exist and the overwrite flag has not been selected:\n\n" + str([str(x) for x in self.conversion_err])[1:-1]
+                str_excep = "Subjects not converted because they already exist and the overwrite flag has not been selected:\n\n" + str([str(x) for x in self.conversion_err])[1:-1]
             str_excep1 = ''
             if not len(self.list_scans_err) == 0:
                 str_excep1 = "Scans not converted (check that they are valid Bruker files):\n\n" + str('\n'.join([str(x) for x in self.list_scans_err]))
@@ -996,10 +1059,11 @@ class xnat_pic_gui():
                     # Existent folder without overwriting flag set to 0 --> ignore folder
                     messagebox.showerror("XNAT-PIC Converter", "Destination folder %s already exists" % self.sub_dst)
                     self.converted_folder.set(self.sub_dst)
+                    enable_buttons([self.exit_btn])
                     return
             else:
                 # Case 2 --> The directory does not exist
-                if self.sub_dst.split('/')[-1].count('_dcm') >= 1:
+                if os.path.exists(self.sub_dst) and os.path.isdir(self.sub_dst):
                     # Check to avoid already converted folders
                     messagebox.showerror("XNAT-PIC Converter", "Chosen folder %s already converted" % self.sub_dst)
                     self.converted_folder.set(os.path.join(self.folder_to_convert.get().split('/')[:-2], self.sub_dst))
