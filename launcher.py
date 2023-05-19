@@ -35,6 +35,8 @@ import itertools
 from Treeview import Treeview
 import xnat
 from operator import * 
+import webbrowser
+
 
 
 PATH_IMAGE = "images\\"
@@ -163,6 +165,8 @@ class xnat_pic_gui():
         self.toolbar_menu = ttk.Menu(self.root)
         fileMenu = ttk.Menu(self.toolbar_menu, tearoff=0)
         new_menu = ttk.Menu(fileMenu, tearoff=0)
+        help_menu = ttk.Menu(self.toolbar_menu, tearoff=0)
+
         new_menu.add_command(label="Project", image = self.logo_folder, compound = 'left', command=new_prj)
         new_menu.add_command(label="Subject", image = self.logo_folder, compound = 'left',command=new_sub)
         new_menu.add_command(label="Experiment", image = self.logo_folder, compound = 'left',command=new_exp)
@@ -171,8 +175,10 @@ class xnat_pic_gui():
         fileMenu.add_separator()
         fileMenu.add_command(label="Exit", image = self.logo_exit, compound = 'left', command=lambda: self.root.destroy())
         
+        help_menu.add_command(label="Help", image = self.logo_help, compound='left', command = lambda: webbrowser.open('https://www.cim.unito.it/website/research/research_xnat.php'))
+
         self.toolbar_menu.add_cascade(label="File", menu=fileMenu)
-        self.toolbar_menu.add_cascade(label="Help")
+        self.toolbar_menu.add_cascade(label="About", menu=help_menu)
         self.root.config(menu=self.toolbar_menu)
 
         # Logo on the top
@@ -261,6 +267,8 @@ class xnat_pic_gui():
             self.toolbar_menu = ttk.Menu(self.root)
             fileMenu = ttk.Menu(self.toolbar_menu, tearoff=0)
             new_menu = ttk.Menu(fileMenu, tearoff=0)
+            help_menu = ttk.Menu(self.toolbar_menu, tearoff=0)
+
             new_menu.add_command(label="Project", image = self.logo_folder, compound = 'left', command=new_prj)
             new_menu.add_command(label="Subject", image = self.logo_folder, compound = 'left',command=new_sub)
             new_menu.add_command(label="Experiment", image = self.logo_folder, compound = 'left',command=new_exp)
@@ -268,9 +276,11 @@ class xnat_pic_gui():
             fileMenu.add_cascade(label="New...", image = self.logo_subdirectory, compound = 'left', menu=new_menu)
             fileMenu.add_separator()
             fileMenu.add_command(label="Exit", image = self.logo_exit, compound = 'left', command=lambda: self.root.destroy())
+
+            help_menu.add_command(label="Help", image = self.logo_help, compound='left', command = lambda: webbrowser.open('https://www.cim.unito.it/website/research/research_xnat.php'))
             
             self.toolbar_menu.add_cascade(label="File", menu=fileMenu)
-            self.toolbar_menu.add_cascade(label="Help")
+            self.toolbar_menu.add_cascade(label="About", menu=help_menu)
             self.root.config(menu=self.toolbar_menu)
 
 
@@ -341,7 +351,7 @@ class xnat_pic_gui():
 
             file_menu.add_command(label="Clear Tree", image = master.logo_clear, compound='left', command = lambda: clear_tree())
             
-            help_menu.add_command(label="Help", image = master.logo_help, compound='left', command = lambda: messagebox.showinfo("XNAT-PIC","Help"))
+            help_menu.add_command(label="Help", image = master.logo_help, compound='left', command = lambda: webbrowser.open('https://www.cim.unito.it/website/research/research_xnat.php'))
 
             self.menu.add_cascade(label='Home', menu=home_menu)
             self.menu.add_cascade(label="File", menu=file_menu)
@@ -1223,7 +1233,7 @@ class xnat_pic_gui():
             file_menu.add_separator()
             file_menu.add_command(label="Save All", image = master.logo_save, compound='left', command = lambda: self.save_metadata())
 
-            help_menu.add_command(label="Help", image = master.logo_help, compound='left', command = lambda: messagebox.showinfo("XNAT-PIC","Help"))
+            help_menu.add_command(label="Help", image = master.logo_help, compound='left', command = lambda: webbrowser.open('https://www.cim.unito.it/website/research/research_xnat.php'))
 
             self.menu.add_cascade(label='Home', menu=home_menu)
             self.menu.add_cascade(label="File", menu=file_menu)
@@ -2555,7 +2565,7 @@ class xnat_pic_gui():
             file_menu.add_command(label="Refresh Page", image = master.refresh_icon, compound='left', command = lambda: self.refresh(master))
             file_menu.add_command(label="Clear Tree", image = master.logo_clear, compound='left', command = lambda: clear_tree())
             
-            help_menu.add_command(label="Help", image = master.logo_help, compound='left', command = lambda: messagebox.showinfo("XNAT-PIC","Help"))
+            help_menu.add_command(label="Help", image = master.logo_help, compound='left', command = lambda: webbrowser.open('https://www.cim.unito.it/website/research/research_xnat.php'))
 
             self.menu.add_cascade(label='Home', menu=home_menu)
             self.menu.add_cascade(label="File", menu=file_menu)
