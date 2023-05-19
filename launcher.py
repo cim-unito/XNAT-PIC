@@ -1501,7 +1501,7 @@ class xnat_pic_gui():
                 self.selection = 'Selected Subject: ' + self.subject_name
             elif press_btn == "Experiment":
                 # Check if the selected folder is related to the right conversion flag
-                if glob(self.information_folder + "/**/**/**/*.dcm", recursive=False) == [] and glob(self.information_folder + "/**/**/**/**/2dseq", recursive=False) == []:
+                if glob(self.information_folder + "/**/**/*.dcm", recursive=False) == [] and glob(self.information_folder + "/**/**/**/2dseq", recursive=False) == []:
                     messagebox.showerror("XNAT-PIC Project Data", "The selected folder is not experiment related.\nPlease select an other directory!")
                     destroy_widgets([self.frame_metadata])
                     self.overall_projectdata(master)
@@ -1979,7 +1979,7 @@ class xnat_pic_gui():
 
         def confirm_metadata(self):
             # Check before editing the data
-            if str(self.level_CV.get()) == "Sessions" and not self.entries_value_ID[3].get():
+            if str(self.level_CV.get()) == "Sessions" and not self.entries_value_ID[2].get():
                 messagebox.showerror("XNAT-PIC", "Click Tab to select a folder from the list box on the left")
                 return 
 
@@ -2219,12 +2219,13 @@ class xnat_pic_gui():
             if flag_ID == "Project":               
                 # Modify Project Name
                 self.entries_value_ID[0]['state'] = 'normal'
-                
+                self.project_name = self.entries_value_ID[0].get()
+                self.subject_name = self.entries_value_ID[1].get()
                 def confirm_project_name():
                     new_prj = self.entries_value_ID[0].get()
                     if not new_prj:
                         messagebox.showerror("XNAT-PIC", "Insert the name of the project!")
-                        return 
+                        return
                     self.entries_value_ID[0]['state'] = 'disabled'
                     enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
                     for k,v in self.results_dict.items():
@@ -2259,6 +2260,8 @@ class xnat_pic_gui():
                 btn_project_confirm_ID.place(relx = 0.65, rely = 0.53, anchor = NE)
 
                 def delete_project_name():
+                    self.entries_value_ID[0].delete(0, tk.END)
+                    self.entries_value_ID[0].insert(0, self.project_name)
                     self.entries_value_ID[0]['state'] = 'disabled'
                     enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
                     btn_project_delete_ID.destroy()
@@ -2319,6 +2322,8 @@ class xnat_pic_gui():
                 btn_subject_confirm_ID.place(relx = 0.65, rely = 0.53, anchor = NE)
 
                 def delete_subject_name():
+                    self.entries_value_ID[1].delete(0, tk.END)
+                    self.entries_value_ID[1].insert(0, self.subject_name)
                     self.entries_value_ID[1]['state'] = 'disabled'
                     enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
                     btn_subject_delete_ID.destroy()
@@ -2333,13 +2338,13 @@ class xnat_pic_gui():
                     messagebox.showerror("XNAT-PIC", "Select Sessions Level")
                     enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
                     return 
-                if str(self.level_CV.get()) == "Sessions" and not self.entries_value_ID[3].get():
+                if str(self.level_CV.get()) == "Sessions" and not self.entries_value_ID[2].get():
                     messagebox.showerror("XNAT-PIC", "Click Tab to select a folder from the list box on the left")
                     enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
                     return 
                 # Modify Project Name
                 self.entries_value_ID[2]['state'] = 'normal'
-
+                self.experiment_name = self.entries_value_ID[2].get()
                 def confirm_exp_name():
                     new_exp = self.entries_value_ID[2].get()
                     if not new_exp:
@@ -2359,6 +2364,8 @@ class xnat_pic_gui():
                 btn_exp_confirm_ID.place(relx = 0.65, rely = 0.53, anchor = NE)
 
                 def delete_exp_name():
+                    self.entries_value_ID[2].delete(0, tk.END)
+                    self.entries_value_ID[2].insert(0, self.experiment_name)
                     self.entries_value_ID[2]['state'] = 'disabled'
                     enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
                     btn_exp_delete_ID.destroy()
@@ -2373,7 +2380,7 @@ class xnat_pic_gui():
                     messagebox.showerror("XNAT-PIC", "Select Sessions Level")
                     enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
                     return 
-                if str(self.level_CV.get()) == "Sessions" and not self.entries_value_ID[3].get():
+                if str(self.level_CV.get()) == "Sessions" and not self.entries_value_ID[2].get():
                     messagebox.showerror("XNAT-PIC", "Click Tab to select a folder from the list box on the left")
                     enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
                     return 
@@ -2381,32 +2388,38 @@ class xnat_pic_gui():
                 # Modify acq date Name
                 self.cal.entry['state'] = 'normal'
                 self.cal.button['state'] = 'normal'
+                self.flag = 0
+                self.entries_value_ID[3]['state'] = 'normal'
+                self.acquisition_date_name = self.entries_value_ID[3].get()
 
                             # # Acquisition date: you can modify date with the calendar           
                 def date_entry_selected(*args):
-                    self.entries_value_ID[3]['state'] = tk.NORMAL
-                    self.entries_value_ID[3].delete(0, tk.END)
-                    self.entries_value_ID[3].insert(0, str(self.cal.entry.get()))
-                    if self.entries_value_ID[3].get():
-                        try:
-                            acq_date = dt.datetime.strptime(self.entries_value_ID[3].get(), '%Y-%m-%d')
-                            self.today = date.today()
-                            self.today = self.today.strftime('%Y-%m-%d')
-                            if acq_date.strftime('%Y-%m-%d') > self.today:
+                    if self.flag == 0:
+                        self.entries_value_ID[3]['state'] = tk.NORMAL
+                        self.entries_value_ID[3].delete(0, tk.END)
+                        self.entries_value_ID[3].insert(0, str(self.cal.entry.get()))
+                        if self.entries_value_ID[3].get():
+                            try:
+                                acq_date = dt.datetime.strptime(self.entries_value_ID[3].get(), '%Y-%m-%d')
+                                self.today = date.today()
+                                self.today = self.today.strftime('%Y-%m-%d')
+                                if acq_date.strftime('%Y-%m-%d') > self.today:
+                                    self.entries_value_ID[3].delete(0, tk.END)
+                                    raise Exception("The date entered is greater than today's date")
+                            except Exception as e:
+                                messagebox.showerror("XNAT-PIC", str(e))
                                 self.entries_value_ID[3].delete(0, tk.END)
-                                raise Exception("The date entered is greater than today's date")
-                        except Exception as e:
-                            messagebox.showerror("XNAT-PIC", str(e))
-                            self.entries_value_ID[3].delete(0, tk.END)
-                            self.entries_value_ID[3]['state'] = tk.DISABLED
-                            raise
+                                self.entries_value_ID[3]['state'] = tk.DISABLED
+                                raise
 
-                    self.entries_value_ID[3]['state'] = tk.DISABLED
-                    self.my_listbox.selection_set(self.selected_index)
+                        self.entries_value_ID[3]['state'] = tk.DISABLED
+                        self.my_listbox.selection_set(self.selected_index)
             
                 self.datevar.trace('w', date_entry_selected)
 
                 def confirm_date_name():
+                    self.flag = 1
+                    self.cal.entry.delete(0, tk.END)
                     self.cal.entry['state'] = 'disabled'
                     self.cal.button['state'] = 'disabled'
                     enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
@@ -2424,8 +2437,14 @@ class xnat_pic_gui():
                 btn_date_confirm_ID.place(relx = 0.65, rely = 0.53, anchor = NE)
 
                 def delete_date_name():
+                    self.flag = 1
+                    self.entries_value_ID[3]['state'] = tk.NORMAL
+                    self.cal.entry.delete(0, tk.END)
+                    self.entries_value_ID[3].delete(0, tk.END)
+                    self.entries_value_ID[3].insert(0, self.acquisition_date_name)
                     self.cal.entry['state'] = 'disabled'
                     self.cal.button['state'] = 'disabled'
+                    self.entries_value_ID[3]['state'] = tk.DISABLED
                     enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
                     btn_date_delete_ID.destroy()
                     btn_date_confirm_ID.destroy()
