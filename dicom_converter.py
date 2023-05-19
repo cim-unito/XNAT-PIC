@@ -53,7 +53,7 @@ class Bruker2DicomConverter():
             current_path = os.path.join(folder_to_convert, dir).replace('\\', '/')
             current_dst = os.path.join(dst_folder, 'MR', dir).replace('\\', '/')
             if os.path.isdir(current_path):
-                if 'Results' in dir and self.results_flag == 1:
+                if 'Results'.lower() in dir.lower() and self.results_flag == 1:
                     new_list_dirs.append((current_path, current_dst))
                 else:
                     dseq_file = glob(current_path + '/**/2dseq', recursive=True)
@@ -100,7 +100,7 @@ class Bruker2DicomConverter():
             convert_path = dirs[0]
             dst_path = dirs[1]
 
-            if 'Results' in dirs[0].split('/')[-1]:
+            if 'Results'.lower() in dirs[0].split('/')[-1].lower():
                 shutil.copytree(convert_path, dst_path)
 
             elif 'Custom' in dirs[0].split('/')[-1]:
