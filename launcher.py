@@ -1648,7 +1648,22 @@ class xnat_pic_gui():
                         dict_CV =  {k: v for k, v in tmp_dict.items() if k in complete_list[1]}
                     elif str(self.level_CV.get()) == "Sessions":
                         dict_CV =  {k: v for k, v in tmp_dict.items() if k in complete_list[2]} 
-
+                    #################################################################                   
+                    # ID: Modify the values ​​of the entries with the values ​​of the selected experiment
+                    ind = 0
+                    for key, value in dict_ID.items():
+                        if ind==1 or ind==2:
+                            # Variable ID
+                            self.entries_variable_ID[ind-1]['state'] = 'normal'
+                            self.entries_variable_ID[ind-1].delete(0, tk.END)
+                            self.entries_variable_ID[ind-1].insert(0, key)
+                            self.entries_variable_ID[ind-1]['state'] = 'disabled'
+                            # Value ID
+                            self.entries_value_ID[ind-1]['state'] = 'normal'
+                            self.entries_value_ID[ind-1].delete(0, tk.END)
+                            self.entries_value_ID[ind-1].insert(0, value if value is not None else '')
+                            self.entries_value_ID[ind-1]['state'] = 'disabled'
+                        ind += 1   
                     #################################################################
                     # Updates the CV frame based on the selected variables and values
                     diff_CV = len(self.entries_variable_CV) - len(dict_CV) 
