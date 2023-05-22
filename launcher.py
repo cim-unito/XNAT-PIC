@@ -1217,8 +1217,6 @@ class xnat_pic_gui():
 
             home_menu.add_command(label="Home", image = master.logo_home, compound='left', command = lambda: self.home_metadata(master))
 
-            file_menu.add_command(label="Select Folder", image = master.logo_folder, compound='left', command = lambda: self.overall_projectdata(master))
-            file_menu.add_separator()
             modify_ID_menu.add_command(label="Project", compound='left', command = lambda: self.modify_ID_metadata(master, flag_ID='Project'))
             modify_ID_menu.add_command(label="Subject", compound='left', command = lambda: self.modify_ID_metadata(master, flag_ID='Subject'))
             modify_ID_menu.add_command(label="Experiment", compound='left', command = lambda: self.modify_ID_metadata(master, flag_ID='Experiment'))
