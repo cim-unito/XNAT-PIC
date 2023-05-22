@@ -150,6 +150,10 @@ class xnat_pic_gui():
         self.details_icon = open_image(PATH_IMAGE + "details_icon.png", 15, 15)
         # Load refresh icon
         self.refresh_icon = open_image(PATH_IMAGE + "refresh.png", 15, 15)
+        # Load computer icon
+        self.computer_icon = open_image(PATH_IMAGE + "computer_icon.png", 15, 15)
+        # Load server icon
+        self.server_icon = open_image(PATH_IMAGE + "server_icon.png", 15, 15)
         
         # Toolbar Menu
         def new_prj():
@@ -1602,7 +1606,90 @@ class xnat_pic_gui():
                         self.cal.entry['state'] = 'disabled'
                         self.cal.button['state'] = 'disabled'
                         self.cal.grid(row=4, column=1, padx = 5, pady = 5, sticky=E)
-                        
+                
+                #################################################################
+                # Load subject custom variables when switching from session to subject
+                try: 
+                    self.notebook.notebookContent.select(self.notebook.notebookTab.index("current"))
+                except Exception as e:
+                    pass
+                # Events for the Subjects
+                if str(self.level_CV.get()) == "Subjects":
+                    # Clear all the combobox and the entry
+                    self.selected_group.set('')
+                    self.selected_timepoint.set('')
+                    self.selected_timepoint1.set('')
+                    self.time_entry.delete(0, tk.END)
+                    self.selected_dose.set('')
+
+                    disable_buttons([self.group_menu, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.dose_menu])
+                    
+                    # Find the tab
+                    self.index_tab = self.notebook.notebookTab.index("current")
+                    self.tab_name =  self.notebook.notebookTab.tab(self.index_tab, "text")
+                    self.my_listbox = self.listbox_notebook[self.index_tab]
+                    
+                    def find_selected_folder():
+                        for k,v in self.path_list1.items():
+                            if str(self.tab_name) in str(k):
+                                path = v.split('/')
+                                sub_name = path[len(path)-2]
+                                if sub_name == str(self.tab_name):
+                                        self.selected_folder = k
+                                        return
+                    find_selected_folder()
+                    tmp_dict = self.results_dict[self.selected_folder]
+
+                    # Split the dictionary into ID and CV
+                    complete_list = [list(group) for key, group in itertools.groupby(tmp_dict, lambda x: x == "SubjectsCV" or x == "SessionsCV") if not key]
+                    dict_ID = {'Folder' : self.selected_folder}
+                    dict_ID.update({k: v for k, v in tmp_dict.items() if k in complete_list[0]})
+                    if str(self.level_CV.get()) == "Subjects":
+                        dict_CV =  {k: v for k, v in tmp_dict.items() if k in complete_list[1]}
+                    elif str(self.level_CV.get()) == "Sessions":
+                        dict_CV =  {k: v for k, v in tmp_dict.items() if k in complete_list[2]} 
+
+                    #################################################################
+                    # Updates the CV frame based on the selected variables and values
+                    diff_CV = len(self.entries_variable_CV) - len(dict_CV) 
+                    
+                    # If the number of entries is greater than the number of variables, eliminate the excess entries
+                    if diff_CV > 0:
+                        for i in range(len(dict_CV), len(self.entries_variable_CV)):
+                            self.entries_variable_CV[i].destroy() 
+                            self.entries_value_CV[i].destroy() 
+                        del self.entries_variable_CV[len(dict_CV) : len(self.entries_variable_CV)]
+                        del self.entries_value_CV[len(dict_CV) : len(self.entries_value_CV)]
+                    # If the number of entries is less than the number of variables, insert the entries
+                    elif diff_CV < 0:
+                        for j in range(len(self.entries_variable_CV), len(dict_CV)):
+                            self.entries_variable_CV.append(ttk.Entry(self.frame_CV, takefocus = 0, width=15))
+                            self.entries_variable_CV[-1].grid(row=j, column=0, padx = 5, pady = 5, sticky=W)
+                            self.entries_value_CV.append(ttk.Entry(self.frame_CV, state='disabled', takefocus = 0, width = 25))
+                            self.entries_value_CV[-1].grid(row=j, column=1, padx = 5, pady = 5, sticky=W)
+                    
+                    # Modify the values ​​of the entries with the values ​​of the selected experiment
+                    ind = 0
+                    for key, value in dict_CV.items():
+                        # Variable CV
+                        if str(self.level_CV.get()) == "Subjects":
+                            key1 = str(key).replace('Subjects', '')
+                        elif str(self.level_CV.get()) == "Sessions":
+                            key1 = str(key).replace('Sessions', '')
+                        self.entries_variable_CV[ind]['state'] = 'normal'
+                        self.entries_variable_CV[ind].delete(0, tk.END)
+                        self.entries_variable_CV[ind].insert(0, key1)
+                        self.entries_variable_CV[ind]['state'] = 'disabled'
+                        # Value CV
+                        self.entries_value_CV[ind]['state'] = 'normal'
+                        self.entries_value_CV[ind].delete(0, tk.END)
+                        self.entries_value_CV[ind].insert(0, value if value is not None else '')
+                        self.entries_value_CV[ind]['state'] = 'disabled'
+                        ind += 1
+                elif str(self.level_CV.get()) == "Session":
+                    return
+                
+
             self.level_CV.trace('w', change_frame)
          #################### Load the info about the selected subject ####################
         def load_info(self, master):
@@ -2630,6 +2717,9 @@ class xnat_pic_gui():
             self.separator1 = ttk.Separator(self.frame_uploader, bootstyle="primary")
             self.separator1.place(relx = 0.05, rely = 0.21, relwidth = 0.9, anchor = NW)
 
+            self.separator2 = ttk.Separator(self.frame_uploader, bootstyle="primary")
+            self.separator2.place(relx = 0.05, rely = 0.65, relwidth = 0.9, anchor = NW)
+
             # Define a string variable in order to check the current selected item of the Treeview widget
             self.selected_item_path = tk.StringVar()
             
@@ -2919,9 +3009,9 @@ class xnat_pic_gui():
                     #self.search_entry.config(state='disabled')
                     self.folder_to_upload.set("")
 
-            self.clear_tree_btn = ttk.Button(self.frame_uploader, image=master.logo_clear,
-                                    cursor=CURSOR_HAND, command=clear_tree, style="WithoutBack.TButton")
-            self.clear_tree_btn.place(relx = 0.47, rely = 0.25, anchor = NE)
+            # self.clear_tree_btn = ttk.Button(self.frame_uploader, image=master.logo_clear,
+            #                         cursor=CURSOR_HAND, command=clear_tree, style="WithoutBack.TButton")
+            # self.clear_tree_btn.place(relx = 0.47, rely = 0.25, anchor = NE)
             
             # See the entire project
             self.chkvar_entire_prj = tk.BooleanVar()
@@ -3081,14 +3171,14 @@ class xnat_pic_gui():
             ################# Project ###################
             # Menu
             self.project_list_label = ttk.Label(self.frame_uploader, text="Project", font = 'bold', anchor='center')
-            self.project_list_label.place(relx = 0.125, rely = 0.65, relwidth=0.15, anchor = N)
+            self.project_list_label.place(relx = 0.125, rely = 0.68, relwidth=0.15, anchor = N)
             Hovertip(self.project_list_label, "Select an existing project or create a new one ")
             self.OPTIONS = list(self.session.projects)
             self.prj = tk.StringVar()
             default_value = "--"
             self.project_list = ttk.OptionMenu(self.frame_uploader, self.prj, default_value, *self.OPTIONS)
             self.project_list.configure(state="disabled", cursor=CURSOR_HAND)
-            self.project_list.place(relx = 0.05, rely = 0.69, relwidth=0.15, anchor = NW)
+            self.project_list.place(relx = 0.05, rely = 0.72, relwidth=0.15, anchor = NW)
 
             
             # Button to add a new project
@@ -3103,7 +3193,7 @@ class xnat_pic_gui():
 
             self.new_prj_btn = ttk.Button(self.frame_uploader, state=tk.DISABLED, style="Secondary.TButton", image=master.logo_add,
                                         command=add_project, cursor=CURSOR_HAND, text="New Project", compound='left')
-            self.new_prj_btn.place(relx = 0.05, rely = 0.75, relwidth=0.15, anchor = NW)
+            self.new_prj_btn.place(relx = 0.05, rely = 0.78, relwidth=0.15, anchor = NW)
             
             #############################################
 
@@ -3115,13 +3205,13 @@ class xnat_pic_gui():
             else:
                 self.OPTIONS2 = []
             self.subject_list_label = ttk.Label(self.frame_uploader, text="Subject", font = 'bold', anchor=CENTER)
-            self.subject_list_label.place(relx = 0.5, rely = 0.65, relwidth=0.15, anchor = N)
+            self.subject_list_label.place(relx = 0.5, rely = 0.68, relwidth=0.15, anchor = N)
             Hovertip(self.subject_list_label, "Select an existing subject or create a new one ")
             self.sub = tk.StringVar()
             self.subject_list = ttk.OptionMenu(self.frame_uploader, self.sub, default_value, *self.OPTIONS2)
             self.subject_list.configure(state="disabled", cursor=CURSOR_HAND)
             
-            self.subject_list.place(relx = 0.5, rely = 0.69, relwidth=0.15, anchor = N)
+            self.subject_list.place(relx = 0.5, rely = 0.72, relwidth=0.15, anchor = N)
             
             # Button to add a new subject
             def add_subject():
@@ -3136,7 +3226,7 @@ class xnat_pic_gui():
 
             self.new_sub_btn = ttk.Button(self.frame_uploader, state=tk.DISABLED, style="Secondary.TButton", image=master.logo_add,
                                         command=add_subject, cursor=CURSOR_HAND, text="New Subject", compound='left')
-            self.new_sub_btn.place(relx = 0.5, rely = 0.75, relwidth=0.15, anchor = N)
+            self.new_sub_btn.place(relx = 0.5, rely = 0.78, relwidth=0.15, anchor = N)
             #############################################
 
             #############################################
@@ -3147,12 +3237,12 @@ class xnat_pic_gui():
             else:
                 self.OPTIONS3 = []
             self.experiment_list_label = ttk.Label(self.frame_uploader, text="Experiment", font = 'bold', anchor='center')
-            self.experiment_list_label.place(relx = 0.875, rely = 0.65, relwidth=0.15, anchor = N)
+            self.experiment_list_label.place(relx = 0.875, rely = 0.68, relwidth=0.15, anchor = N)
             Hovertip(self.experiment_list_label, "Select an existing experiment or create a new one ")
             self.exp = tk.StringVar()
             self.experiment_list = ttk.OptionMenu(self.frame_uploader, self.exp, default_value, *self.OPTIONS3)
             self.experiment_list.configure(state="disabled", cursor=CURSOR_HAND)
-            self.experiment_list.place(relx = 0.95, rely = 0.69, relwidth=0.15, anchor = NE)
+            self.experiment_list.place(relx = 0.95, rely = 0.72, relwidth=0.15, anchor = NE)
             
             # Button to add a new experiment
             def add_experiment():
@@ -3168,7 +3258,7 @@ class xnat_pic_gui():
 
             self.new_exp_btn = ttk.Button(self.frame_uploader, state=tk.DISABLED, style="Secondary.TButton", image=master.logo_add,
                                         text="New Experiment", command=add_experiment, cursor=CURSOR_HAND, compound='left')
-            self.new_exp_btn.place(relx = 0.95, rely = 0.75, relwidth=0.15, anchor = NE)
+            self.new_exp_btn.place(relx = 0.95, rely = 0.78, relwidth=0.15, anchor = NE)
             #############################################
 
             # Callback methods
@@ -3260,7 +3350,7 @@ class xnat_pic_gui():
                 # Disable main buttons
                 disable_buttons([self.prj_btn, self.sub_btn, self.exp_btn, self.file_btn])
                 enable_buttons([self.project_list, self.new_prj_btn, self.select_folder_button, self.add_file_btn, self.chkbtn_entire_prj])
-                working_text = 'Upload Project'
+                working_text = 'Upload Project from your PC...'
                 # Enable NEXT button only if all the requested fields are filled
                 def enable_next(*args):
                     if self.prj.get() != '--' and self.folder_to_upload.get() != '':
@@ -3274,7 +3364,7 @@ class xnat_pic_gui():
                 # Disable main buttons
                 disable_buttons([self.prj_btn, self.sub_btn, self.exp_btn, self.file_btn])
                 enable_buttons([self.project_list, self.new_prj_btn, self.select_folder_button, self.add_file_btn, self.chkbtn_entire_prj])
-                working_text = 'Upload Subject'
+                working_text = 'Upload Subject from your PC...'
                 # Enable NEXT button only if all the requested fields are filled
                 def enable_next(*args):
                     if self.prj.get() != '--' and self.folder_to_upload.get() != '':
@@ -3289,7 +3379,7 @@ class xnat_pic_gui():
                 disable_buttons([self.prj_btn, self.sub_btn, self.exp_btn, self.file_btn])
                 enable_buttons([self.project_list, self.new_prj_btn, self.select_folder_button,
                                 self.subject_list, self.new_sub_btn, self.add_file_btn, self.chkbtn_entire_prj])
-                working_text = 'Upload Experiment'
+                working_text = 'Upload Experiment from your PC...'
                 # Enable NEXT button only if all the requested fields are filled
                 def enable_next(*args):
                     if self.prj.get() != '--' and self.sub.get() != '--' and self.folder_to_upload.get() != '':
@@ -3305,7 +3395,7 @@ class xnat_pic_gui():
                 enable_buttons([self.project_list, self.new_prj_btn, self.select_folder_button,
                                 self.subject_list, self.new_sub_btn,
                                 self.experiment_list, self.new_exp_btn, self.add_file_btn, self.chkbtn_entire_prj])
-                working_text = 'Upload File'
+                working_text = 'Upload File from your PC...'
                 # Enable NEXT button only if all the requested fields are filled
                 def enable_next(*args):
                     if self.prj.get() != '--' and self.sub.get() != '--' and self.exp.get() != '--' and self.folder_to_upload.get() != '':
@@ -3316,8 +3406,16 @@ class xnat_pic_gui():
                 self.folder_to_upload.trace('w', enable_next)
             else:
                 pass
-            working_label = ttk.Label(self.frame_uploader, text=working_text, font = 'bold', anchor='center')
-            working_label.place(relx = 0.5, rely = 0.21, relwidth = 0.18, anchor = CENTER)
+            working_label = ttk.Label(self.frame_uploader, text=working_text, image = master.computer_icon, compound=tk.LEFT, font = 'bold', anchor='center')
+            working_label.place(relx = 0.5, rely = 0.21, relwidth = 0.3, anchor = CENTER)
+            working_label1 = ttk.Label(self.frame_uploader, text="...to XNAT", image = master.server_icon, compound=tk.RIGHT, font = 'bold', anchor='center')
+            working_label1.place(relx = 0.5, rely = 0.65, relwidth = 0.18, anchor = CENTER)
+
+            # working_label = ttk.Label(self.frame_uploader, text='PC', image = master.computer_icon, compound=tk.LEFT, font = 'bold', anchor='center')
+            # working_label.place(relx = 0.05, rely = 0.21, relwidth = 0.10, anchor = CENTER)
+            # working_label1 = ttk.Label(self.frame_uploader, text="XNAT", image = master.server_icon, compound=tk.LEFT, font = 'bold', anchor='center')
+            # working_label1.place(relx = 0.05, rely = 0.65, relwidth = 0.10, anchor = CENTER)
+
         def project_uploader(self, master):
 
             project_to_upload = self.folder_to_upload.get()
