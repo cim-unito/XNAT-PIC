@@ -220,17 +220,17 @@ class xnat_pic_gui():
             # Change font according to window size
             if self.width > int(2/3*self.my_width):
                 self.style.configure('TButton', font = LARGE_FONT)
-                self.style.configure('Title.TLabel', font = ("Inkfree", 36, "italic"))
+                self.style.configure('Title.TLabel', font = ("Helvetica", 36))
                 self.style.configure("MainTitle.TLabel", font = ("Helvetica", 36))
 
             elif self.width > int(self.my_width/3) and self.width < int(2/3*self.my_width):
                 self.style.configure('TButton', font = SMALL_FONT)
-                self.style.configure('Title.TLabel', font = ("Inkfree", 30, "italic"))
+                self.style.configure('Title.TLabel', font = ("Helvetica", 30))
                 self.style.configure("MainTitle.TLabel", font = ("Helvetica", 30))
             
             elif self.width < int(self.my_width/3):
                 self.style.configure('TButton', font = SMALL_FONT_2)
-                self.style.configure('Title.TLabel', font = ("Inkfree", 24, "italic"))
+                self.style.configure('Title.TLabel', font = ("Helvetica", 24))
                 self.style.configure("MainTitle.TLabel", font = ("Helvetica", 24))
             # Update the frame widget
             self.frame.update()
@@ -2785,9 +2785,13 @@ class xnat_pic_gui():
                         # # Check for the name of the previous tree
                         # If the folder name is changed, then delete the previous tree
                         self.tree.tree.delete(*self.tree.tree.get_children())
+                    # If the user wants to upload files, it is not necessary to see the complete tree of the project but only its folder
+                    # If the user wants to upload a project, it is not necessary to see the complete tree of the projec. You have the complete tree.
+                    if self.upload_type.get() == 0 or self.upload_type.get() == 3:
+                        self.chkvar_entire_prj.set(False)
                     if self.chkvar_entire_prj.get():
                         # Define the main folder into the Treeview object
-                        if self.upload_type.get() == 0 or self.upload_type.get() == 3:
+                        if self.upload_type.get() == 0:
                             self.working_folder = self.folder_to_upload.get()
                         elif self.upload_type.get() == 1:
                             self.working_folder = self.folder_to_upload.get().rsplit('/', 1)[0]
@@ -2857,7 +2861,7 @@ class xnat_pic_gui():
                     else:
                         # Treeview for the project or experiment
                         if self.upload_type.get() == 0 or self.upload_type.get() == 2:
-
+                            
                             self.working_folder = self.folder_to_upload.get()
                             # Scan the folder to get its tree
                             subdir = os.listdir(self.working_folder)
@@ -2932,7 +2936,7 @@ class xnat_pic_gui():
                             self.tree.set(dict_items)
                         # Treeview for the subject
                         if self.upload_type.get() == 1:
-
+                            
                             self.working_folder = self.folder_to_upload.get()
                             subdir = [str(self.folder_to_upload.get().rsplit('/', 1)[1])]
                             # Check for OS configuration files and remove them
@@ -2975,7 +2979,47 @@ class xnat_pic_gui():
                             text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'Yes'
                             dict_items['0']['values'] = ("Subject", text_CV_exp)
                             self.tree.set(dict_items)
-            
+                        # Treeview for the file
+                        if self.upload_type.get() == 3:
+                            
+                            self.working_folder = self.folder_to_upload.get()
+                            subdir = [str(self.folder_to_upload.get().rsplit('/', 1)[1])]
+                            # Check for OS configuration files and remove them
+                            subdirectories = [x for x in subdir if x.endswith('.ini') == False]
+                            # Scan the folder to get its tree
+                            subdir = os.listdir(self.working_folder)
+                            # Check for OS configuration files and remove them
+                            subdirectories = [x for x in subdir if x.endswith('.ini') == False]
+                        
+                            j = 0
+                            dict_items[str(j)] = {}
+                            dict_items[str(j)]['parent'] = ""
+                            dict_items[str(j)]['text'] = self.working_folder.split('/')[-1]
+                            j = 1
+                            for sub in subdirectories:
+                                list_CV_sub = []
+                                if os.path.isfile(os.path.join(self.working_folder, sub)):
+                                    # Add the item like a file
+                                    dict_items[str(j)] = {}
+                                    dict_items[str(j)]['parent'] = '0'
+                                    dict_items[str(j)]['text'] = sub
+                                    dict_items[str(j)]['values'] = ("File")
+                                    # Update the j counter
+                                    j += 1
+
+                                elif os.path.isdir(os.path.join(self.working_folder, sub)):
+                                    branch_idx = j
+                                    dict_items[str(j)] = {}
+                                    dict_items[str(j)]['parent'] = '0'
+                                    dict_items[str(j)]['text'] = sub
+                                    j += 1
+                                        
+                                    dict_items[str(branch_idx)]['values'] = ("Folder")
+
+                            # Update the fields of the parent object
+                            dict_items['0']['values'] = ("Folder")
+                            self.tree.set(dict_items)
+                        
             # Initialize the folder_to_upload path
             self.folder_to_upload = tk.StringVar()
             self.select_folder_button = ttk.Button(self.frame_uploader, text="Select folder", style="Secondary.TButton",
@@ -3510,7 +3554,7 @@ class xnat_pic_gui():
                                 self.uploader_file = FileUploader(self.session)
                                 progressbar.set_caption('Uploading files to ' + str(self.exp.get()) + ' ...')
                                 for sub_dir in os.listdir(exp):
-                                    if 'Results' in sub_dir:
+                                    if 'Results'.lower() in sub_dir.lower():
                                         vars = {}
                                         vars['project_id'] = self.prj.get()
                                         vars['subject_id'] = self.sub.get()
@@ -3621,7 +3665,7 @@ class xnat_pic_gui():
                             self.session.clearcache()
                             self.uploader_file = FileUploader(self.session)
                             for sub_dir in os.listdir(exp):
-                                if 'Results' in sub_dir:
+                                if 'Results'.lower() in sub_dir.lower():
                                     vars = {}
                                     vars['project_id'] = self.prj.get()
                                     vars['subject_id'] = self.sub.get()
@@ -3724,7 +3768,7 @@ class xnat_pic_gui():
                             self.session.clearcache()
                             self.uploader_file = FileUploader(self.session)
                             for sub_dir in os.listdir(experiment_to_upload):
-                                if 'Results' in sub_dir:
+                                if 'Results'.lower() in sub_dir.lower():
                                     vars = {}
                                     vars['project_id'] = self.prj.get()
                                     vars['subject_id'] = self.sub.get()

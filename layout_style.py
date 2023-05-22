@@ -28,7 +28,7 @@ BG_BTN_COLOR = "#E5EAF0"
 BG_LBL_COLOR = "black"
 DISABLE_LBL_COLOR = '#D3D3D3'
 MAIN_TITLE_FONT = ("Helvetica", 36)
-TITLE_FONT = ("Inkfree", 36, "italic")
+TITLE_FONT = ("Helvetica", 36, "underline")
 UNDERTITLE_FONT = ("Inkfree", 24, "italic")
 LARGE_FONT = ("Calibri", 22, "bold")
 SMALL_FONT = ("Calibri", 16, "bold")
@@ -67,7 +67,7 @@ class MyStyle():
 
         # Configure Labels
         self.style.configure("MainTitle.TLabel", font=MAIN_TITLE_FONT, foreground=theme_colors[self.style_name]["colors"]["primary"])
-        self.style.configure("Title.TLabel", background=theme_colors[self.style_name]["colors"]["bg"], foreground=theme_colors[self.style_name]["colors"]["info"], font=TITLE_FONT)
+        self.style.configure("Title.TLabel", background=theme_colors[self.style_name]["colors"]["bg"], foreground=theme_colors[self.style_name]["colors"]["primary"], font=TITLE_FONT)
         self.style.configure("Popup.TLabel", background=theme_colors[self.style_name]["colors"]["bg"], foreground=theme_colors[self.style_name]["colors"]["primary"], font=ATTACHED_FONT)
         self.style.configure("UnderTitle.TLabel", background=theme_colors[self.style_name]["colors"]["bg"], foreground="black", font=UNDERTITLE_FONT)
         self.style.configure("Error.TLabel", font=KEYWORD_FONT, foreground=theme_colors[self.style_name]["colors"]["danger"])
