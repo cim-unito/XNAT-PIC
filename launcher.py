@@ -2843,13 +2843,17 @@ class xnat_pic_gui():
 
                                     elif os.path.isdir(os.path.join(self.working_folder, sub, sub2)):
                                         tmp_exp_path = os.path.join(self.working_folder, sub, sub2)
-                                        CV_exist_exp =  glob(tmp_exp_path + '/**/*custom_variables.txt', recursive=False)
-                                        text_CV_exp = 'No' if CV_exist_exp == [] else 'Yes'
-                                        list_CV_sub.append(text_CV_exp)
+                                        if glob(tmp_exp_path + "/**/**/*.dcm", recursive=False) == []:
+                                            val_exp_1 = "Folder"
+                                        else:
+                                            CV_exist_exp =  glob(tmp_exp_path + '/**/*custom_variables.txt', recursive=False)
+                                            text_CV_exp = 'No' if CV_exist_exp == [] else 'Yes'
+                                            list_CV_sub.append(text_CV_exp)
+                                            val_exp_1 = "Experiment"
                                         dict_items[str(j)] = {}
                                         dict_items[str(j)]['parent'] = '1'
                                         dict_items[str(j)]['text'] = sub2
-                                        dict_items[str(j)]['values'] = ("Experiment")
+                                        dict_items[str(j)]['values'] = (val_exp_1)
                                         j += 1
 
                                 text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'Yes'
@@ -2910,12 +2914,19 @@ class xnat_pic_gui():
                                             dict_items[str(j)]['text'] = sub2
                                             if self.upload_type.get() == 0:
                                                 tmp_exp_path = os.path.join(self.working_folder, sub, sub2)
-                                                CV_exist_exp =  glob(tmp_exp_path + '/**/*custom_variables.txt', recursive=False)
-                                                text_CV_exp = 'No' if CV_exist_exp == [] else 'Yes'
-                                                list_CV_sub.append(text_CV_exp)
-                                                dict_items[str(j)]['values'] = ("Experiment")
+                                                if glob(tmp_exp_path + "/**/**/*.dcm", recursive=False) == []:
+                                                    dict_items[str(j)]['values'] = ("Folder")
+                                                else:
+                                                    CV_exist_exp =  glob(tmp_exp_path + '/**/*custom_variables.txt', recursive=False)
+                                                    text_CV_exp = 'No' if CV_exist_exp == [] else 'Yes'
+                                                    list_CV_sub.append(text_CV_exp)
+                                                    dict_items[str(j)]['values'] = ("Experiment")
                                             elif self.upload_type.get() == 2:
-                                                dict_items[str(j)]['values'] = ("Scan")
+                                                tmp_exp_path1 = os.path.join(self.working_folder, sub, sub2)
+                                                if glob(tmp_exp_path1 + "/*.dcm", recursive=False) == []:
+                                                    dict_items[str(j)]['values'] = ("Folder")
+                                                else:
+                                                    dict_items[str(j)]['values'] = ("Scan")
                                             j += 1
                                     if self.upload_type.get() == 0:    
                                         text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'Yes'
@@ -2964,16 +2975,20 @@ class xnat_pic_gui():
 
                                 elif os.path.isdir(os.path.join(self.working_folder, sub)):
                                     tmp_exp_path = os.path.join(self.working_folder, sub)
-                                    CV_exist_exp =  glob(tmp_exp_path + '/**/*custom_variables.txt', recursive=False)
-                                    text_CV_exp = 'No' if CV_exist_exp == [] else 'Yes'
-                                    list_CV_sub.append(text_CV_exp)
+                                    if glob(tmp_exp_path + "/**/**/*.dcm", recursive=False) == []:
+                                        val_exp = "Folder"
+                                    else:
+                                        CV_exist_exp =  glob(tmp_exp_path + '/**/*custom_variables.txt', recursive=False)
+                                        text_CV_exp = 'No' if CV_exist_exp == [] else 'Yes'
+                                        list_CV_sub.append(text_CV_exp)
+                                        val_exp = "Experiment"
                                     branch_idx = j
                                     dict_items[str(j)] = {}
                                     dict_items[str(j)]['parent'] = '0'
                                     dict_items[str(j)]['text'] = sub
                                     j += 1
                                         
-                                    dict_items[str(branch_idx)]['values'] = ("Experiment")
+                                    dict_items[str(branch_idx)]['values'] = (val_exp)
 
                             # Update the fields of the parent object
                             text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'Yes'
