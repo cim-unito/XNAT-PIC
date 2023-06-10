@@ -1439,7 +1439,7 @@ class xnat_pic_gui():
             self.timepoint_menu1.grid(row=1, column=4, padx = 5, pady = 5, sticky=W)
 
             # Dose
-            OPTIONS2 = ["mg/kg"]
+            OPTIONS2 = ["g/kg"]
             self.selected_dose = tk.StringVar()
             self.dose_menu = ttk.Combobox(self.frame_CV, takefocus = 0, textvariable=self.selected_dose, width=10)
             self.dose_menu['values'] = OPTIONS2
@@ -1966,7 +1966,7 @@ class xnat_pic_gui():
                 if self.entries_value_CV[2].get():
                     try:
                         dose = str(self.entries_value_CV[2].get())
-                        value_dose = dose.replace(' mg/kg','')
+                        value_dose = dose.replace(' g/kg','')
                         float(value_dose)
                     except Exception as e:
                         messagebox.showerror("XNAT-PIC", 'Insert a number in dose')
@@ -2034,7 +2034,7 @@ class xnat_pic_gui():
             if  self.entries_value_CV[2].get():
                 try:
                     # Check if the entry is a number
-                    dose_value = self.entries_value_CV[2].get().replace(' mg/kg',"")
+                    dose_value = self.entries_value_CV[2].get().replace(' g/kg',"")
                     float(dose_value)
                 except Exception as e: 
                     raise Exception ("Insert a number in dose")
@@ -2960,7 +2960,7 @@ class xnat_pic_gui():
                                         dict_items[str(j)]['values'] = (val_exp_1)
                                         j += 1
 
-                                text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'Yes'
+                                text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'No'
                                 dict_items[str(branch_idx)]['values'] = ("Subject", text_CV_exp)
 
                         # Update the fields of the parent object
@@ -2981,6 +2981,7 @@ class xnat_pic_gui():
                             dict_items[str(j)]['parent'] = ""
                             dict_items[str(j)]['text'] = self.working_folder.split('/')[-1]
                             j = 1
+                            list_CV_sub = []
                             for sub in subdirectories:
                                 
                                 if os.path.isfile(os.path.join(self.working_folder, sub)):
@@ -3001,8 +3002,8 @@ class xnat_pic_gui():
                                     # Scansiona le directory interne per ottenere il tree CHIUSO
                                     sub_level2 = os.listdir(os.path.join(self.working_folder, sub))
                                     subdirectories2 = [x for x in sub_level2 if x.endswith('.ini') == False]
+                                    list_CV_sub = []
                                     for sub2 in subdirectories2:
-                                        list_CV_sub = []
                                         if os.path.isfile(os.path.join(self.working_folder, sub, sub2)):
                                             # Add the item like a file
                                             dict_items[str(j)] = {}
@@ -3033,8 +3034,9 @@ class xnat_pic_gui():
                                                     dict_items[str(j)]['values'] = ("Scan")
                                             j += 1
                                     if self.upload_type.get() == 0:    
-                                        text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'Yes'
+                                        text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'No'
                                         dict_items[str(branch_idx)]['values'] = ("Subject", text_CV_exp)
+                                        list_CV_sub = []
                                     elif self.upload_type.get() == 2:    
                                         dict_items[str(branch_idx)]['values'] = ("Imaging-Technique")
 
@@ -3095,7 +3097,7 @@ class xnat_pic_gui():
                                     dict_items[str(branch_idx)]['values'] = (val_exp)
 
                             # Update the fields of the parent object
-                            text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'Yes'
+                            text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'No'
                             dict_items['0']['values'] = ("Subject", text_CV_exp)
                             self.tree.set(dict_items)
                         # Treeview for the file
@@ -3230,11 +3232,11 @@ class xnat_pic_gui():
                         if str(self.type_folder) == 'Subject':
                             my_string_var.set("Subject Level")
                             list_of_files = glob(self.selected_item_path.get() + '/**/**/*custom_variables.txt', recursive=False)
-                            no_keys = ['Project', 'Subject', 'Experiment', 'Acquisition_date', 'SubjectsCV', 'SessionsCV', 'SessionsGroup', 'SessionsTimepoint', 'SessionsDose', 'SessionsB0']
+                            no_keys = ['Project', 'Subject', 'Experiment', 'Acquisition_date', 'SubjectsCV', 'SessionsCV', 'SessionsGroup', 'SessionsTimepoint', 'SessionsDose', 'SessionsB0', 'SessionsMagneticField']
                         elif str(self.type_folder) == 'Experiment':
                             my_string_var.set("Experiment Level")
                             list_of_files = glob(self.selected_item_path.get() + '/**/*custom_variables.txt', recursive=False)
-                            no_keys = ['Project', 'Subject', 'Experiment', 'Acquisition_date', 'SubjectsCV', 'SessionsCV', 'SubjectsGroup', 'SubjectsTimepoint', 'SubjectsDose', 'SubjectsB0']
+                            no_keys = ['Project', 'Subject', 'Experiment', 'Acquisition_date', 'SubjectsCV', 'SessionsCV', 'SubjectsGroup', 'SubjectsTimepoint', 'SubjectsDose', 'SubjectsB0', 'SubjectsMagneticField']
                         else: 
                             my_string_var.set("Custom Variables")
                             return
@@ -3251,9 +3253,9 @@ class xnat_pic_gui():
                                 "SubjectsCV": "",
                                 "SessionsCV": ""}
                         if str(self.type_folder) == 'Subject':
-                            custom_vars = [("SubjectsGroup", ""), ("SubjectsTimepoint", ""), ("SubjectsDose", ""), ("SubjectsB0", "")]
+                            custom_vars = [("SubjectsGroup", ""), ("SubjectsTimepoint", ""), ("SubjectsDose", ""), ("SubjectsMagneticField", "")]
                         elif str(self.type_folder) == 'Experiment':
-                            custom_vars = [("SessionsGroup", ""), ("SessionsTimepoint", ""), ("SessionsDose", ""), ("SessionsDose", "")]
+                            custom_vars = [("SessionsGroup", ""), ("SessionsTimepoint", ""), ("SessionsDose", ""), ("SessionsB0", ""), ("SessionsMagneticField", "")]
                         custom_file = [os.path.join(self.selected_item_path.get(), 'MR', self.selected_item_path.get().split('/')[-1] + "_Custom_Variables.txt")]
                     label_list = []
                     entry_list = []
@@ -3849,19 +3851,13 @@ class xnat_pic_gui():
                                                                                                                         and 'Custom' in f]
                         subject_data = read_table(text_file[0])
                         
-                        # Define the subject_id and the experiment_id
+                        # Define the subject_id and the experiment_id if the custom variables file is not available
                         if self.sub.get() == '--':
-                            self.sub.set(subject_data['Subject'])
-                        if self.sub.get() != subject_data['Subject']:
-                            ans = messagebox.askyesno("XNAT-PIC Experiment Uploader", 
-                                                    "The subject you are trying to retrieve does not match with the custom variables."
-                                                    "\n Would you like to continue?")
-                            if ans != True:
-                                return
+                            self.sub.set(experiment_to_upload.split('/')[-2].replace('.','_'))
                         params['subject_id'] = self.sub.get()
                         if self.exp.get() == '--':
-                            self.exp.set('_'.join([subject_data['Project'], subject_data['Subject'], subject_data['Experiment'],
-                                                    subject_data['SessionsGroup'], subject_data['SessionsTimepoint']]).replace(' ', '_'))
+                            self.exp.set('_'.join([experiment_to_upload.split('/')[-3].replace('_dcm', ''), 
+                                                    experiment_to_upload.split('/')[-2].replace('.','_')]).replace(' ', '_'))
                         params['experiment_id'] = self.exp.get()
                         for var in subject_data.keys():
                             if var not in ['Project', 'Subject', 'Experiment', 'Acquisition_date']:
