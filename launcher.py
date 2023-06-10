@@ -2304,7 +2304,7 @@ class xnat_pic_gui():
                 for text, var in zip(self.todos, self.sub_flag):
                     if var.get():
                         try:
-                            self.save_entries(self.selected_folder, multiple=0, sub_name = text)
+                            self.save_entries(self.selected_folder, multiple=1, sub_name = text)
                         except Exception as e: 
                             messagebox.showerror("XNAT-PIC", "Error in saving" + str(e))  
                             raise
