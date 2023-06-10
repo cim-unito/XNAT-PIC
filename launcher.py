@@ -3535,21 +3535,30 @@ class xnat_pic_gui():
                                 subject_data = {k: v or '' for (k, v) in subject_data1.items()}
                                 # Define the subject_id and the experiment_id
                                 # Controllo su stringa vuota
-                                self.sub.set(subject_data['Subject'])
-                                if self.sub.get() != subject_data['Subject']:
-                                    ans = messagebox.askyesno("XNAT-PIC Experiment Uploader", 
-                                                            "The subject you are trying to retrieve does not match with the custom variables."
-                                                            "\n Would you like to continue?")
-                                    if ans != True:
-                                        return
+                                # self.sub.set(subject_data['Subject'])
+                                # if self.sub.get() != subject_data['Subject']:
+                                #     ans = messagebox.askyesno("XNAT-PIC Experiment Uploader", 
+                                #                             "The subject you are trying to retrieve does not match with the custom variables."
+                                #                             "\n Would you like to continue?")
+                                #     if ans != True:
+                                #         return
+                                # params['subject_id'] = self.sub.get()
+                                # self.exp.set('_'.join([subject_data['Project'], subject_data['Subject'], subject_data['Experiment'],
+                                #                         subject_data['SessionsGroup'], subject_data['SessionsTimepoint']]).replace(' ', '_'))
+                                # params['experiment_id'] = self.exp.get()
+                                # for var in subject_data.keys():
+                                #     if var not in ['Project', 'Subject', 'Experiment', 'Acquisition_date']:
+                                #         params[var] = subject_data[var]
+                                                                
+                                # Define the subject_id and the experiment_id if the custom variables file is not available
+                                self.sub.set(exp.split('/')[-3].replace('.','_'))
                                 params['subject_id'] = self.sub.get()
-                                self.exp.set('_'.join([subject_data['Project'], subject_data['Subject'], subject_data['Experiment'],
-                                                        subject_data['SessionsGroup'], subject_data['SessionsTimepoint']]).replace(' ', '_'))
+                                self.exp.set('_'.join([exp.split('/')[-4].replace('_dcm', ''), exp.split('/')[-3].replace('.', '_'),
+                                                             exp.split('/')[-2].replace('.', '_')]).replace(' ', '_'))
                                 params['experiment_id'] = self.exp.get()
                                 for var in subject_data.keys():
                                     if var not in ['Project', 'Subject', 'Experiment', 'Acquisition_date']:
                                         params[var] = subject_data[var]
-                                
                                 
                             except Exception as e:
                                 print(e)

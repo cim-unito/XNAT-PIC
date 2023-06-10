@@ -14,7 +14,33 @@ Adapted from Matteo Caffini
 """
 import re
 import numpy as np
-from datetime import datetime
+import datetime
+
+month_mapping = {
+        'January': 1,
+        'Jan': 1,
+        'February': 2,
+        'Feb': 2,
+        'March': 3,
+        'Mar': 3,
+        'April': 4,
+        'Apr': 4,
+        'May': 5,
+        'June': 6,
+        'Jun': 6,
+        'July': 7,
+        'Jul': 7,
+        'August': 8,
+        'Aug': 8,
+        'September': 9,
+        'Sep': 9,
+        'October': 10,
+        'Oct': 10,
+        'November': 11,
+        'Nov': 11,
+        'December': 12,
+        'December': 12
+        }
 
 
 def read_visupars_parameters(filename):
@@ -95,8 +121,9 @@ def read_visupars_parameters(filename):
                     second_part[i].replace(">", "") for i in range(len(second_part))
                 ]
                 if ":" in second_part[0]:
+                    second_part[2] = str(month_mapping.get(second_part[2]))
                     datestring = " ".join(second_part)
-                    second_part = datetime.strptime(datestring, "%H:%M:%S %d %b %Y")
+                    second_part = datetime.datetime.strptime(datestring, "%H:%M:%S %d %m %Y")
                 else:
                     pass
                 try:
