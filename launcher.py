@@ -2640,7 +2640,7 @@ class xnat_pic_gui():
                     self.entries_value_CV[2].delete(0, tk.END)
                     self.entries_value_CV[2]['state'] = state
             self.confirm_metadata()
-            
+
         ##################### Add Custom Variable #################
         def add_custom_variable(self, master):
             # Check before editing the data
@@ -3230,11 +3230,11 @@ class xnat_pic_gui():
                         if str(self.type_folder) == 'Subject':
                             my_string_var.set("Subject Level")
                             list_of_files = glob(self.selected_item_path.get() + '/**/**/*custom_variables.txt', recursive=False)
-                            no_keys = ['Project', 'Subject', 'Experiment', 'Acquisition_date', 'SubjectsCV', 'SessionsCV', 'SessionsGroup', 'SessionsTimepoint', 'SessionsDose']
+                            no_keys = ['Project', 'Subject', 'Experiment', 'Acquisition_date', 'SubjectsCV', 'SessionsCV', 'SessionsGroup', 'SessionsTimepoint', 'SessionsDose', 'SessionsB0']
                         elif str(self.type_folder) == 'Experiment':
                             my_string_var.set("Experiment Level")
                             list_of_files = glob(self.selected_item_path.get() + '/**/*custom_variables.txt', recursive=False)
-                            no_keys = ['Project', 'Subject', 'Experiment', 'Acquisition_date', 'SubjectsCV', 'SessionsCV', 'SubjectsGroup', 'SubjectsTimepoint', 'SubjectsDose']
+                            no_keys = ['Project', 'Subject', 'Experiment', 'Acquisition_date', 'SubjectsCV', 'SessionsCV', 'SubjectsGroup', 'SubjectsTimepoint', 'SubjectsDose', 'SubjectsB0']
                         else: 
                             my_string_var.set("Custom Variables")
                             return
@@ -3251,9 +3251,9 @@ class xnat_pic_gui():
                                 "SubjectsCV": "",
                                 "SessionsCV": ""}
                         if str(self.type_folder) == 'Subject':
-                            custom_vars = [("SubjectsGroup", ""), ("SubjectsTimepoint", ""), ("SubjectsDose", "")]
+                            custom_vars = [("SubjectsGroup", ""), ("SubjectsTimepoint", ""), ("SubjectsDose", ""), ("SubjectsB0", "")]
                         elif str(self.type_folder) == 'Experiment':
-                            custom_vars = [("SessionsGroup", ""), ("SessionsTimepoint", ""), ("SessionsDose", "")]
+                            custom_vars = [("SessionsGroup", ""), ("SessionsTimepoint", ""), ("SessionsDose", ""), ("SessionsDose", "")]
                         custom_file = [os.path.join(self.selected_item_path.get(), 'MR', self.selected_item_path.get().split('/')[-1] + "_Custom_Variables.txt")]
                     label_list = []
                     entry_list = []
@@ -3756,17 +3756,10 @@ class xnat_pic_gui():
                         
                         # Define the subject_id and the experiment_id
                         if self.sub.get() == '--':
-                            self.sub.set(subject_data['Subject'])
-                        if self.sub.get() != subject_data['Subject']:
-                            ans = messagebox.askyesno("XNAT-PIC Experiment Uploader", 
-                                                    "The subject you are trying to retrieve does not match with the custom variables."
-                                                    "\n Would you like to continue?")
-                            if ans != True:
-                                return
+                            self.sub.set(exp.split('/')[-2].replace('.','_'))
                         params['subject_id'] = self.sub.get()
                         if self.exp.get() == '--':
-                            self.exp.set('_'.join([subject_data['Project'], subject_data['Subject'], subject_data['Experiment'],
-                                                    subject_data['SessionsGroup'], subject_data['SessionsTimepoint']]).replace(' ', '_'))
+                            self.exp.set('_'.join([exp.split('/')[-3].replace('_dcm',''), exp.split('/')[-2].replace('.','_')]).replace(' ', '_'))
                         params['experiment_id'] = self.exp.get()
                         for var in subject_data.keys():
                             if var not in ['Project', 'Subject', 'Experiment', 'Acquisition_date']:
