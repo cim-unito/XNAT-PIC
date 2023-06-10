@@ -1227,6 +1227,8 @@ class xnat_pic_gui():
             modify_ID_menu.add_command(label="Acquisition Date", compound='left', command = lambda: self.modify_ID_metadata(master, flag_ID='Acquisition Date'))
             file_menu.add_cascade(label="Modify Name ID", image = master.logo_edit, compound='left', menu=modify_ID_menu)
             file_menu.add_separator()
+            file_menu.add_command(label="Add Custom Variable", image = master.logo_add, compound='left', command = lambda: self.add_custom_variable(master))
+            file_menu.add_separator()
             clear_menu.add_command(label="Group", compound='left', command = lambda: self.clear_metadata(flag='Group'))
             clear_menu.add_command(label="Timepoint", compound='left', command = lambda: self.clear_metadata(flag='Timepoint'))
             clear_menu.add_command(label="Dose", compound='left', command = lambda: self.clear_metadata(flag='Dose'))
@@ -1748,13 +1750,26 @@ class xnat_pic_gui():
                     tmp_dict = self.results_dict[self.selected_folder]
 
                     # Split the dictionary into ID and CV
-                    complete_list = [list(group) for key, group in itertools.groupby(tmp_dict, lambda x: x == "SubjectsCV" or x == "SessionsCV") if not key]
-                    dict_ID = {'Folder' : self.selected_folder}
-                    dict_ID.update({k: v for k, v in tmp_dict.items() if k in complete_list[0]})
+                    substring1 = 'Subjects'
+                    substring2 = 'Sessions'
+
+                    group_sub = {}
+                    group_ses = {}
+                    group_ID = {'Folder' : self.selected_folder}
+
+                    for key, value in tmp_dict.items():
+                        if substring1 in key and str(key) != 'SubjectsCV':
+                            group_sub[key] = value
+                        elif substring2 in key and str(key) != 'SessionsCV':
+                            group_ses[key] = value
+                        elif str(key) != 'SubjectsCV' and str(key) != 'SessionsCV':
+                            group_ID[key] = value
+
+                    dict_ID = group_ID
                     if str(self.level_CV.get()) == "Subjects":
-                        dict_CV =  {k: v for k, v in tmp_dict.items() if k in complete_list[1]}
+                        dict_CV =  group_sub
                     elif str(self.level_CV.get()) == "Sessions":
-                        dict_CV =  {k: v for k, v in tmp_dict.items() if k in complete_list[2]}
+                        dict_CV =  group_ses
                     
                     #################################################################                   
                     # ID: Modify the values ​​of the entries with the values ​​of the selected experiment
@@ -1839,13 +1854,26 @@ class xnat_pic_gui():
                     tmp_dict = self.results_dict[self.selected_folder]
 
                     # Split the dictionary into ID and CV
-                    complete_list = [list(group) for key, group in itertools.groupby(tmp_dict, lambda x: x == "SubjectsCV" or x == "SessionsCV") if not key]
-                    dict_ID = {'Folder' : self.selected_folder}
-                    dict_ID.update({k: v for k, v in tmp_dict.items() if k in complete_list[0]})
+                    substring1 = 'Subjects'
+                    substring2 = 'Sessions'
+
+                    group_sub = {}
+                    group_ses = {}
+                    group_ID = {'Folder' : self.selected_folder}
+
+                    for key, value in tmp_dict.items():
+                        if substring1 in key and str(key) != 'SubjectsCV':
+                            group_sub[key] = value
+                        elif substring2 in key and str(key) != 'SessionsCV':
+                            group_ses[key] = value
+                        elif str(key) != 'SubjectsCV' and str(key) != 'SessionsCV':
+                            group_ID[key] = value
+
+                    dict_ID = group_ID
                     if str(self.level_CV.get()) == "Subjects":
-                        dict_CV =  {k: v for k, v in tmp_dict.items() if k in complete_list[1]}
+                        dict_CV =   group_sub
                     elif str(self.level_CV.get()) == "Sessions":
-                        dict_CV =  {k: v for k, v in tmp_dict.items() if k in complete_list[2]}
+                        dict_CV =  group_ses
                     
                     #################################################################
                     # Modify the values ​​of the entries with the values ​​of the selected experiment
@@ -2254,9 +2282,27 @@ class xnat_pic_gui():
             # Select the subjects to copy the custom variables to
             self.popup_subject_frame = ttk.LabelFrame(self.popup_subject, text="Custom Variables", style="Popup.TLabelframe")
             self.popup_subject_frame.grid(row=1, column=0, padx=10, pady=5, sticky=tk.E+tk.W+tk.N+tk.S, columnspan=2)
+            self.canvas_sub = tk.Canvas(self.popup_subject_frame)
+            self.frame_sub = tk.Frame(self.canvas_sub)
 
+            # Scrollbar
+            self.vsb_sub = ttk.Scrollbar(self.popup_subject_frame, orient="vertical", command=self.canvas_sub.yview)
+            self.canvas_sub.configure(yscrollcommand=self.vsb_sub.set)  
+            self.hsb_sub = ttk.Scrollbar(self.popup_subject_frame, orient="horizontal", command=self.canvas_sub.xview)
+            self.canvas_sub.configure(xscrollcommand=self.hsb_sub.set)
+
+            self.vsb_sub.pack(side="right", fill="y")     
+            self.hsb_sub.pack(side="bottom", fill="x")
+            self.canvas_sub.pack(side = LEFT, fill = BOTH, expand = 1)
+            self.canvas_sub.create_window((0,0), window=self.frame_sub, anchor="nw")
+
+            # Be sure that we call OnFrameConfigure on the right canvas
+            self.frame_sub.bind("<Configure>", lambda event, canvas=self.canvas_sub: OnFrameConfigure(canvas))
+
+            def OnFrameConfigure(canvas):
+                    canvas.configure(scrollregion=canvas.bbox("all"))
             # Label     
-            self.popup_subject.label = ttk.Label(self.popup_subject_frame, text="Select the subjects to copy the custom variables to:")  
+            self.popup_subject.label = ttk.Label(self.frame_sub, text="Select the subjects to copy the custom variables to:")  
             self.popup_subject.label.grid(row=1, column=0, padx=10, pady=10, sticky=tk.W)
 
             # List of subjects
@@ -2266,11 +2312,11 @@ class xnat_pic_gui():
             for key in self.todos:
                 # Variable
                 self.sub_flag.append(BooleanVar(value=False))
-                ttk.Checkbutton(self.popup_subject_frame, variable=self.sub_flag[count-2], 
+                ttk.Checkbutton(self.frame_sub, variable=self.sub_flag[count-2], 
                                 text=key, cursor=CURSOR_HAND).grid(row=count, column=0, padx = 5, pady = 5, sticky=W)
                 if str(key) == self.tab_name:
                     self.sub_flag[-1].set(True)
-                    ttk.Checkbutton(self.popup_subject_frame, variable=self.sub_flag[count-2], 
+                    ttk.Checkbutton(self.frame_sub, variable=self.sub_flag[count-2], 
                                 text=key, state=tk.DISABLED,cursor=CURSOR_HAND).grid(row=count, column=0, padx = 5, pady = 5, sticky=W)
                     
                 count += 1
@@ -2594,6 +2640,64 @@ class xnat_pic_gui():
                     self.entries_value_CV[2].delete(0, tk.END)
                     self.entries_value_CV[2]['state'] = state
             self.confirm_metadata()
+            
+        ##################### Add Custom Variable #################
+        def add_custom_variable(self, master):
+            # Check before editing the data
+            if not self.entries_value_ID[0].get():
+                messagebox.showerror("XNAT-PIC", "Select a folder")
+                return 
+            # Disable btns
+            disable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn])
+            # I get number of next free row
+            next_row = len(self.entries_variable_CV)
+
+            # Add entry variable CV
+            ent_variable = ttk.Entry(self.frame_CV, takefocus = 0, width=15)
+            ent_variable.grid(row=next_row, column=0, padx = 5, pady = 5, sticky=W)
+            self.entries_variable_CV.append(ent_variable)                 
+
+            # Add entry value in second col
+            ent_value = ttk.Entry(self.frame_CV, takefocus = 0, width=25)
+            ent_value.grid(row=next_row, column=1, padx = 5, pady = 5, sticky=W)
+            self.entries_value_CV.append(ent_value)
+
+            # Confirm
+            def confirm_CV(next_row):
+                if self.entries_variable_CV[next_row].get():
+                    if self.entries_value_CV[next_row].get():
+                        value_CV = self.entries_value_CV[next_row].get()
+                    else:
+                        value_CV = ''
+                    tmp_CV = {self.entries_variable_CV[next_row].get() : value_CV}
+                    try:
+                        self.save_entries(self.selected_folder, multiple=0, sub_name = self.tab_name)
+                    except Exception as e: 
+                        messagebox.showerror("XNAT-PIC", "Error in saving: " + str(e))  
+                        raise  
+                    state = self.entries_value_ID[1]['state']    
+                    self.entries_variable_CV[next_row]['state'] = tk.DISABLED
+                    self.entries_value_CV[next_row]['state'] = state
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn])
+                    btn_confirm_CV.destroy()
+                    btn_reject_CV.destroy()
+                else:
+                    messagebox.showerror("XNAT-PIC", "Insert Custom Variable")
+
+            btn_confirm_CV = ttk.Button(self.frame_CV, image = master.logo_accept, 
+                                            command=lambda: confirm_CV(next_row), cursor=CURSOR_HAND)
+            btn_confirm_CV.grid(row=next_row, column=2, padx = 5, pady = 5, sticky=tk.NW)
+
+            # Delete
+            def reject_CV(next_row):
+                self.entries_variable_CV[next_row].destroy()
+                self.entries_value_CV[next_row].destroy()
+                enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn])
+                btn_confirm_CV.destroy()
+                btn_reject_CV.destroy()
+            btn_reject_CV = ttk.Button(self.frame_CV, image = master.logo_delete, 
+                                            command=lambda: reject_CV(next_row), cursor=CURSOR_HAND)
+            btn_reject_CV.grid(row=next_row, column=2, padx = 5, pady = 5, sticky=tk.NE)
         # #################### Save all the metadata ####################
         def save_metadata(self):
             # Check before editing the data
