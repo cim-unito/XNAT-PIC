@@ -2254,9 +2254,29 @@ class xnat_pic_gui():
             # Select the subjects to copy the custom variables to
             self.popup_subject_frame = ttk.LabelFrame(self.popup_subject, text="Custom Variables", style="Popup.TLabelframe")
             self.popup_subject_frame.grid(row=1, column=0, padx=10, pady=5, sticky=tk.E+tk.W+tk.N+tk.S, columnspan=2)
+            
+            self.canvas_sub = tk.Canvas(self.popup_subject_frame)
+            self.frame_sub = tk.Frame(self.canvas_sub)
 
+            # Scrollbar
+            self.vsb_sub = ttk.Scrollbar(self.popup_subject_frame, orient="vertical", command=self.canvas_sub.yview)
+            self.canvas_sub.configure(yscrollcommand=self.vsb_sub.set)  
+            self.hsb_sub = ttk.Scrollbar(self.popup_subject_frame, orient="horizontal", command=self.canvas_sub.xview)
+            self.canvas_sub.configure(xscrollcommand=self.hsb_sub.set)
+
+            self.vsb_sub.pack(side="right", fill="y")     
+            self.hsb_sub.pack(side="bottom", fill="x")
+            self.canvas_sub.pack(side = LEFT, fill = BOTH, expand = 1)
+            self.canvas_sub.create_window((0,0), window=self.frame_sub, anchor="nw")
+
+            # Be sure that we call OnFrameConfigure on the right canvas
+            self.frame_sub.bind("<Configure>", lambda event, canvas=self.canvas_sub: OnFrameConfigure(canvas))
+
+            def OnFrameConfigure(canvas):
+                    canvas.configure(scrollregion=canvas.bbox("all"))
+                                     
             # Label     
-            self.popup_subject.label = ttk.Label(self.popup_subject_frame, text="Select the subjects to copy the custom variables to:")  
+            self.popup_subject.label = ttk.Label(self.frame_sub, text="Select the subjects to copy the custom variables to:")  
             self.popup_subject.label.grid(row=1, column=0, padx=10, pady=10, sticky=tk.W)
 
             # List of subjects
@@ -2266,11 +2286,11 @@ class xnat_pic_gui():
             for key in self.todos:
                 # Variable
                 self.sub_flag.append(BooleanVar(value=False))
-                ttk.Checkbutton(self.popup_subject_frame, variable=self.sub_flag[count-2], 
+                ttk.Checkbutton(self.frame_sub, variable=self.sub_flag[count-2], 
                                 text=key, cursor=CURSOR_HAND).grid(row=count, column=0, padx = 5, pady = 5, sticky=W)
                 if str(key) == self.tab_name:
                     self.sub_flag[-1].set(True)
-                    ttk.Checkbutton(self.popup_subject_frame, variable=self.sub_flag[count-2], 
+                    ttk.Checkbutton(self.frame_sub, variable=self.sub_flag[count-2], 
                                 text=key, state=tk.DISABLED,cursor=CURSOR_HAND).grid(row=count, column=0, padx = 5, pady = 5, sticky=W)
                     
                 count += 1
@@ -2856,7 +2876,7 @@ class xnat_pic_gui():
                                         dict_items[str(j)]['values'] = (val_exp_1)
                                         j += 1
 
-                                text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'Yes'
+                                text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'No'
                                 dict_items[str(branch_idx)]['values'] = ("Subject", text_CV_exp)
 
                         # Update the fields of the parent object
@@ -2929,7 +2949,7 @@ class xnat_pic_gui():
                                                     dict_items[str(j)]['values'] = ("Scan")
                                             j += 1
                                     if self.upload_type.get() == 0:    
-                                        text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'Yes'
+                                        text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'No'
                                         dict_items[str(branch_idx)]['values'] = ("Subject", text_CV_exp)
                                     elif self.upload_type.get() == 2:    
                                         dict_items[str(branch_idx)]['values'] = ("Imaging-Technique")
@@ -2991,7 +3011,7 @@ class xnat_pic_gui():
                                     dict_items[str(branch_idx)]['values'] = (val_exp)
 
                             # Update the fields of the parent object
-                            text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'Yes'
+                            text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'No'
                             dict_items['0']['values'] = ("Subject", text_CV_exp)
                             self.tree.set(dict_items)
                         # Treeview for the file
