@@ -304,7 +304,7 @@ class xnat_pic_gui():
         Hovertip(self.convert_btn,'Convert images from Bruker ParaVision format to DICOM standard')
         
         # Fill in the info
-        self.info_btn = ttk.Button(self.frame, text="Edit Custom Variables", 
+        self.info_btn = ttk.Button(self.frame, text="Edit Custom Forms", 
                                     command=partial(self.metadata, self), cursor=CURSOR_HAND)
         self.info_btn.place(relx=0.6, rely=0.6, anchor=tk.CENTER, relwidth=0.21)
         Hovertip(self.info_btn,'Fill information regarding group, timepoint, etc.')
@@ -450,19 +450,19 @@ class xnat_pic_gui():
 
                 # Check if the selected folder is related to the right convertion flag
                 if self.conv_flag.get() == 0:
-                    if glob(self.folder_to_convert.get() + '/**/**/**/**/**/2dseq', recursive=False) == []:
+                    if glob(self.folder_to_convert.get() + '//**//**//**//**//**//2dseq', recursive=False) == []:
                         messagebox.showerror("XNAT-PIC Converter", "The selected folder is not project related.\nPlease select an other directory.")
                         disable_buttons([self.next_btn])
                         clear_tree()
                         return
                 elif self.conv_flag.get() == 1:
-                    if glob(self.folder_to_convert.get() + '/**/**/**/**/2dseq', recursive=False) == []:
+                    if glob(self.folder_to_convert.get() + '//**//**//**//**//2dseq', recursive=False) == []:
                         messagebox.showerror("XNAT-PIC Converter", "The selected folder is not subject related.\nPlease select an other directory.")
                         disable_buttons([self.next_btn])
                         clear_tree()
                         return
                 elif self.conv_flag.get() == 2:
-                    if glob(self.folder_to_convert.get() + '/**/**/**/2dseq', recursive=False) == []:
+                    if glob(self.folder_to_convert.get() + '//**//**//**//2dseq', recursive=False) == []:
                         messagebox.showerror("XNAT-PIC Converter", "The selected folder is not experiment related.\nPlease select an other directory.")
                         disable_buttons([self.next_btn])
                         clear_tree()
@@ -750,7 +750,7 @@ class xnat_pic_gui():
                     # If you want the logo 
                     self.popup_subject.iconbitmap(PATH_IMAGE + "logo3.ico")
 
-                    # Select the subjects to copy the custom variables to
+                    # Select the subjects to copy the Custom Forms to
                     self.popup_subject_frame = ttk.LabelFrame(self.popup_subject, text="Destination path", style="Popup.TLabelframe")
                     self.popup_subject_frame.grid(row=1, column=0, padx=10, pady=5, sticky=tk.E+tk.W+tk.N+tk.S, columnspan=2)
 
@@ -814,7 +814,7 @@ class xnat_pic_gui():
                     # If you want the logo 
                     self.popup_experiment.iconbitmap(PATH_IMAGE + "logo3.ico")
 
-                    # Select the subjects to copy the custom variables to
+                    # Select the subjects to copy the Custom Forms to
                     self.popup_experiment_frame = ttk.LabelFrame(self.popup_experiment, text="Destination path", style="Popup.TLabelframe")
                     self.popup_experiment_frame.grid(row=1, column=0, padx=10, pady=5, sticky=tk.E+tk.W+tk.N+tk.S, columnspan=2)
 
@@ -921,7 +921,7 @@ class xnat_pic_gui():
                 messagebox.showerror("XNAT-PIC Converter", "The selected folder does not exists. Please select an other one.")
                 return
 
-            if glob(self.folder_to_convert.get() + '/**/**/**/**/**/2dseq', recursive=False) == []:
+            if glob(self.folder_to_convert.get() + '//**//**//**//**//**//2dseq', recursive=False) == []:
                 messagebox.showerror("XNAT-PIC Converter", "The selected folder is not project related!")
                 return
             
@@ -1207,7 +1207,7 @@ class xnat_pic_gui():
         def overall_projectdata(self, master):
             
             # Create new frame
-            master.frame_label.set("Edit Custom Variables")
+            master.frame_label.set("Edit Custom Forms")
             
             # Menu bar
             self.menu = ttk.Menu(master.root)
@@ -1229,7 +1229,7 @@ class xnat_pic_gui():
             clear_menu.add_command(label="Timepoint", compound='left', command = lambda: self.clear_metadata(flag='Timepoint'))
             clear_menu.add_command(label="Dose", compound='left', command = lambda: self.clear_metadata(flag='Dose'))
             clear_menu.add_command(label="All", compound='left', command = lambda: self.clear_metadata(flag='All'))
-            file_menu.add_cascade(label="Clear Custom Variables", image = master.logo_clear, compound='left', menu=clear_menu)
+            file_menu.add_cascade(label="Clear Custom Forms", image = master.logo_clear, compound='left', menu=clear_menu)
             file_menu.add_separator()
             file_menu.add_command(label="Save All", image = master.logo_save, compound='left', command = lambda: self.save_metadata())
 
@@ -1244,7 +1244,7 @@ class xnat_pic_gui():
             self.frame_metadata = ttk.Frame(master.frame, style="Hidden.TLabelframe")
             self.frame_metadata.place(relx = 0.2, rely= 0, relheight=1, relwidth=0.8, anchor=tk.NW)
             # Frame Title
-            self.frame_title = ttk.Label(self.frame_metadata, text="Edit Custom Variables", style='Title.TLabel')
+            self.frame_title = ttk.Label(self.frame_metadata, text="Edit Custom Forms", style='Title.TLabel')
             self.frame_title.place(relx = 0.5, rely = 0.05, anchor = CENTER)
             
             # Select a  Project
@@ -1253,7 +1253,7 @@ class xnat_pic_gui():
             self.prj_data_btn = ttk.Button(self.frame_metadata, text="Select Project", 
                                             command=prj_data_handler, cursor=CURSOR_HAND)
             self.prj_data_btn.place(relx = 0.05, rely = 0.12, relwidth=0.22, anchor = NW)
-            Hovertip(self.prj_data_btn, "Select a project to add custom variables")
+            Hovertip(self.prj_data_btn, "Select a project to add Custom Forms")
 
             # Select a Subject
             def sbj_data_handler(*args):
@@ -1261,7 +1261,7 @@ class xnat_pic_gui():
             self.sbj_data_btn = ttk.Button(self.frame_metadata, text="Select Subject",
                                             command=sbj_data_handler, cursor=CURSOR_HAND)
             self.sbj_data_btn.place(relx = 0.5, rely = 0.12, relwidth=0.22, anchor = N)
-            Hovertip(self.sbj_data_btn, "Select a subject to add custom variables")
+            Hovertip(self.sbj_data_btn, "Select a subject to add Custom Forms")
 
             # Select a Experiment
             def exp_data_handler(*args):
@@ -1269,7 +1269,7 @@ class xnat_pic_gui():
             self.exp_data_btn = ttk.Button(self.frame_metadata, text="Select Experiment",
                                             command=exp_data_handler, cursor=CURSOR_HAND)
             self.exp_data_btn.place(relx = 0.95, rely = 0.12, relwidth=0.22, anchor = NE)
-            Hovertip(self.exp_data_btn, "Select a experiment to add custom variables")
+            Hovertip(self.exp_data_btn, "Select a experiment to add Custom Forms")
 
             self.separator1 = ttk.Separator(self.frame_metadata, bootstyle="primary")
             self.separator1.place(relx = 0.05, rely = 0.21, relwidth = 0.9, anchor = NW)
@@ -1321,11 +1321,11 @@ class xnat_pic_gui():
                 count += 1
 
             #####################################################################
-            # Choose at which level to add the custom variables
-            self.label_frame_level = ttk.LabelFrame(self.frame_metadata, text="Custom Variables", padding = 5, bootstyle="primary") 
+            # Choose at which level to add the Custom Forms
+            self.label_frame_level = ttk.LabelFrame(self.frame_metadata, text="Custom Forms", padding = 5, bootstyle="primary") 
             #self.label_level.place(relx = 0.05, rely = 0.6, relwidth = 0.34, anchor = tk.NW)
             
-            # Scroll bar in the Label frame CV
+            # Scroll bar in the Label frame CF
             self.canvas_level = tk.Canvas(self.label_frame_level)
             self.frame_level = tk.Frame(self.canvas_level)
             
@@ -1346,71 +1346,75 @@ class xnat_pic_gui():
             def OnFrameConfigure(canvas):
                     canvas.configure(scrollregion=canvas.bbox("all"))
 
-            self.label = ttk.Label(self.frame_level, text="Add custom variable(s) to:")
+            self.label = ttk.Label(self.frame_level, text="Add Custom Forms to:")
             self.label.grid(row=0, column=0, padx = 5, pady = 5, sticky=W)
+            # Project level
+            self.level_CF = tk.StringVar()
+            self.ProjectCF = ttk.Radiobutton(self.frame_level, text="Project", variable = self.level_CF, 
+                                                           value = "Project", style="Popup.TRadiobutton")   
+            self.ProjectCF.grid(row=1, column=0, padx = 5, pady = 5, sticky=N)
             # Subject level
-            self.level_CV = tk.StringVar()
-            self.SubjectCV = ttk.Radiobutton(self.frame_level, text="Subjects", variable = self.level_CV, 
-                                                           value = "Subjects", style="Popup.TRadiobutton")   
-            self.SubjectCV.grid(row=1, column=0, padx = 5, pady = 5, sticky=W)
+            self.SubjectCF = ttk.Radiobutton(self.frame_level, text="Subjects", variable = self.level_CF, 
+                                                           value = "Subjects", state='disabled', style="Popup.TRadiobutton")   
+            self.SubjectCF.grid(row=1, column=1, padx = 5, pady = 5, sticky=N)
             # Session level     
-            self.SessionCV = ttk.Radiobutton(self.frame_level, text="Sessions", variable = self.level_CV, 
+            self.SessionCF = ttk.Radiobutton(self.frame_level, text="Sessions", variable = self.level_CF, 
                                                            value = "Sessions", state='disabled', style="Popup.TRadiobutton")   
-            self.SessionCV.grid(row=2, column=0, padx = 5, pady = 5, sticky=W)
+            self.SessionCF.grid(row=1, column=2, padx = 5, pady = 5, sticky=N)
             
-            self.level_CV.set("Subjects")
-            self.SubjectCV.config(state=DISABLED)
+            self.level_CF.set("Project")
+            self.ProjectCF.config(state=DISABLED)
             #####################################################################
-            # Custom Variables (CV)
-            textCV = "Custom Variables" 
-            self.label_frame_CV = ttk.LabelFrame(self.frame_metadata, text=textCV , padding = 5, bootstyle="primary")
+            # Custom Forms (CF)
+            textCF = "Custom Forms" 
+            self.label_frame_CF = ttk.LabelFrame(self.frame_metadata, text=textCF , padding = 5, bootstyle="primary")
             
-            # Scroll bar in the Label frame CV
-            self.canvas_CV = tk.Canvas(self.label_frame_CV)
-            self.frame_CV = tk.Frame(self.canvas_CV)
+            # Scroll bar in the Label frame CF
+            self.canvas_CF = tk.Canvas(self.label_frame_CF)
+            self.frame_CF = tk.Frame(self.canvas_CF)
 
-            self.vsb_CV = ttk.Scrollbar(self.label_frame_CV, orient="vertical", command=self.canvas_CV.yview)
-            self.canvas_CV.configure(yscrollcommand=self.vsb_CV.set)  
-            self.hsb_CV = ttk.Scrollbar(self.label_frame_CV, orient="horizontal", command=self.canvas_CV.xview)
-            self.canvas_CV.configure(xscrollcommand=self.hsb_CV.set)     
+            self.vsb_CF = ttk.Scrollbar(self.label_frame_CF, orient="vertical", command=self.canvas_CF.yview)
+            self.canvas_CF.configure(yscrollcommand=self.vsb_CF.set)  
+            self.hsb_CF = ttk.Scrollbar(self.label_frame_CF, orient="horizontal", command=self.canvas_CF.xview)
+            self.canvas_CF.configure(xscrollcommand=self.hsb_CF.set)     
 
-            self.vsb_CV.pack(side="right", fill="y")     
-            self.hsb_CV.pack(side="bottom", fill="x")
-            self.canvas_CV.pack(side = LEFT, fill = BOTH, expand = 1)
-            self.canvas_CV.create_window((0,0), window=self.frame_CV, anchor="nw")
+            self.vsb_CF.pack(side="right", fill="y")     
+            self.hsb_CF.pack(side="bottom", fill="x")
+            self.canvas_CF.pack(side = LEFT, fill = BOTH, expand = 1)
+            self.canvas_CF.create_window((0,0), window=self.frame_CF, anchor="nw")
 
             # Be sure that we call OnFrameConfigure on the right canvas
-            self.frame_CV.bind("<Configure>", lambda event, canvas=self.canvas_CV: OnFrameConfigure(canvas))
-            self.label_frame_CV.place(relx = 0.5, rely = 0.60, relheight=0.2, relwidth=0.43, anchor = tk.NW)
+            self.frame_CF.bind("<Configure>", lambda event, canvas=self.canvas_CF: OnFrameConfigure(canvas))
+            self.label_frame_CF.place(relx = 0.5, rely = 0.60, relheight=0.2, relwidth=0.43, anchor = tk.NW)
             
             def OnFrameConfigure(canvas):
                     canvas.configure(scrollregion=canvas.bbox("all"))
 
-            keys_CV = ["Group", "Timepoint", "Dose"]
+            keys_CF = ["Group", "Timepoint", "Dose"]
 
-            # Entry CV  
-            self.entries_variable_CV = []  
-            self.entries_value_CV = []          
+            # Entry CF  
+            self.entries_variable_CF = []  
+            self.entries_value_CF = []          
             count = 0
-            for key in keys_CV:
+            for key in keys_CF:
                 # Variable
-                self.entries_variable_CV.append(ttk.Entry(self.frame_CV, takefocus = 0, width=15))
-                self.entries_variable_CV[-1].insert(0, key)
-                self.entries_variable_CV[-1]['state'] = 'disabled'
-                self.entries_variable_CV[-1].grid(row=count, column=0, padx = 5, pady = 5, sticky=W)
+                self.entries_variable_CF.append(ttk.Entry(self.frame_CF, takefocus = 0, width=15))
+                self.entries_variable_CF[-1].insert(0, key)
+                self.entries_variable_CF[-1]['state'] = 'disabled'
+                self.entries_variable_CF[-1].grid(row=count, column=0, padx = 5, pady = 5, sticky=W)
                 # Value
-                self.entries_value_CV.append(ttk.Entry(self.frame_CV, state='disabled', takefocus = 0, width=25))
-                self.entries_value_CV[-1].grid(row=count, column=1, padx = 5, pady = 5, sticky=W)
+                self.entries_value_CF.append(ttk.Entry(self.frame_CF, state='disabled', takefocus = 0, width=25))
+                self.entries_value_CF[-1].grid(row=count, column=1, padx = 5, pady = 5, sticky=W)
                 count += 1
             
             # Dose: the dose entry has a StringVar because the unit of measure will be automatically added to the entered value
             self.dosevar = tk.StringVar()
-            self.entries_value_CV[2].config(textvariable=self.dosevar)
+            self.entries_value_CF[2].config(textvariable=self.dosevar)
 
             # Group Menu
             OPTIONS = ["untreated", "treated"]
             self.selected_group = tk.StringVar()
-            self.group_menu = ttk.Combobox(self.frame_CV, takefocus = 0, textvariable=self.selected_group, width=10)
+            self.group_menu = ttk.Combobox(self.frame_CF, takefocus = 0, textvariable=self.selected_group, width=10)
             self.group_menu['values'] = OPTIONS
             self.group_menu['state'] = 'disabled'
             self.group_menu.grid(row=0, column=2, padx = 5, pady = 5, sticky=W)
@@ -1418,18 +1422,18 @@ class xnat_pic_gui():
             # Timepoint
             self.OPTIONS = ["pre", "post"]
             self.selected_timepoint = tk.StringVar()
-            self.timepoint_menu = ttk.Combobox(self.frame_CV, takefocus = 0, textvariable=self.selected_timepoint, width=10)
+            self.timepoint_menu = ttk.Combobox(self.frame_CF, takefocus = 0, textvariable=self.selected_timepoint, width=10)
             self.timepoint_menu['values'] = self.OPTIONS
             self.timepoint_menu['state'] = 'disabled'
             self.timepoint_menu.grid(row=1, column=2, padx = 5, pady = 5, sticky=W)
             
             self.time_entry_value = tk.StringVar()
-            self.time_entry = ttk.Entry(self.frame_CV, state='disabled', takefocus = 0, width=5, textvariable=self.time_entry_value)
+            self.time_entry = ttk.Entry(self.frame_CF, state='disabled', takefocus = 0, width=5, textvariable=self.time_entry_value)
             self.time_entry.grid(row=1, column=3, padx = 5, pady = 5, sticky=W)
 
             self.OPTIONS1 = ["seconds", "minutes", "hours", "days", "weeks", "months", "years"]
             self.selected_timepoint1 = tk.StringVar()
-            self.timepoint_menu1 = ttk.Combobox(self.frame_CV, takefocus = 0, textvariable=self.selected_timepoint1, width=7)
+            self.timepoint_menu1 = ttk.Combobox(self.frame_CF, takefocus = 0, textvariable=self.selected_timepoint1, width=7)
             self.timepoint_menu1['values'] = self.OPTIONS1
             self.timepoint_menu1['state'] = 'disabled'
             self.timepoint_menu1.grid(row=1, column=4, padx = 5, pady = 5, sticky=W)
@@ -1437,37 +1441,37 @@ class xnat_pic_gui():
             # Dose
             OPTIONS2 = ["mg/kg"]
             self.selected_dose = tk.StringVar()
-            self.dose_menu = ttk.Combobox(self.frame_CV, takefocus = 0, textvariable=self.selected_dose, width=10)
+            self.dose_menu = ttk.Combobox(self.frame_CF, takefocus = 0, textvariable=self.selected_dose, width=10)
             self.dose_menu['values'] = OPTIONS2
             self.dose_menu['state'] = 'disabled'
             self.dose_menu.grid(row=2, column=2, padx = 5, pady = 5, sticky=W)
             
             self.sep1 = ttk.Separator(self.frame_level, bootstyle="primary")
-            self.sep1.grid(row=3, column=0, padx = 5, pady = 5, sticky=EW)
+            self.sep1.grid(row=2, column=0, padx = 5, pady = 5, sticky=EW)
             self.lab1 = ttk.Label(self.frame_level, text='Actions:', bootstyle="primary")
-            self.lab1.grid(row=3, column=1, padx = 5, pady = 5, sticky=N)
+            self.lab1.grid(row=2, column=1, padx = 5, pady = 5, sticky=N)
             self.sep2 = ttk.Separator(self.frame_level, bootstyle="primary")
-            self.sep2.grid(row=3, column=2, padx = 5, pady = 5, sticky=EW)
+            self.sep2.grid(row=2, column=2, padx = 5, pady = 5, sticky=EW)
 
 
             #################### Modify the metadata ####################
             self.modify_btn = ttk.Button(self.frame_level, text="Modify", command = lambda: self.modify_metadata(), cursor=CURSOR_HAND, takefocus = 0, state = tk.DISABLED, style = "Secondary1.TButton")
             #self.modify_btn.place(relx=0.39, rely=0.60, anchor=tk.NE, relwidth=0.22)
             self.modify_btn.config(width = 13)
-            self.modify_btn.grid(row=4, column=0, padx = 5, pady = 5, sticky=NSEW)
-            Hovertip(self.modify_btn, "Edit the custom variables")
+            self.modify_btn.grid(row=3, column=0, padx = 5, pady = 5, sticky=NSEW)
+            Hovertip(self.modify_btn, "Edit the Custom Forms")
             #################### Confirm the metadata ####################
             self.confirm_btn = ttk.Button(self.frame_level, text="Confirm", command = lambda: self.confirm_metadata(), cursor=CURSOR_HAND, takefocus = 0, state = tk.DISABLED, style = "Secondary1.TButton")
             #self.confirm_btn.place(relx=0.39, rely=0.70, anchor=tk.NE, relwidth=0.22)
             self.confirm_btn.config(width = 13)
-            self.confirm_btn.grid(row=4, column=1, padx = 5, pady = 5, sticky=NSEW)
-            Hovertip(self.modify_btn, "Confirm the custom variables for the selected subject/experiment")
+            self.confirm_btn.grid(row=3, column=1, padx = 5, pady = 5, sticky=NSEW)
+            Hovertip(self.modify_btn, "Confirm the Custom Forms for the selected project/subject/experiment")
             #################### Confirm multiple metadata ####################
             self.multiple_confirm_btn = ttk.Button(self.frame_level, text="Confirm +", command = lambda: self.confirm_multiple_metadata(master), cursor=CURSOR_HAND, takefocus = 0, state = tk.DISABLED, style = "Secondary1.TButton")
             #self.multiple_confirm_btn.place(relx=0.39, rely=0.80, anchor=tk.NE, relwidth=0.22)
             self.multiple_confirm_btn.config(width = 13)
-            self.multiple_confirm_btn.grid(row=4, column=2, padx = 5, pady = 5, sticky=NSEW)
-            Hovertip(self.modify_btn, "Confirm custom variables for multiple subjects/experiments")
+            self.multiple_confirm_btn.grid(row=3, column=2, padx = 5, pady = 5, sticky=NSEW)
+            Hovertip(self.modify_btn, "Confirm Custom Forms for multiple subjects/experiments")
             #################### Back button ####################
             self.back_btn = ttk.Button(self.frame_metadata, text="Back", command = lambda: self.back_action(master), cursor=CURSOR_HAND, takefocus = 0, state = tk.DISABLED, style = "Secondary1.TButton")
             self.back_btn.place(relx = 0.05, rely = 0.90, relwidth = 0.15, anchor = tk.NW)
@@ -1487,11 +1491,11 @@ class xnat_pic_gui():
             if not self.information_folder:
                 enable_buttons([self.prj_data_btn, self.sbj_data_btn, self.exp_data_btn])
                 return
-            enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SubjectCV, self.SessionCV, self.back_btn])
+            enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SubjectCF, self.SessionCF, self.back_btn])
             # Read the data
             if press_btn == "Project":
                 # Check if the selected folder is related to the right conversion flag
-                if glob(self.information_folder + "/**/**/**/**/*.dcm", recursive=False) == [] and glob(self.information_folder + "/**/**/**/**/**/2dseq", recursive=False) == []:
+                if glob(self.information_folder + "//**//**//**//**//*.dcm", recursive=False) == [] and glob(self.information_folder + "//**//**//**//**//**//2dseq", recursive=False) == []:
                     messagebox.showerror("XNAT-PIC Project Data", "The selected folder is not project related.\nPlease select an other directory!")
                     destroy_widgets([self.frame_metadata])
                     self.overall_projectdata(master)
@@ -1501,7 +1505,7 @@ class xnat_pic_gui():
                 self.selection = 'Selected Project: ' + self.project_name
             elif press_btn == "Subject":
                 # Check if the selected folder is related to the right conversion flag
-                if glob(self.information_folder + "/**/**/**/*.dcm", recursive=False) == [] and glob(self.information_folder + "/**/**/**/**/2dseq", recursive=False) == []:
+                if glob(self.information_folder + "//**//**//**//*.dcm", recursive=False) == [] and glob(self.information_folder + "//**//**//**//**//2dseq", recursive=False) == []:
                     messagebox.showerror("XNAT-PIC Project Data", "The selected folder is not subject related.\nPlease select an other directory!")
                     destroy_widgets([self.frame_metadata])
                     self.overall_projectdata(master)
@@ -1511,7 +1515,7 @@ class xnat_pic_gui():
                 self.selection = 'Selected Subject: ' + self.subject_name
             elif press_btn == "Experiment":
                 # Check if the selected folder is related to the right conversion flag
-                if glob(self.information_folder + "/**/**/*.dcm", recursive=False) == [] and glob(self.information_folder + "/**/**/**/2dseq", recursive=False) == []:
+                if glob(self.information_folder + "//**//**//*.dcm", recursive=False) == [] and glob(self.information_folder + "//**//**//**//2dseq", recursive=False) == []:
                     messagebox.showerror("XNAT-PIC Project Data", "The selected folder is not experiment related.\nPlease select an other directory!")
                     destroy_widgets([self.frame_metadata])
                     self.overall_projectdata(master)
@@ -1551,11 +1555,11 @@ class xnat_pic_gui():
             self.load_info(master)
 
             def change_frame(*args):
-                # Normal entry CV
-                for i in range(0, len(self.entries_value_CV)):
-                    self.entries_value_CV[i]['state'] = 'normal'
-                    self.entries_value_CV[i].delete(0, tk.END)
-                    self.entries_value_CV[i]['state'] = 'disabled'
+                # Normal entry CF
+                for i in range(0, len(self.entries_value_CF)):
+                    self.entries_value_CF[i]['state'] = 'normal'
+                    self.entries_value_CF[i].delete(0, tk.END)
+                    self.entries_value_CF[i]['state'] = 'disabled'
                 # Clear all the combobox and the entry
                 self.selected_group.set('')
                 self.selected_timepoint.set('')
@@ -1563,7 +1567,7 @@ class xnat_pic_gui():
                 self.time_entry.delete(0, tk.END)
                 self.selected_dose.set('')     
                 disable_buttons([self.group_menu, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.dose_menu])              
-                if str(self.level_CV.get()) == "Subjects":
+                if str(self.level_CF.get()) == "Subjects":
                     # Notebook
                     for i in range(len(self.listbox_notebook)):
                         self.listbox_notebook[i].config(state=DISABLED)
@@ -1576,7 +1580,7 @@ class xnat_pic_gui():
                         del self.entries_value_ID[2 : len(self.entries_value_ID)]
                         self.cal.destroy()
                         del self.cal
-                elif str(self.level_CV.get()) == "Sessions":
+                elif str(self.level_CF.get()) == "Sessions":
                     # Notebook
                     for i in range(len(self.listbox_notebook)):
                         self.listbox_notebook[i].config(state=NORMAL)
@@ -1606,13 +1610,13 @@ class xnat_pic_gui():
                         self.cal.grid(row=4, column=1, padx = 5, pady = 5, sticky=E)
                 
                 #################################################################
-                # Load subject custom variables when switching from session to subject
+                # Load subject Custom Forms when switching from session to subject
                 try: 
                     self.notebook.notebookContent.select(self.notebook.notebookTab.index("current"))
                 except Exception as e:
                     pass
                 # Events for the Subjects
-                if str(self.level_CV.get()) == "Subjects":
+                if str(self.level_CF.get()) == "Subjects":
                     # Clear all the combobox and the entry
                     self.selected_group.set('')
                     self.selected_timepoint.set('')
@@ -1638,14 +1642,14 @@ class xnat_pic_gui():
                     find_selected_folder()
                     tmp_dict = self.results_dict[self.selected_folder]
 
-                    # Split the dictionary into ID and CV
-                    complete_list = [list(group) for key, group in itertools.groupby(tmp_dict, lambda x: x == "SubjectsCV" or x == "SessionsCV") if not key]
+                    # Split the dictionary into ID and CF
+                    complete_list = [list(group) for key, group in itertools.groupby(tmp_dict, lambda x: x == "SubjectsCF" or x == "SessionsCF") if not key]
                     dict_ID = {'Folder' : self.selected_folder}
                     dict_ID.update({k: v for k, v in tmp_dict.items() if k in complete_list[0]})
-                    if str(self.level_CV.get()) == "Subjects":
-                        dict_CV =  {k: v for k, v in tmp_dict.items() if k in complete_list[1]}
-                    elif str(self.level_CV.get()) == "Sessions":
-                        dict_CV =  {k: v for k, v in tmp_dict.items() if k in complete_list[2]} 
+                    if str(self.level_CF.get()) == "Subjects":
+                        dict_CF =  {k: v for k, v in tmp_dict.items() if k in complete_list[1]}
+                    elif str(self.level_CF.get()) == "Sessions":
+                        dict_CF =  {k: v for k, v in tmp_dict.items() if k in complete_list[2]} 
                     #################################################################                   
                     # ID: Modify the values ​​of the entries with the values ​​of the selected experiment
                     ind = 0
@@ -1663,47 +1667,47 @@ class xnat_pic_gui():
                             self.entries_value_ID[ind-1]['state'] = 'disabled'
                         ind += 1   
                     #################################################################
-                    # Updates the CV frame based on the selected variables and values
-                    diff_CV = len(self.entries_variable_CV) - len(dict_CV) 
+                    # Updates the CF frame based on the selected variables and values
+                    diff_CF = len(self.entries_variable_CF) - len(dict_CF) 
                     
                     # If the number of entries is greater than the number of variables, eliminate the excess entries
-                    if diff_CV > 0:
-                        for i in range(len(dict_CV), len(self.entries_variable_CV)):
-                            self.entries_variable_CV[i].destroy() 
-                            self.entries_value_CV[i].destroy() 
-                        del self.entries_variable_CV[len(dict_CV) : len(self.entries_variable_CV)]
-                        del self.entries_value_CV[len(dict_CV) : len(self.entries_value_CV)]
+                    if diff_CF > 0:
+                        for i in range(len(dict_CF), len(self.entries_variable_CF)):
+                            self.entries_variable_CF[i].destroy() 
+                            self.entries_value_CF[i].destroy() 
+                        del self.entries_variable_CF[len(dict_CF) : len(self.entries_variable_CF)]
+                        del self.entries_value_CF[len(dict_CF) : len(self.entries_value_CF)]
                     # If the number of entries is less than the number of variables, insert the entries
-                    elif diff_CV < 0:
-                        for j in range(len(self.entries_variable_CV), len(dict_CV)):
-                            self.entries_variable_CV.append(ttk.Entry(self.frame_CV, takefocus = 0, width=15))
-                            self.entries_variable_CV[-1].grid(row=j, column=0, padx = 5, pady = 5, sticky=W)
-                            self.entries_value_CV.append(ttk.Entry(self.frame_CV, state='disabled', takefocus = 0, width = 25))
-                            self.entries_value_CV[-1].grid(row=j, column=1, padx = 5, pady = 5, sticky=W)
+                    elif diff_CF < 0:
+                        for j in range(len(self.entries_variable_CF), len(dict_CF)):
+                            self.entries_variable_CF.append(ttk.Entry(self.frame_CF, takefocus = 0, width=15))
+                            self.entries_variable_CF[-1].grid(row=j, column=0, padx = 5, pady = 5, sticky=W)
+                            self.entries_value_CF.append(ttk.Entry(self.frame_CF, state='disabled', takefocus = 0, width = 25))
+                            self.entries_value_CF[-1].grid(row=j, column=1, padx = 5, pady = 5, sticky=W)
                     
                     # Modify the values ​​of the entries with the values ​​of the selected experiment
                     ind = 0
-                    for key, value in dict_CV.items():
-                        # Variable CV
-                        if str(self.level_CV.get()) == "Subjects":
+                    for key, value in dict_CF.items():
+                        # Variable CF
+                        if str(self.level_CF.get()) == "Subjects":
                             key1 = str(key).replace('Subjects', '')
-                        elif str(self.level_CV.get()) == "Sessions":
+                        elif str(self.level_CF.get()) == "Sessions":
                             key1 = str(key).replace('Sessions', '')
-                        self.entries_variable_CV[ind]['state'] = 'normal'
-                        self.entries_variable_CV[ind].delete(0, tk.END)
-                        self.entries_variable_CV[ind].insert(0, key1)
-                        self.entries_variable_CV[ind]['state'] = 'disabled'
-                        # Value CV
-                        self.entries_value_CV[ind]['state'] = 'normal'
-                        self.entries_value_CV[ind].delete(0, tk.END)
-                        self.entries_value_CV[ind].insert(0, value if value is not None else '')
-                        self.entries_value_CV[ind]['state'] = 'disabled'
+                        self.entries_variable_CF[ind]['state'] = 'normal'
+                        self.entries_variable_CF[ind].delete(0, tk.END)
+                        self.entries_variable_CF[ind].insert(0, key1)
+                        self.entries_variable_CF[ind]['state'] = 'disabled'
+                        # Value CF
+                        self.entries_value_CF[ind]['state'] = 'normal'
+                        self.entries_value_CF[ind].delete(0, tk.END)
+                        self.entries_value_CF[ind].insert(0, value if value is not None else '')
+                        self.entries_value_CF[ind]['state'] = 'disabled'
                         ind += 1
-                elif str(self.level_CV.get()) == "Session":
+                elif str(self.level_CF.get()) == "Session":
                     return
                 
 
-            self.level_CV.trace('w', change_frame)
+            self.level_CF.trace('w', change_frame)
          #################### Load the info about the selected subject ####################
         def load_info(self, master):
             # Find the initial tab
@@ -1719,7 +1723,7 @@ class xnat_pic_gui():
                 except Exception as e:
                     pass
                 # Events for the Subjects
-                if str(self.level_CV.get()) == "Subjects":
+                if str(self.level_CF.get()) == "Subjects":
                     # Clear all the combobox and the entry
                     self.selected_group.set('')
                     self.selected_timepoint.set('')
@@ -1745,14 +1749,14 @@ class xnat_pic_gui():
                     find_selected_folder()
                     tmp_dict = self.results_dict[self.selected_folder]
 
-                    # Split the dictionary into ID and CV
-                    complete_list = [list(group) for key, group in itertools.groupby(tmp_dict, lambda x: x == "SubjectsCV" or x == "SessionsCV") if not key]
+                    # Split the dictionary into ID and CF
+                    complete_list = [list(group) for key, group in itertools.groupby(tmp_dict, lambda x: x == "SubjectsCF" or x == "SessionsCF") if not key]
                     dict_ID = {'Folder' : self.selected_folder}
                     dict_ID.update({k: v for k, v in tmp_dict.items() if k in complete_list[0]})
-                    if str(self.level_CV.get()) == "Subjects":
-                        dict_CV =  {k: v for k, v in tmp_dict.items() if k in complete_list[1]}
-                    elif str(self.level_CV.get()) == "Sessions":
-                        dict_CV =  {k: v for k, v in tmp_dict.items() if k in complete_list[2]}
+                    if str(self.level_CF.get()) == "Subjects":
+                        dict_CF =  {k: v for k, v in tmp_dict.items() if k in complete_list[1]}
+                    elif str(self.level_CF.get()) == "Sessions":
+                        dict_CF =  {k: v for k, v in tmp_dict.items() if k in complete_list[2]}
                     
                     #################################################################                   
                     # ID: Modify the values ​​of the entries with the values ​​of the selected experiment
@@ -1772,50 +1776,50 @@ class xnat_pic_gui():
                         ind += 1   
 
                     #################################################################
-                    # Updates the CV frame based on the selected variables and values
-                    diff_CV = len(self.entries_variable_CV) - len(dict_CV) 
+                    # Updates the CF frame based on the selected variables and values
+                    diff_CF = len(self.entries_variable_CF) - len(dict_CF) 
                     
                     # If the number of entries is greater than the number of variables, eliminate the excess entries
-                    if diff_CV > 0:
-                        for i in range(len(dict_CV), len(self.entries_variable_CV)):
-                            self.entries_variable_CV[i].destroy() 
-                            self.entries_value_CV[i].destroy() 
-                        del self.entries_variable_CV[len(dict_CV) : len(self.entries_variable_CV)]
-                        del self.entries_value_CV[len(dict_CV) : len(self.entries_value_CV)]
+                    if diff_CF > 0:
+                        for i in range(len(dict_CF), len(self.entries_variable_CF)):
+                            self.entries_variable_CF[i].destroy() 
+                            self.entries_value_CF[i].destroy() 
+                        del self.entries_variable_CF[len(dict_CF) : len(self.entries_variable_CF)]
+                        del self.entries_value_CF[len(dict_CF) : len(self.entries_value_CF)]
                     # If the number of entries is less than the number of variables, insert the entries
-                    elif diff_CV < 0:
-                        for j in range(len(self.entries_variable_CV), len(dict_CV)):
-                            self.entries_variable_CV.append(ttk.Entry(self.frame_CV, takefocus = 0, width=15))
-                            self.entries_variable_CV[-1].grid(row=j, column=0, padx = 5, pady = 5, sticky=W)
-                            self.entries_value_CV.append(ttk.Entry(self.frame_CV, state='disabled', takefocus = 0, width = 25))
-                            self.entries_value_CV[-1].grid(row=j, column=1, padx = 5, pady = 5, sticky=W)
+                    elif diff_CF < 0:
+                        for j in range(len(self.entries_variable_CF), len(dict_CF)):
+                            self.entries_variable_CF.append(ttk.Entry(self.frame_CF, takefocus = 0, width=15))
+                            self.entries_variable_CF[-1].grid(row=j, column=0, padx = 5, pady = 5, sticky=W)
+                            self.entries_value_CF.append(ttk.Entry(self.frame_CF, state='disabled', takefocus = 0, width = 25))
+                            self.entries_value_CF[-1].grid(row=j, column=1, padx = 5, pady = 5, sticky=W)
                     
                     # Modify the values ​​of the entries with the values ​​of the selected experiment
                     ind = 0
-                    for key, value in dict_CV.items():
-                        # Variable CV
-                        if str(self.level_CV.get()) == "Subjects":
+                    for key, value in dict_CF.items():
+                        # Variable CF
+                        if str(self.level_CF.get()) == "Subjects":
                             key1 = str(key).replace('Subjects', '')
-                        elif str(self.level_CV.get()) == "Sessions":
+                        elif str(self.level_CF.get()) == "Sessions":
                             key1 = str(key).replace('Sessions', '')
-                        self.entries_variable_CV[ind]['state'] = 'normal'
-                        self.entries_variable_CV[ind].delete(0, tk.END)
-                        self.entries_variable_CV[ind].insert(0, key1)
-                        self.entries_variable_CV[ind]['state'] = 'disabled'
-                        # Value CV
-                        self.entries_value_CV[ind]['state'] = 'normal'
-                        self.entries_value_CV[ind].delete(0, tk.END)
-                        self.entries_value_CV[ind].insert(0, value if value is not None else '')
-                        self.entries_value_CV[ind]['state'] = 'disabled'
+                        self.entries_variable_CF[ind]['state'] = 'normal'
+                        self.entries_variable_CF[ind].delete(0, tk.END)
+                        self.entries_variable_CF[ind].insert(0, key1)
+                        self.entries_variable_CF[ind]['state'] = 'disabled'
+                        # Value CF
+                        self.entries_value_CF[ind]['state'] = 'normal'
+                        self.entries_value_CF[ind].delete(0, tk.END)
+                        self.entries_value_CF[ind].insert(0, value if value is not None else '')
+                        self.entries_value_CF[ind]['state'] = 'disabled'
                         ind += 1
-                elif str(self.level_CV.get()) == "Session":
+                elif str(self.level_CF.get()) == "Session":
                     return
             # Add the event: change Tab  
             self.notebook.notebookTab.bind("<<NotebookTabChanged>>", items_selected_subjects)
             
             def items_selected_sessions(event):
                 # Events for the Sessions
-                if str(self.level_CV.get()) == "Sessions":
+                if str(self.level_CF.get()) == "Sessions":
                     # Clear all the combobox and the entry
                     self.selected_group.set('')
                     self.selected_timepoint.set('')
@@ -1836,14 +1840,14 @@ class xnat_pic_gui():
 
                     tmp_dict = self.results_dict[self.selected_folder]
 
-                    # Split the dictionary into ID and CV
-                    complete_list = [list(group) for key, group in itertools.groupby(tmp_dict, lambda x: x == "SubjectsCV" or x == "SessionsCV") if not key]
+                    # Split the dictionary into ID and CF
+                    complete_list = [list(group) for key, group in itertools.groupby(tmp_dict, lambda x: x == "SubjectsCF" or x == "SessionsCF") if not key]
                     dict_ID = {'Folder' : self.selected_folder}
                     dict_ID.update({k: v for k, v in tmp_dict.items() if k in complete_list[0]})
-                    if str(self.level_CV.get()) == "Subjects":
-                        dict_CV =  {k: v for k, v in tmp_dict.items() if k in complete_list[1]}
-                    elif str(self.level_CV.get()) == "Sessions":
-                        dict_CV =  {k: v for k, v in tmp_dict.items() if k in complete_list[2]}
+                    if str(self.level_CF.get()) == "Subjects":
+                        dict_CF =  {k: v for k, v in tmp_dict.items() if k in complete_list[1]}
+                    elif str(self.level_CF.get()) == "Sessions":
+                        dict_CF =  {k: v for k, v in tmp_dict.items() if k in complete_list[2]}
                     
                     #################################################################
                     # Modify the values ​​of the entries with the values ​​of the selected experiment
@@ -1863,41 +1867,41 @@ class xnat_pic_gui():
                         ind += 1
 
                     #################################################################
-                    # Updates the CV frame based on the selected variables and values
-                    diff_CV = len(self.entries_variable_CV) - len(dict_CV) 
+                    # Updates the CF frame based on the selected variables and values
+                    diff_CF = len(self.entries_variable_CF) - len(dict_CF) 
                     
                     # If the number of entries is greater than the number of variables, eliminate the excess entries
-                    if diff_CV > 0:
-                        for i in range(len(dict_CV), len(self.entries_variable_CV)):
-                            self.entries_variable_CV[i].destroy() 
-                            self.entries_value_CV[i].destroy() 
-                        del self.entries_variable_CV[len(dict_CV) : len(self.entries_variable_CV)]
-                        del self.entries_value_CV[len(dict_CV) : len(self.entries_value_CV)]
+                    if diff_CF > 0:
+                        for i in range(len(dict_CF), len(self.entries_variable_CF)):
+                            self.entries_variable_CF[i].destroy() 
+                            self.entries_value_CF[i].destroy() 
+                        del self.entries_variable_CF[len(dict_CF) : len(self.entries_variable_CF)]
+                        del self.entries_value_CF[len(dict_CF) : len(self.entries_value_CF)]
                     # If the number of entries is less than the number of variables, insert the entries
-                    elif diff_CV < 0:
-                        for j in range(len(self.entries_variable_CV), len(dict_CV)):
-                            self.entries_variable_CV.append(ttk.Entry(self.frame_CV, takefocus = 0, width=15))
-                            self.entries_variable_CV[-1].grid(row=j, column=0, padx = 5, pady = 5, sticky=W)
-                            self.entries_value_CV.append(ttk.Entry(self.frame_CV, state='disabled', takefocus = 0, width = 25))
-                            self.entries_value_CV[-1].grid(row=j, column=1, padx = 5, pady = 5, sticky=W)
+                    elif diff_CF < 0:
+                        for j in range(len(self.entries_variable_CF), len(dict_CF)):
+                            self.entries_variable_CF.append(ttk.Entry(self.frame_CF, takefocus = 0, width=15))
+                            self.entries_variable_CF[-1].grid(row=j, column=0, padx = 5, pady = 5, sticky=W)
+                            self.entries_value_CF.append(ttk.Entry(self.frame_CF, state='disabled', takefocus = 0, width = 25))
+                            self.entries_value_CF[-1].grid(row=j, column=1, padx = 5, pady = 5, sticky=W)
                     
                     # Modify the values ​​of the entries with the values ​​of the selected experiment
                     ind = 0
-                    for key, value in dict_CV.items():
-                        # Variable CV
-                        if str(self.level_CV.get()) == "Subjects":
+                    for key, value in dict_CF.items():
+                        # Variable CF
+                        if str(self.level_CF.get()) == "Subjects":
                             key1 = str(key).replace('Subjects', '')
-                        elif str(self.level_CV.get()) == "Sessions":
+                        elif str(self.level_CF.get()) == "Sessions":
                             key1 = str(key).replace('Sessions', '')
-                        self.entries_variable_CV[ind]['state'] = 'normal'
-                        self.entries_variable_CV[ind].delete(0, tk.END)
-                        self.entries_variable_CV[ind].insert(0, key1)
-                        self.entries_variable_CV[ind]['state'] = 'disabled'
-                        # Value CV
-                        self.entries_value_CV[ind]['state'] = 'normal'
-                        self.entries_value_CV[ind].delete(0, tk.END)
-                        self.entries_value_CV[ind].insert(0, value if value is not None else '')
-                        self.entries_value_CV[ind]['state'] = 'disabled'
+                        self.entries_variable_CF[ind]['state'] = 'normal'
+                        self.entries_variable_CF[ind].delete(0, tk.END)
+                        self.entries_variable_CF[ind].insert(0, key1)
+                        self.entries_variable_CF[ind]['state'] = 'disabled'
+                        # Value CF
+                        self.entries_value_CF[ind]['state'] = 'normal'
+                        self.entries_value_CF[ind].delete(0, tk.END)
+                        self.entries_value_CF[ind].insert(0, value if value is not None else '')
+                        self.entries_value_CF[ind]['state'] = 'disabled'
                         ind += 1
                 
             # Add the event to the list of listbox (press Tab)   
@@ -1906,24 +1910,24 @@ class xnat_pic_gui():
         # Modify Metadata
         def modify_metadata(self):
             # Check before editing the data
-            if str(self.level_CV.get()) == "Sessions" and not self.entries_value_ID[3].get():
+            if str(self.level_CF.get()) == "Sessions" and not self.entries_value_ID[3].get():
                 messagebox.showerror("XNAT-PIC", "Click Tab to select a folder from the list box on the left")
                 return 
                        
-            # Normal entry CV
-            for i in range(0, len(self.entries_value_CV)):
-                self.entries_value_CV[i]['state'] = 'normal'
+            # Normal entry CF
+            for i in range(0, len(self.entries_value_CF)):
+                self.entries_value_CF[i]['state'] = 'normal'
           
             # The timepoint field remains locked. Only one value can be entered from the entry.
-            self.entries_value_CV[1]['state'] = 'disabled'
+            self.entries_value_CF[1]['state'] = 'disabled'
 
             # Option menu for the group (treated/untreated)
             self.group_menu['state'] = 'readonly'
             def group_changed(event):
                 """ handle the group changed event """
-                self.entries_value_CV[0].delete(0, tk.END)
-                self.entries_value_CV[0].insert(0, str(self.selected_group.get()))  
-                if str(self.level_CV.get()) == "Sessions":                  
+                self.entries_value_CF[0].delete(0, tk.END)
+                self.entries_value_CF[0].insert(0, str(self.selected_group.get()))  
+                if str(self.level_CF.get()) == "Sessions":                  
                     self.my_listbox.selection_set(self.selected_index)
 
             self.group_menu.bind("<<ComboboxSelected>>", group_changed)
@@ -1933,18 +1937,18 @@ class xnat_pic_gui():
             def dose_changed(event):
                 """ handle the dose changed event """
                 value_dose = ''
-                if self.entries_value_CV[2].get():
+                if self.entries_value_CF[2].get():
                     try:
-                        dose = str(self.entries_value_CV[2].get())
+                        dose = str(self.entries_value_CF[2].get())
                         value_dose = dose.replace(' mg/kg','')
                         float(value_dose)
                     except Exception as e:
                         messagebox.showerror("XNAT-PIC", 'Insert a number in dose')
                         raise
 
-                self.entries_value_CV[2].delete(0, tk.END)
-                self.entries_value_CV[2].insert(0, str(value_dose) + ' ' + str(self.selected_dose.get()))    
-                if str(self.level_CV.get()) == "Sessions":                
+                self.entries_value_CF[2].delete(0, tk.END)
+                self.entries_value_CF[2].insert(0, str(value_dose) + ' ' + str(self.selected_dose.get()))    
+                if str(self.level_CF.get()) == "Sessions":                
                     self.my_listbox.selection_set(self.selected_index)
 
             self.dose_menu.bind("<<ComboboxSelected>>", dose_changed)
@@ -1955,14 +1959,14 @@ class xnat_pic_gui():
             self.timepoint_menu['state'] = 'readonly'
 
             def timepoint_changed(*args):
-                self.entries_value_CV[1].config(state=tk.NORMAL)
+                self.entries_value_CF[1].config(state=tk.NORMAL)
                 """ handle the timepoint changed event """
                 if str(self.time_entry.get()) or str(self.selected_timepoint1.get()):
                     timepoint_str = str(self.selected_timepoint.get()) + "-" + str(self.time_entry.get()) + "-" + str(self.selected_timepoint1.get())
                 else:
                     timepoint_str = str(self.selected_timepoint.get()) 
                 
-                if str(self.level_CV.get()) == "Sessions":
+                if str(self.level_CF.get()) == "Sessions":
                     self.my_listbox.selection_set(self.selected_index)
 
                 if self.time_entry.get():
@@ -1971,9 +1975,9 @@ class xnat_pic_gui():
                     except Exception as e: 
                         messagebox.showerror("XNAT-PIC", "Insert a number in the timepoint entry")
 
-                self.entries_value_CV[1].delete(0, tk.END)
-                self.entries_value_CV[1].insert(0, timepoint_str)
-                self.entries_value_CV[1].config(state=tk.DISABLED)
+                self.entries_value_CF[1].delete(0, tk.END)
+                self.entries_value_CF[1].insert(0, timepoint_str)
+                self.entries_value_CF[1].config(state=tk.DISABLED)
 
             self.timepoint_menu.bind("<<ComboboxSelected>>", timepoint_changed)
             self.time_entry.bind('<Return>', timepoint_changed)
@@ -1989,22 +1993,22 @@ class xnat_pic_gui():
             if not self.entries_value_ID[1].get():
                 raise Exception ("Insert the name of the subject!")
 
-            if self.entries_value_CV[1].get() and '-' in  self.entries_value_CV[1].get(): 
-                if not str(self.entries_value_CV[1].get()).split('-')[0] in self.OPTIONS:
+            if self.entries_value_CF[1].get() and '-' in  self.entries_value_CF[1].get(): 
+                if not str(self.entries_value_CF[1].get()).split('-')[0] in self.OPTIONS:
                     raise Exception ("Select pre/post in timepoint!")
-                if not str(self.entries_value_CV[1].get()).split('-')[2] in self.OPTIONS1:
+                if not str(self.entries_value_CF[1].get()).split('-')[2] in self.OPTIONS1:
                     raise Exception ("Select seconds, minutes, hours, days, weeks, months, years in timepoint")
 
-                input_num = str(self.entries_value_CV[1].get()).split('-')[1]
+                input_num = str(self.entries_value_CF[1].get()).split('-')[1]
                 try:
                     float(input_num)
                 except Exception as e: 
                     raise Exception ("Insert a number in timepoint between pre/post and seconds, minutes, hours..")  
 
-            if  self.entries_value_CV[2].get():
+            if  self.entries_value_CF[2].get():
                 try:
                     # Check if the entry is a number
-                    dose_value = self.entries_value_CV[2].get().replace(' mg/kg',"")
+                    dose_value = self.entries_value_CF[2].get().replace(' mg/kg',"")
                     float(dose_value)
                 except Exception as e: 
                     raise Exception ("Insert a number in dose")
@@ -2036,23 +2040,23 @@ class xnat_pic_gui():
 
             if multiple == 0:
             # Single confirm
-                array_CV = range(0, len(self.entries_variable_CV))
+                array_CF = range(0, len(self.entries_variable_CF))
             elif multiple ==1:
             # Multple confirm
-                array_CV = self.list_CV
+                array_CF = self.list_CF
                 
-            tmp_CV = {}
+            tmp_CF = {}
             
-            if str(self.level_CV.get()) == "Subjects":
-                # Update the info in the txt file CV
-                for i in array_CV:
-                    keyCV = "Subjects" + str(self.entries_variable_CV[i].get())
-                    keyCV1 = "Sessions" + str(self.entries_variable_CV[i].get())
-                    new_value_sub = self.entries_value_CV[i].get() 
+            if str(self.level_CF.get()) == "Subjects":
+                # Update the info in the txt file CF
+                for i in array_CF:
+                    keyCF = "Subjects" + str(self.entries_variable_CF[i].get())
+                    keyCF1 = "Sessions" + str(self.entries_variable_CF[i].get())
+                    new_value_sub = self.entries_value_CF[i].get() 
                     new_value_sub = "" if new_value_sub is None else new_value_sub
-                    tmp_CV.update({keyCV : new_value_sub, keyCV1 : new_value_sub})    
-                    self.entries_variable_CV[i]['state'] = tk.DISABLED
-                    self.entries_value_CV[i]['state'] = tk.DISABLED 
+                    tmp_CF.update({keyCF : new_value_sub, keyCF1 : new_value_sub})    
+                    self.entries_variable_CF[i]['state'] = tk.DISABLED
+                    self.entries_value_CF[i]['state'] = tk.DISABLED 
                 # Find all the keys for the subject (Sub+Exp) that you want to update
                 keys = []
                 for k,v in self.path_list1.items():
@@ -2063,18 +2067,18 @@ class xnat_pic_gui():
                             keys.append(k)
                 for x in range(len(keys)):
                     my_key = keys[x]           
-                    self.results_dict[my_key].update(tmp_CV)
+                    self.results_dict[my_key].update(tmp_CF)
                     savetxt(my_key)
-            elif str(self.level_CV.get()) == "Sessions":
-                # Update the info in the txt file CV
-                for i in array_CV:
-                    keyCV = "Sessions" + str(self.entries_variable_CV[i].get())
-                    new_value_ses = self.entries_value_CV[i].get() 
-                    tmp_CV.update({keyCV : new_value_ses})     
-                    self.entries_variable_CV[i]['state'] = tk.DISABLED
-                    self.entries_value_CV[i]['state'] = tk.DISABLED 
+            elif str(self.level_CF.get()) == "Sessions":
+                # Update the info in the txt file CF
+                for i in array_CF:
+                    keyCF = "Sessions" + str(self.entries_variable_CF[i].get())
+                    new_value_ses = self.entries_value_CF[i].get() 
+                    tmp_CF.update({keyCF : new_value_ses})     
+                    self.entries_variable_CF[i]['state'] = tk.DISABLED
+                    self.entries_value_CF[i]['state'] = tk.DISABLED 
          
-                self.results_dict[my_key].update(tmp_CV)
+                self.results_dict[my_key].update(tmp_CF)
                 savetxt(my_key)
            
             # Clear all 
@@ -2087,7 +2091,7 @@ class xnat_pic_gui():
 
         def confirm_metadata(self):
             # Check before editing the data
-            if str(self.level_CV.get()) == "Sessions" and not self.entries_value_ID[2].get():
+            if str(self.level_CF.get()) == "Sessions" and not self.entries_value_ID[2].get():
                 messagebox.showerror("XNAT-PIC", "Click Tab to select a folder from the list box on the left")
                 return 
 
@@ -2105,11 +2109,11 @@ class xnat_pic_gui():
         ##################### Confirm multiple metadata ####################
         def confirm_multiple_metadata(self, master):
 
-            disable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+            disable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
             
-            for i in range(len(self.entries_variable_CV)):  
-                self.entries_variable_CV[i]['state'] = tk.DISABLED
-                self.entries_value_CV[i]['state'] = tk.DISABLED    
+            for i in range(len(self.entries_variable_CF)):  
+                self.entries_variable_CF[i]['state'] = tk.DISABLED
+                self.entries_value_CF[i]['state'] = tk.DISABLED    
 
             # Clear all 
             self.selected_group.set('')
@@ -2119,53 +2123,53 @@ class xnat_pic_gui():
             self.selected_dose.set('')
 
             # Check before editing the data
-            if str(self.level_CV.get()) == "Sessions" and not self.entries_value_ID[3].get():
-                enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+            if str(self.level_CF.get()) == "Sessions" and not self.entries_value_ID[3].get():
+                enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
                 messagebox.showerror("XNAT-PIC", "Click Tab to select a folder from the list box on the left")
                 return 
-            self.select_CV(master)
+            self.select_CF(master)
 
-        def select_CV(self, master):
-            messagebox.showinfo("Project Data","Select the Custom Variables you want to copy.")
+        def select_CF(self, master):
+            messagebox.showinfo("Project Data","Select the Custom Forms you want to copy.")
             #self.my_listbox.selection_set(self.selected_index)
             # Select the fields that you want to copy
-            self.list_CV = []
+            self.list_CF = []
             # Confirm ID
-            def multiple_confirm_CV(row):
-                self.list_CV.append(row)
-                btn_multiple_confirm_CV[row].destroy()
-                btn_multiple_delete_CV[row].destroy()
+            def multiple_confirm_CF(row):
+                self.list_CF.append(row)
+                btn_multiple_confirm_CF[row].destroy()
+                btn_multiple_delete_CF[row].destroy()
                 count_list.pop()
-                # If the user has finished all the selections of the CV, he moves on to the selection of experiments
+                # If the user has finished all the selections of the CF, he moves on to the selection of experiments
                 if len(count_list) == 0:
-                    if str(self.level_CV.get()) == "Sessions":
+                    if str(self.level_CF.get()) == "Sessions":
                         self.select_exp(master)
-                    if str(self.level_CV.get()) == "Subjects":
+                    if str(self.level_CF.get()) == "Subjects":
                         self.select_sub(master)
 
             # Delete ID
-            def multiple_delete_CV(row):
-                btn_multiple_confirm_CV[row].destroy()
-                btn_multiple_delete_CV[row].destroy()
+            def multiple_delete_CF(row):
+                btn_multiple_confirm_CF[row].destroy()
+                btn_multiple_delete_CF[row].destroy()
                 count_list.pop()
-                # If the user has finished all the selections of the CV, he moves on to the selection of experiments
+                # If the user has finished all the selections of the CF, he moves on to the selection of experiments
                 if len(count_list) == 0:
-                    if str(self.level_CV.get()) == "Sessions":
+                    if str(self.level_CF.get()) == "Sessions":
                         self.select_exp(master)
-                    if str(self.level_CV.get()) == "Subjects":
+                    if str(self.level_CF.get()) == "Subjects":
                         self.select_sub(master)
 
-            btn_multiple_confirm_CV = []
-            btn_multiple_delete_CV = []
+            btn_multiple_confirm_CF = []
+            btn_multiple_delete_CF = []
             count_list = []
-            for i in range(0, len(self.entries_variable_CV)):
-                btn_multiple_confirm_CV.append(ttk.Button(self.frame_CV, image = master.logo_accept, 
-                                                command=lambda row=i: multiple_confirm_CV(row), cursor=CURSOR_HAND))
-                btn_multiple_confirm_CV[-1].grid(row=i, column=5, padx = 5, pady = 5, sticky=NW)
-                btn_multiple_delete_CV.append(ttk.Button(self.frame_CV, image = master.logo_delete, 
-                                                command=lambda row=i: multiple_delete_CV(row), cursor=CURSOR_HAND))
-                btn_multiple_delete_CV[-1].grid(row=i, column=6, padx = 5, pady = 5, sticky=NW)
-                count_list = btn_multiple_confirm_CV.copy()
+            for i in range(0, len(self.entries_variable_CF)):
+                btn_multiple_confirm_CF.append(ttk.Button(self.frame_CF, image = master.logo_accept, 
+                                                command=lambda row=i: multiple_confirm_CF(row), cursor=CURSOR_HAND))
+                btn_multiple_confirm_CF[-1].grid(row=i, column=5, padx = 5, pady = 5, sticky=NW)
+                btn_multiple_delete_CF.append(ttk.Button(self.frame_CF, image = master.logo_delete, 
+                                                command=lambda row=i: multiple_delete_CF(row), cursor=CURSOR_HAND))
+                btn_multiple_delete_CF[-1].grid(row=i, column=6, padx = 5, pady = 5, sticky=NW)
+                count_list = btn_multiple_confirm_CF.copy()
         
         def select_exp(self, master):
             
@@ -2216,7 +2220,7 @@ class xnat_pic_gui():
                 self.time_entry.delete(0, tk.END)
                 disable_buttons([self.dose_menu, self.group_menu, self.timepoint_menu, self.time_entry, self.timepoint_menu1])
                 # Clear the focus and the select mode of the listbox is single
-                enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
                 self.my_listbox.selection_clear(0, 'end')
                 for i in range(len(self.listbox_notebook)):
                     self.listbox_notebook[i]['selectmode'] = SINGLE 
@@ -2232,7 +2236,7 @@ class xnat_pic_gui():
                 self.ok_btn.destroy()
                 # Clear the focus and the select mode of the listbox is single
                 messagebox.showinfo("Metadata","The information was not saved for the selected folders!")
-                enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
                 for i in range(len(self.listbox_notebook)):
                     self.listbox_notebook[i]['selectmode'] = SINGLE 
                     self.listbox_notebook[i]['exportselection']= TRUE 
@@ -2249,8 +2253,8 @@ class xnat_pic_gui():
             # If you want the logo 
             self.popup_subject.iconbitmap(PATH_IMAGE + "logo3.ico")
 
-            # Select the subjects to copy the custom variables to
-            self.popup_subject_frame = ttk.LabelFrame(self.popup_subject, text="Custom Variables", style="Popup.TLabelframe")
+            # Select the subjects to copy the Custom Forms to
+            self.popup_subject_frame = ttk.LabelFrame(self.popup_subject, text="Custom Forms", style="Popup.TLabelframe")
             self.popup_subject_frame.grid(row=1, column=0, padx=10, pady=5, sticky=tk.E+tk.W+tk.N+tk.S, columnspan=2)
             
             self.canvas_sub = tk.Canvas(self.popup_subject_frame)
@@ -2274,7 +2278,7 @@ class xnat_pic_gui():
                     canvas.configure(scrollregion=canvas.bbox("all"))
                                      
             # Label     
-            self.popup_subject.label = ttk.Label(self.frame_sub, text="Select the subjects to copy the custom variables to:")  
+            self.popup_subject.label = ttk.Label(self.frame_sub, text="Select the subjects to copy the Custom Forms to:")  
             self.popup_subject.label.grid(row=1, column=0, padx=10, pady=10, sticky=tk.W)
 
             # List of subjects
@@ -2298,7 +2302,7 @@ class xnat_pic_gui():
                     self.popup_subject.destroy()
                 except:
                     pass
-                enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
                 for text, var in zip(self.todos, self.sub_flag):
                     if var.get():
                         try:
@@ -2317,7 +2321,7 @@ class xnat_pic_gui():
                     self.popup_subject.destroy()
                 except:
                     pass
-                enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
                
             self.popup_subject.button_cancel = ttk.Button(self.popup_subject, image = master.logo_delete,
                                                 command = enable, cursor=CURSOR_HAND)
@@ -2331,9 +2335,9 @@ class xnat_pic_gui():
             if not self.entries_value_ID[0].get():
                 messagebox.showerror("XNAT-PIC", "Select a folder")
                 return 
-            # Normal entry CV
-            for i in range(0, len(self.entries_value_CV)):
-                self.entries_value_CV[i]['state'] = 'disabled'
+            # Normal entry CF
+            for i in range(0, len(self.entries_value_CF)):
+                self.entries_value_CF[i]['state'] = 'disabled'
         
             # Clear all 
             self.selected_group.set('')
@@ -2342,7 +2346,7 @@ class xnat_pic_gui():
             self.selected_timepoint1.set('')
             self.time_entry.delete(0, tk.END)
             disable_buttons([self.dose_menu, self.group_menu, self.timepoint_menu, self.time_entry, self.timepoint_menu1])
-            disable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+            disable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
 
             if flag_ID == "Project":               
                 # Modify Project Name
@@ -2355,7 +2359,7 @@ class xnat_pic_gui():
                         messagebox.showerror("XNAT-PIC", "Insert the name of the project!")
                         return
                     self.entries_value_ID[0]['state'] = 'disabled'
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
                     for k,v in self.results_dict.items():
                         self.results_dict[k]['Project'] = new_prj
                     for k,v in self.path_list1.items():
@@ -2391,7 +2395,7 @@ class xnat_pic_gui():
                     self.entries_value_ID[0].delete(0, tk.END)
                     self.entries_value_ID[0].insert(0, self.project_name)
                     self.entries_value_ID[0]['state'] = 'disabled'
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
                     btn_project_delete_ID.destroy()
                     btn_project_confirm_ID.destroy()
 
@@ -2409,7 +2413,7 @@ class xnat_pic_gui():
                         messagebox.showerror("XNAT-PIC", "Insert the name of the subject!")
                         return 
                     self.entries_value_ID[1]['state'] = 'disabled'
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
                     
                     keys = []
                     for k,v in self.path_list1.items():
@@ -2453,7 +2457,7 @@ class xnat_pic_gui():
                     self.entries_value_ID[1].delete(0, tk.END)
                     self.entries_value_ID[1].insert(0, self.subject_name)
                     self.entries_value_ID[1]['state'] = 'disabled'
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
                     btn_subject_delete_ID.destroy()
                     btn_subject_confirm_ID.destroy()
 
@@ -2462,13 +2466,13 @@ class xnat_pic_gui():
                 btn_subject_delete_ID.place(relx = 0.71, rely = 0.53, anchor = NE)
 
             elif flag_ID == "Experiment":
-                if str(self.level_CV.get()) == "Subjects":
+                if str(self.level_CF.get()) == "Subjects":
                     messagebox.showerror("XNAT-PIC", "Select Sessions Level")
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
                     return 
-                if str(self.level_CV.get()) == "Sessions" and not self.entries_value_ID[2].get():
+                if str(self.level_CF.get()) == "Sessions" and not self.entries_value_ID[2].get():
                     messagebox.showerror("XNAT-PIC", "Click Tab to select a folder from the list box on the left")
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
                     return 
                 # Modify Project Name
                 self.entries_value_ID[2]['state'] = 'normal'
@@ -2479,7 +2483,7 @@ class xnat_pic_gui():
                         messagebox.showerror("XNAT-PIC", "Insert the name of the experiment!")
                         return 
                     self.entries_value_ID[2]['state'] = 'disabled'
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
  
                     self.results_dict[self.selected_folder]['Experiment'] = new_exp
                     self.confirm_metadata()
@@ -2495,7 +2499,7 @@ class xnat_pic_gui():
                     self.entries_value_ID[2].delete(0, tk.END)
                     self.entries_value_ID[2].insert(0, self.experiment_name)
                     self.entries_value_ID[2]['state'] = 'disabled'
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
                     btn_exp_delete_ID.destroy()
                     btn_exp_confirm_ID.destroy()
 
@@ -2504,13 +2508,13 @@ class xnat_pic_gui():
                 btn_exp_delete_ID.place(relx = 0.71, rely = 0.53, anchor = NE)
 
             elif flag_ID == "Acquisition Date":
-                if str(self.level_CV.get()) == "Subjects":
+                if str(self.level_CF.get()) == "Subjects":
                     messagebox.showerror("XNAT-PIC", "Select Sessions Level")
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
                     return 
-                if str(self.level_CV.get()) == "Sessions" and not self.entries_value_ID[2].get():
+                if str(self.level_CF.get()) == "Sessions" and not self.entries_value_ID[2].get():
                     messagebox.showerror("XNAT-PIC", "Click Tab to select a folder from the list box on the left")
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
                     return 
 
                 # Modify acq date Name
@@ -2550,7 +2554,7 @@ class xnat_pic_gui():
                     self.cal.entry.delete(0, tk.END)
                     self.cal.entry['state'] = 'disabled'
                     self.cal.button['state'] = 'disabled'
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
                     
                     new_date = self.entries_value_ID[3].get()
 
@@ -2573,7 +2577,7 @@ class xnat_pic_gui():
                     self.cal.entry['state'] = 'disabled'
                     self.cal.button['state'] = 'disabled'
                     self.entries_value_ID[3]['state'] = tk.DISABLED
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCV, self.SubjectCV])
+                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
                     btn_date_delete_ID.destroy()
                     btn_date_confirm_ID.destroy()
 
@@ -2595,22 +2599,22 @@ class xnat_pic_gui():
             state = self.entries_value_ID[1]['state']
             if flag =='All':
                 # Set empty string in all the entries
-                for i in range(0, len(self.entries_variable_CV)):
-                        self.entries_value_CV[i]['state'] = tk.NORMAL
-                        self.entries_value_CV[i].delete(0, tk.END)
-                        self.entries_value_CV[i]['state'] = state
+                for i in range(0, len(self.entries_variable_CF)):
+                        self.entries_value_CF[i]['state'] = tk.NORMAL
+                        self.entries_value_CF[i].delete(0, tk.END)
+                        self.entries_value_CF[i]['state'] = state
             elif flag == 'Group':
-                self.entries_value_CV[0]['state'] = tk.NORMAL
-                self.entries_value_CV[0].delete(0, tk.END)
-                self.entries_value_CV[0]['state'] = state
+                self.entries_value_CF[0]['state'] = tk.NORMAL
+                self.entries_value_CF[0].delete(0, tk.END)
+                self.entries_value_CF[0]['state'] = state
             elif flag == 'Timepoint':
-                    self.entries_value_CV[1]['state'] = tk.NORMAL
-                    self.entries_value_CV[1].delete(0, tk.END)
-                    self.entries_value_CV[1]['state'] = state
+                    self.entries_value_CF[1]['state'] = tk.NORMAL
+                    self.entries_value_CF[1].delete(0, tk.END)
+                    self.entries_value_CF[1]['state'] = state
             elif flag == 'Dose':
-                    self.entries_value_CV[2]['state'] = tk.NORMAL
-                    self.entries_value_CV[2].delete(0, tk.END)
-                    self.entries_value_CV[2]['state'] = state
+                    self.entries_value_CF[2]['state'] = tk.NORMAL
+                    self.entries_value_CF[2].delete(0, tk.END)
+                    self.entries_value_CF[2]['state'] = state
             self.confirm_metadata()
         # #################### Save all the metadata ####################
         def save_metadata(self):
@@ -2768,17 +2772,19 @@ class xnat_pic_gui():
                     #messagebox.showerror("XNAT-PIC Converter", "Please select a folder.")
                     return
                 # Check if the selected folder is related to the right conversion flag
-                if self.upload_type.get() == 0 and glob(self.folder_to_upload.get() + "/**/**/**/**/*.dcm", recursive=False) == []:
+                print(self.folder_to_upload.get())
+                print(self.upload_type.get() == 0)
+                if self.upload_type.get() == 0 and glob(self.folder_to_upload.get() + "//**//**//**//**//*.dcm", recursive=False) == []:
                     messagebox.showerror("XNAT-PIC Uploader", "The selected folder is not project related.\nPlease select an other directory!")
                     destroy_widgets([self.frame_uploader])
                     self.overall_uploader(master)
                     return
-                if self.upload_type.get() == 1 and glob(self.folder_to_upload.get() + "/**/**/**/*.dcm", recursive=False) == []:
+                if self.upload_type.get() == 1 and glob(self.folder_to_upload.get() + "//**//**//**//*.dcm", recursive=False) == []:
                     messagebox.showerror("XNAT-PIC Uploader", "The selected folder is not subject related.\nPlease select an other directory!")
                     destroy_widgets([self.frame_uploader])
                     self.overall_uploader(master)
                     return
-                if self.upload_type.get() == 2 and glob(self.folder_to_upload.get() + "/**/**/*.dcm", recursive=False) == []:
+                if self.upload_type.get() == 2 and glob(self.folder_to_upload.get() + "//**//**//*.dcm", recursive=False) == []:
                     messagebox.showerror("XNAT-PIC Uploader", "The selected folder is not experiment related.\nPlease select an other directory!")
                     destroy_widgets([self.frame_uploader])
                     self.overall_uploader(master)

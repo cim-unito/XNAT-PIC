@@ -281,6 +281,7 @@ class AccessManager():
                 self.popup.entry_psw.var.get(),
             )
             self.connected = True
+            #self.test_custom_forms()
             # Check if the 'Remember Button' is checked
             if self.popup.remember.get() == True:
                 # Save credentials
@@ -292,7 +293,29 @@ class AccessManager():
             messagebox.showerror("Error!", error)
             self.connected = False
             self.popup.destroy()
+    def test_custom_forms(self):
+            # Project Level
+            # Get the list of projects uploaded to xnat 
+            project_list = list(self.session.projects)
+            # print(project_list)
+            # GET
+            try:
+                response = self.session.get('/xapi/custom-fields/projects/11062024_3/fields')
+                print("\n\n CustomForm: " + response.text)
+            except Exception as e:
+                messagebox.showerror("XNAT-PIC", 'Error:' + str(e))
+                raise
+            # PUT
+            try:
+                payload = {'e2bd7bc6-5660-4787-8700-18b4c2b6b2d7': {'checkbox': "test"}}
+                headers = {'Content-Type': 'application/json'}
+                response = self.session.put('/xapi/custom-fields/projects/11062024_3/fields', json=payload, headers=headers)
+                #print(response)
+            except Exception as e:
+                messagebox.showerror("XNAT-PIC", 'Error:' + str(e))
+                raise
 
+                   
     def save_credentials(self):
 
         dir = os.getcwd().replace('\\', '/')
