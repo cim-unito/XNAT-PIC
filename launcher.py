@@ -2825,9 +2825,6 @@ class xnat_pic_gui():
                         subdir = os.listdir(self.working_folder)
                         # Check for OS configuration files and remove them
                         subdirectories = [x for x in subdir if x.endswith('.ini') == False]
-                        # Check if there are CV 
-                        CV_exist_prj = glob(self.working_folder + '/**/**/**/*custom_variables.txt', recursive=False)
-                        text_CV_prj = 'No' if CV_exist_prj == [] else 'Yes'
                         
                         j = 0
                         dict_items[str(j)] = {}
@@ -2855,7 +2852,6 @@ class xnat_pic_gui():
                                 sub_level2 = os.listdir(os.path.join(self.working_folder, sub))
                                 subdirectories2 = [x for x in sub_level2 if x.endswith('.ini') == False]
                                 for sub2 in subdirectories2:
-                                    list_CV_sub = []
                                     if os.path.isfile(os.path.join(self.working_folder, sub, sub2)):
                                         # Add the item like a file
                                         dict_items[str(j)] = {}
@@ -2870,9 +2866,6 @@ class xnat_pic_gui():
                                         if glob(tmp_exp_path + "/**/**/*.dcm", recursive=False) == []:
                                             val_exp_1 = "Folder"
                                         else:
-                                            CV_exist_exp =  glob(tmp_exp_path + '/**/*custom_variables.txt', recursive=False)
-                                            text_CV_exp = 'No' if CV_exist_exp == [] else 'Yes'
-                                            list_CV_sub.append(text_CV_exp)
                                             val_exp_1 = "Experiment"
                                         dict_items[str(j)] = {}
                                         dict_items[str(j)]['parent'] = '1'
@@ -2880,11 +2873,8 @@ class xnat_pic_gui():
                                         dict_items[str(j)]['values'] = (val_exp_1)
                                         j += 1
 
-                                text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'No'
-                                dict_items[str(branch_idx)]['values'] = ("Subject", text_CV_exp)
-
                         # Update the fields of the parent object
-                        dict_items['0']['values'] = ("Project", text_CV_prj)
+                        dict_items['0']['values'] = ("Project")
                         self.tree.set(dict_items)
                     else:
                         # Treeview for the project or experiment
@@ -2922,7 +2912,6 @@ class xnat_pic_gui():
                                     sub_level2 = os.listdir(os.path.join(self.working_folder, sub))
                                     subdirectories2 = [x for x in sub_level2 if x.endswith('.ini') == False]
                                     for sub2 in subdirectories2:
-                                        list_CV_sub = []
                                         if os.path.isfile(os.path.join(self.working_folder, sub, sub2)):
                                             # Add the item like a file
                                             dict_items[str(j)] = {}
@@ -2941,9 +2930,6 @@ class xnat_pic_gui():
                                                 if glob(tmp_exp_path + "/**/**/*.dcm", recursive=False) == []:
                                                     dict_items[str(j)]['values'] = ("Folder")
                                                 else:
-                                                    CV_exist_exp =  glob(tmp_exp_path + '/**/*custom_variables.txt', recursive=False)
-                                                    text_CV_exp = 'No' if CV_exist_exp == [] else 'Yes'
-                                                    list_CV_sub.append(text_CV_exp)
                                                     dict_items[str(j)]['values'] = ("Experiment")
                                             elif self.upload_type.get() == 2:
                                                 tmp_exp_path1 = os.path.join(self.working_folder, sub, sub2)
@@ -2953,20 +2939,15 @@ class xnat_pic_gui():
                                                     dict_items[str(j)]['values'] = ("Scan")
                                             j += 1
                                     if self.upload_type.get() == 0:    
-                                        text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'No'
-                                        dict_items[str(branch_idx)]['values'] = ("Subject", text_CV_exp)
+                                        dict_items[str(branch_idx)]['values'] = ("Subject")
                                     elif self.upload_type.get() == 2:    
                                         dict_items[str(branch_idx)]['values'] = ("Imaging-Technique")
 
                             # Update the fields of the parent object
                             if self.upload_type.get() == 0:
-                                CV_exist_prj = glob(self.working_folder + '/**/**/**/*custom_variables.txt', recursive=False)
-                                text_CV_prj = 'No' if CV_exist_prj == [] else 'Yes'
-                                dict_items['0']['values'] = ("Project", text_CV_prj)
+                                dict_items['0']['values'] = ("Project")
                             if self.upload_type.get() == 2:
-                                CV_exist = glob(self.working_folder + '/**/*custom_variables.txt', recursive=False)
-                                text_CV = 'No' if CV_exist == [] else 'Yes'
-                                dict_items['0']['values'] = ("Experiment", text_CV)
+                                dict_items['0']['values'] = ("Experiment")
                             
                             self.tree.set(dict_items)
                         # Treeview for the subject
@@ -2987,7 +2968,6 @@ class xnat_pic_gui():
                             dict_items[str(j)]['text'] = self.working_folder.split('/')[-1]
                             j = 1
                             for sub in subdirectories:
-                                list_CV_sub = []
                                 if os.path.isfile(os.path.join(self.working_folder, sub)):
                                     # Add the item like a file
                                     dict_items[str(j)] = {}
@@ -3002,9 +2982,6 @@ class xnat_pic_gui():
                                     if glob(tmp_exp_path + "/**/**/*.dcm", recursive=False) == []:
                                         val_exp = "Folder"
                                     else:
-                                        CV_exist_exp =  glob(tmp_exp_path + '/**/*custom_variables.txt', recursive=False)
-                                        text_CV_exp = 'No' if CV_exist_exp == [] else 'Yes'
-                                        list_CV_sub.append(text_CV_exp)
                                         val_exp = "Experiment"
                                     branch_idx = j
                                     dict_items[str(j)] = {}
@@ -3015,8 +2992,7 @@ class xnat_pic_gui():
                                     dict_items[str(branch_idx)]['values'] = (val_exp)
 
                             # Update the fields of the parent object
-                            text_CV_exp = 'Yes' if all(x == 'Yes' for x in list_CV_sub) else 'No'
-                            dict_items['0']['values'] = ("Subject", text_CV_exp)
+                            dict_items['0']['values'] = ("Subject")
                             self.tree.set(dict_items)
                         # Treeview for the file
                         if self.upload_type.get() == 3:
@@ -3036,7 +3012,6 @@ class xnat_pic_gui():
                             dict_items[str(j)]['text'] = self.working_folder.split('/')[-1]
                             j = 1
                             for sub in subdirectories:
-                                list_CV_sub = []
                                 if os.path.isfile(os.path.join(self.working_folder, sub)):
                                     # Add the item like a file
                                     dict_items[str(j)] = {}
@@ -3083,7 +3058,7 @@ class xnat_pic_gui():
                             self.selected_item_path.set('/'.join([self.working_folder, self.tree.tree.item(parent_item, "text"),
                                 self.tree.tree.item(selected_item, "text")]))
             
-            columns = [("#0", "Folder"), ("#1", "Type"), ("#2", "Custom Variables")]
+            columns = [("#0", "Folder"), ("#1", "Type")]
             self.tree = Treeview(self.frame_uploader, columns, width=80)
             self.tree.tree.place(relx = 0.05, rely = 0.31, relheight=0.30, relwidth=0.4, anchor = NW)
             self.tree.scrollbar.place(relx = 0.47, rely = 0.31, relheight=0.30, anchor = NE)
@@ -3122,149 +3097,20 @@ class xnat_pic_gui():
                                 text="Additional Files", state='disabled', bootstyle="round-toggle", cursor=CURSOR_HAND)
             self.add_file_btn.place(relx = 0.53, rely = 0.25, anchor = NW)
             
-            # Label Frame Uploader Custom Variables
-            self.custom_var_labelframe = ttk.Labelframe(self.frame_uploader, text = 'Custom Variables')
-            self.custom_var_labelframe.place(relx = 0.53, rely = 0.31, relheight=0.30, relwidth = 0.42, anchor = NW)
+            # Label Frame Uploader DICOM Viewer
+            self.dicom_viewer_labelframe = ttk.Labelframe(self.frame_uploader, text = 'DICOM Viewer')
+            self.dicom_viewer_labelframe.place(relx = 0.53, rely = 0.31, relheight=0.30, relwidth = 0.42, anchor = NW)
             
-            # Custom Variables
-            # self.n_custom_var = tk.IntVar()
-            # self.n_custom_var.set(3)
-            # custom_var_options = list(range(0, 4))
-            # self.custom_var_list = ttk.OptionMenu(self.custom_var_labelframe, self.n_custom_var, 0, *custom_var_options)
-            # self.custom_var_list.config(width=2, cursor=CURSOR_HAND)
-            # self.custom_var_list.grid(row=0, column=0, padx=5, pady=5, sticky=tk.NW)
-            my_string_var = StringVar()
-            my_string_var.set("Custom Variables")
-            self.custom_var_label = ttk.Label(self.custom_var_labelframe, textvariable=my_string_var, font = 'bold')
-            self.custom_var_label.grid(row=0, column=1, padx=2, pady=5, sticky=tk.NW)
-
-            # Show Custom Variables
-            def display_custom_var(*args):
-                for widget in self.custom_var_labelframe.winfo_children():
+            # Show DICOM images
+            def display_dicom(*args):
+                for widget in self.dicom_viewer_labelframe.winfo_children():
                     if widget.grid_info()['row'] > 0:
                         widget.destroy()
 
-                if self.selected_item_path.get() != '':
-                #if self.n_custom_var.get() != 0:
-                    try:
-                        if str(self.type_folder) == 'Subject':
-                            my_string_var.set("Subject Level")
-                            list_of_files = glob(self.selected_item_path.get() + '/**/**/*custom_variables.txt', recursive=False)
-                            no_keys = ['Project', 'Subject', 'Experiment', 'Acquisition_date', 'SubjectsCV', 'SessionsCV', 'SessionsGroup', 'SessionsTimepoint', 'SessionsDose']
-                        elif str(self.type_folder) == 'Experiment':
-                            my_string_var.set("Experiment Level")
-                            list_of_files = glob(self.selected_item_path.get() + '/**/*custom_variables.txt', recursive=False)
-                            no_keys = ['Project', 'Subject', 'Experiment', 'Acquisition_date', 'SubjectsCV', 'SessionsCV', 'SubjectsGroup', 'SubjectsTimepoint', 'SubjectsDose']
-                        else: 
-                            my_string_var.set("Custom Variables")
-                            return
-                        custom_file = [x for x in list_of_files if 'Custom' in x]
-                        custom_variables = read_table(custom_file[0])
-                        info = {}
-                        custom_vars = [(key, custom_variables[key]) for key in custom_variables.keys() 
-                                            if key not in no_keys]
-                    except:
-                        info = {"Project": self.selected_item_path.get().split('/')[-3], 
-                                "Subject": self.selected_item_path.get().split('/')[-2], 
-                                "Experiment": self.selected_item_path.get().split('/')[-1], 
-                                "Acquisition_date": "", 
-                                "SubjectsCV": "",
-                                "SessionsCV": ""}
-                        if str(self.type_folder) == 'Subject':
-                            custom_vars = [("SubjectsGroup", ""), ("SubjectsTimepoint", ""), ("SubjectsDose", "")]
-                        elif str(self.type_folder) == 'Experiment':
-                            custom_vars = [("SessionsGroup", ""), ("SessionsTimepoint", ""), ("SessionsDose", "")]
-                        custom_file = [os.path.join(self.selected_item_path.get(), 'MR', self.selected_item_path.get().split('/')[-1] + "_Custom_Variables.txt")]
-                    label_list = []
-                    entry_list = []
-                    num_custom_variables = 0
-                    for x, my_var in enumerate(custom_vars):
-                        if my_var[1] != None and my_var[1] != 'None' and my_var[1] != '' :
-                            num_custom_variables += 1
-                            # Custom Variable Label
-                            if str(self.type_folder) == 'Subject':
-                                text_label = str(custom_vars[x][0]).replace('Subjects','')
-                            elif str(self.type_folder) == 'Experiment':
-                                text_label = str(custom_vars[x][0]).replace('Sessions','')
-                            label_n = ttk.Label(self.custom_var_labelframe, text=text_label)
-                            label_n.grid(row=x+1, column=0, padx=5, pady=5, sticky=tk.NW)
-                            label_list.append(label_n)
-                            # Custom Variable Entry
-                            entry_n = ttk.Entry(self.custom_var_labelframe, show='', state='disabled')
-                            entry_n.var = tk.StringVar()
-                            text_entry = str(custom_vars[x][1])
-                            text_entry = '' if text_entry == 'None' else text_entry
-                            entry_n.var.set(text_entry)
-                            entry_n["textvariable"] = entry_n.var
-                            entry_n.grid(row=x+1, column=1, padx=5, pady=5, sticky=tk.NW)
-                            entry_list.append(entry_n)
+                if self.selected_item_path.get() != '' and str(self.type_folder) == 'Experiment':
+                        print('ok')
 
-                        # Button to modify the entry of the custom variable
-                        def edit_handler(*args):
-                            self.label_list1 = []
-                            self.entry_list1 = []
-                            all_custom_variables = len(custom_vars)
-                            for x in range(1, all_custom_variables+1):
-                                # Custom Variable Label
-                                if str(self.type_folder) == 'Subject':
-                                    text_label = str(custom_vars[x-1][0]).replace('Subjects','')
-                                elif str(self.type_folder) == 'Experiment':
-                                    text_label = str(custom_vars[x-1][0]).replace('Sessions','')
-                                label_n1 = ttk.Label(self.custom_var_labelframe, text=text_label)
-                                label_n1.grid(row=x, column=0, padx=5, pady=5, sticky=tk.NW)
-                                self.label_list1.append(label_n1)
-                                # Custom Variable Entry
-                                entry_n1 = ttk.Entry(self.custom_var_labelframe, show='', state='disabled')
-                                entry_n1.var = tk.StringVar()
-                                text_entry1 = str(custom_vars[x-1][1])
-                                text_entry1 = '' if text_entry1 == 'None' else text_entry1
-                                entry_n1.var.set(text_entry1)
-                                entry_n1["textvariable"] = entry_n1.var
-                                entry_n1.grid(row=x, column=1, padx=5, pady=5, sticky=tk.NW)
-                                self.entry_list1.append(entry_n1)
-                            enable_buttons(self.entry_list1)
-                            enable_buttons([confirm_button, reject_button])
-                             
-                        edit_button = ttk.Button(self.custom_var_labelframe, image=master.logo_edit, command=edit_handler,
-                                                   style="WithoutBack.TButton", cursor=CURSOR_HAND)
-                        edit_button.grid(row=0, column=2, padx=5, pady=5, sticky=tk.NW)
-
-                        # Button to confirm changes
-                        def accept_changes(*args):
-                           # Save change on .txt file
-                           try:
-                               data = {}
-                               data.update(info)
-                               for e in range(len(self.entry_list1)):
-                                   if str(self.type_folder) == 'Subject':
-                                       new_key_sub = 'Subjects' + str(self.label_list1[e]["text"])
-                                       data[new_key_sub] = self.entry_list1[e].var.get()
-                                       if self.entry_list1[e].var.get() != "":
-                                            new_key_ses = 'Sessions' + str(self.label_list1[e]["text"])
-                                            data[new_key_ses] = self.entry_list1[e].var.get()
-                                   if str(self.type_folder) == 'Experiment':
-                                       new_key = 'Sessions' + str(self.label_list1[e]["text"])
-                                       data[new_key] = self.entry_list1[e].var.get()
-                               for custom_path_file in custom_file:        
-                                write_table(custom_path_file, data)
-                               display_custom_var()
-                           except Exception as e: 
-                              messagebox.showerror("XNAT-PIC Uploader", e)
-
-                        confirm_button = ttk.Button(self.custom_var_labelframe, image=master.logo_accept, command=accept_changes,
-                                                   state='disabled', style="WithoutBack.TButton", cursor=CURSOR_HAND)
-                        confirm_button.grid(row=0, column=3, padx=5, pady=5, sticky=tk.NW)
-
-                        # Button to abort changes
-                        def reject_changes(*args):
-                           # disable_buttons(entry_list)
-                           display_custom_var()
-                        reject_button = ttk.Button(self.custom_var_labelframe, image=master.logo_delete, command=reject_changes,
-                                                   state='disabled', style="WithoutBack.TButton", cursor=CURSOR_HAND)
-                        reject_button.grid(row=0, column=4, padx=5, pady=5, sticky=tk.NW)
-
-            #self.n_custom_var.trace('w', display_custom_var)
-            self.selected_item_path.trace('w', display_custom_var)
+            self.selected_item_path.trace('w', display_dicom)
             #############################################
             ################# Project ###################
             # Menu
