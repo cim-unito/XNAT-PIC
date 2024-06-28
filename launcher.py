@@ -3060,8 +3060,8 @@ class xnat_pic_gui():
             
             columns = [("#0", "Folder"), ("#1", "Type")]
             self.tree = Treeview(self.frame_uploader, columns, width=80)
-            self.tree.tree.place(relx = 0.05, rely = 0.31, relheight=0.30, relwidth=0.4, anchor = NW)
-            self.tree.scrollbar.place(relx = 0.47, rely = 0.31, relheight=0.30, anchor = NE)
+            self.tree.tree.place(relx = 0.29, rely = 0.25, relheight=0.30, relwidth=0.4, anchor = NW)
+            self.tree.scrollbar.place(relx = 0.71, rely = 0.25, relheight=0.30, anchor = NE)
             self.tree.tree.bind("<ButtonRelease-1>", get_selected_item)
 
             def load_tree(*args):
@@ -3090,27 +3090,13 @@ class xnat_pic_gui():
             self.chkvar_entire_prj = tk.BooleanVar()
             self.chkvar_entire_prj.set(False)
             self.chkbtn_entire_prj = ttk.Checkbutton(self.frame_uploader, text="View the entire project", variable=self.chkvar_entire_prj, command=folder_selected_handler, state='disabled', bootstyle="round-toggle", cursor=CURSOR_HAND)
-            self.chkbtn_entire_prj.place(relx = 0.29, rely = 0.25, anchor = NW)
+            self.chkbtn_entire_prj.place(relx = 0.05, rely = 0.30, anchor = NW)
             # Upload additional files
             self.add_file_flag = tk.IntVar()
             self.add_file_btn = ttk.Checkbutton(self.frame_uploader, variable=self.add_file_flag, onvalue=1, offvalue=0, 
                                 text="Additional Files", state='disabled', bootstyle="round-toggle", cursor=CURSOR_HAND)
-            self.add_file_btn.place(relx = 0.53, rely = 0.25, anchor = NW)
+            self.add_file_btn.place(relx = 0.05, rely = 0.33, anchor = NW)
             
-            # Label Frame Uploader DICOM Viewer
-            self.dicom_viewer_labelframe = ttk.Labelframe(self.frame_uploader, text = 'DICOM Viewer')
-            self.dicom_viewer_labelframe.place(relx = 0.53, rely = 0.31, relheight=0.30, relwidth = 0.42, anchor = NW)
-            
-            # Show DICOM images
-            def display_dicom(*args):
-                for widget in self.dicom_viewer_labelframe.winfo_children():
-                    if widget.grid_info()['row'] > 0:
-                        widget.destroy()
-
-                if self.selected_item_path.get() != '' and str(self.type_folder) == 'Experiment':
-                        print('ok')
-
-            self.selected_item_path.trace('w', display_dicom)
             #############################################
             ################# Project ###################
             # Menu
@@ -3514,12 +3500,6 @@ class xnat_pic_gui():
                         # Define the subject_id and the experiment_id
                         if self.sub.get() == '--':
                             self.sub.set(subject_data['Subject'])
-                        if self.sub.get() != subject_data['Subject']:
-                            ans = messagebox.askyesno("XNAT-PIC Experiment Uploader", 
-                                                    "The subject you are trying to retrieve does not match with the custom variables."
-                                                    "\n Would you like to continue?")
-                            if ans != True:
-                                return
                         params['subject_id'] = self.sub.get()
                         if self.exp.get() == '--':
                             self.exp.set('_'.join([subject_data['Project'], subject_data['Subject'], subject_data['Experiment'],
