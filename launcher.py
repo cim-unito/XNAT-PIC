@@ -2790,13 +2790,6 @@ class xnat_pic_gui():
                     self.overall_uploader(master)
                     return
 
-                # if (self.upload_type.get() == 1 or self.upload_type.get() == 2) and (glob(self.folder_to_upload.get() + "/**/**/**/*.dcm", recursive=False) == [] and
-                #                                                                       glob(self.folder_to_upload.get() + "/**/**/*.dcm", recursive=False) == []):
-                #     messagebox.showerror("XNAT-PIC Uploader", "The selected folder does not contain DICOM files!")
-                #     destroy_widgets([self.frame_uploader])
-                #     self.overall_uploader(master)
-                #     return
-                # Reset and clear the selected_item_path defined from Treeview widget selection
                 self.selected_item_path.set('')
 
             def folder_selected_handler(*args):
@@ -3081,10 +3074,6 @@ class xnat_pic_gui():
                     self.tree.tree.delete(*self.tree.tree.get_children())
                     #self.search_entry.config(state='disabled')
                     self.folder_to_upload.set("")
-
-            # self.clear_tree_btn = ttk.Button(self.frame_uploader, image=master.logo_clear,
-            #                         cursor=CURSOR_HAND, command=clear_tree, style="WithoutBack.TButton")
-            # self.clear_tree_btn.place(relx = 0.47, rely = 0.25, anchor = NE)
             
             # See the entire project
             self.chkvar_entire_prj = tk.BooleanVar()
@@ -3341,11 +3330,6 @@ class xnat_pic_gui():
             working_label1 = ttk.Label(self.frame_uploader, text="...to XNAT", image = master.server_icon, compound=tk.RIGHT, font = 'bold', anchor='center')
             working_label1.place(relx = 0.5, rely = 0.65, relwidth = 0.18, anchor = CENTER)
 
-            # working_label = ttk.Label(self.frame_uploader, text='PC', image = master.computer_icon, compound=tk.LEFT, font = 'bold', anchor='center')
-            # working_label.place(relx = 0.05, rely = 0.21, relwidth = 0.10, anchor = CENTER)
-            # working_label1 = ttk.Label(self.frame_uploader, text="XNAT", image = master.server_icon, compound=tk.LEFT, font = 'bold', anchor='center')
-            # working_label1.place(relx = 0.05, rely = 0.65, relwidth = 0.10, anchor = CENTER)
-
         def project_uploader(self, master):
 
             project_to_upload = self.folder_to_upload.get()
@@ -3381,40 +3365,18 @@ class xnat_pic_gui():
                             params = {}
                             params['folder_to_upload'] = exp
                             params['project_id'] = self.prj.get()
-                            #params['custom_var_flag'] = self.n_custom_var.get()
-                            # Check for existing custom variables file
                             
                             try:
-                                # If the custom variables file is available
-                                text_file = [os.path.join(exp, f) for f in os.listdir(exp) if f.endswith('.txt') and 'Custom' in f]
-                                subject_data1 = read_table(text_file[0])
-                                subject_data = {k: v or '' for (k, v) in subject_data1.items()}
-                                # Define the subject_id and the experiment_id
-                                # Controllo su stringa vuota
-                                self.sub.set(subject_data['Subject'])
-                                if self.sub.get() != subject_data['Subject']:
-                                    ans = messagebox.askyesno("XNAT-PIC Experiment Uploader", 
-                                                            "The subject you are trying to retrieve does not match with the custom variables."
-                                                            "\n Would you like to continue?")
-                                    if ans != True:
-                                        return
-                                params['subject_id'] = self.sub.get()
-                                self.exp.set('_'.join([subject_data['Project'], subject_data['Subject'], subject_data['Experiment'],
-                                                        subject_data['SessionsGroup'], subject_data['SessionsTimepoint']]).replace(' ', '_'))
-                                params['experiment_id'] = self.exp.get()
-                                for var in subject_data.keys():
-                                    if var not in ['Project', 'Subject', 'Experiment', 'Acquisition_date']:
-                                        params[var] = subject_data[var]
-                                
-                                
-                            except Exception as e:
-                                print(e)
-                                # Define the subject_id and the experiment_id if the custom variables file is not available
+                                # Define the subject_id and the experiment_id 
                                 self.sub.set(exp.split('/')[-3].replace('.','_'))
                                 params['subject_id'] = self.sub.get()
                                 self.exp.set('_'.join([exp.split('/')[-4].replace('_dcm', ''), exp.split('/')[-3].replace('.', '_'),
                                                              exp.split('/')[-2].replace('.', '_')]).replace(' ', '_'))
                                 params['experiment_id'] = self.exp.get()
+                                
+                            except Exception as e:
+                                messagebox.showerror("XNAT-PIC", "Error: " + str(e))  
+                                raise
 
                             progressbar.set_caption('Uploading ' + str(self.sub.get()) + ' ...')
                             
@@ -3490,32 +3452,18 @@ class xnat_pic_gui():
                     params = {}
                     params['folder_to_upload'] = exp
                     params['project_id'] = self.prj.get()
-                    #params['custom_var_flag'] = self.n_custom_var.get()
-                    # Check for existing custom variables file
+
                     try:
-                        # If the custom variables file is available
-                        text_file = [os.path.join(exp, f) for f in os.listdir(exp) if f.endswith('.txt') and 'Custom' in f]
-                        subject_data = read_table(text_file[0])
-                        
-                        # Define the subject_id and the experiment_id
+                        # Define the subject_id and the experiment_id 
                         if self.sub.get() == '--':
-                            self.sub.set(subject_data['Subject'])
-                        params['subject_id'] = self.sub.get()
-                        if self.exp.get() == '--':
-                            self.exp.set('_'.join([subject_data['Project'], subject_data['Subject'], subject_data['Experiment'],
-                                                    subject_data['SessionsGroup'], subject_data['SessionsTimepoint']]).replace(' ', '_'))
-                        params['experiment_id'] = self.exp.get()
-                        for var in subject_data.keys():
-                            if var not in ['Project', 'Subject', 'Experiment', 'Acquisition_date']:
-                                params[var] = subject_data[var]
-                    except:
-                        # Define the subject_id and the experiment_id if the custom variables file is not available
-                        if self.sub.get() == '--':
-                            self.sub.set(exp.split('/')[-2].replace('.','_'))
+                            self.sub.set(exp.split('/')[-3].replace('.','_'))
                         params['subject_id'] = self.sub.get()
                         if self.exp.get() == '--':
                             self.exp.set('_'.join([exp.split('/')[-3].replace('_dcm',''), exp.split('/')[-2].replace('.','_')]).replace(' ', '_'))
                         params['experiment_id'] = self.exp.get()
+                    except Exception as e:
+                        messagebox.showerror("XNAT-PIC", "Error: " + str(e))  
+                        raise
 
                     progressbar.set_caption('Uploading ' + str(self.sub.get()) + ' ...')
 
@@ -3585,40 +3533,19 @@ class xnat_pic_gui():
                     params = {}
                     params['folder_to_upload'] = experiment_to_upload
                     params['project_id'] = self.prj.get()
-                    #params['custom_var_flag'] = self.n_custom_var.get()
-                    # Check for existing custom variables file
+
                     try:
-                        # If the custom variables file is available
-                        text_file = [os.path.join(experiment_to_upload, f) for f in os.listdir(experiment_to_upload) if f.endswith('.txt') 
-                                                                                                                        and 'Custom' in f]
-                        subject_data = read_table(text_file[0])
-                        
-                        # Define the subject_id and the experiment_id
+                        # Define the subject_id and the experiment_id 
                         if self.sub.get() == '--':
-                            self.sub.set(subject_data['Subject'])
-                        if self.sub.get() != subject_data['Subject']:
-                            ans = messagebox.askyesno("XNAT-PIC Experiment Uploader", 
-                                                    "The subject you are trying to retrieve does not match with the custom variables."
-                                                    "\n Would you like to continue?")
-                            if ans != True:
-                                return
-                        params['subject_id'] = self.sub.get()
-                        if self.exp.get() == '--':
-                            self.exp.set('_'.join([subject_data['Project'], subject_data['Subject'], subject_data['Experiment'],
-                                                    subject_data['SessionsGroup'], subject_data['SessionsTimepoint']]).replace(' ', '_'))
-                        params['experiment_id'] = self.exp.get()
-                        for var in subject_data.keys():
-                            if var not in ['Project', 'Subject', 'Experiment', 'Acquisition_date']:
-                                params[var] = subject_data[var]
-                    except:
-                        # Define the subject_id and the experiment_id if the custom variables file is not available
-                        if self.sub.get() == '--':
-                            self.sub.set(experiment_to_upload.split('/')[-2].replace('.','_'))
+                            self.sub.set(experiment_to_upload.split('/')[-3].replace('.','_'))
                         params['subject_id'] = self.sub.get()
                         if self.exp.get() == '--':
                             self.exp.set('_'.join([experiment_to_upload.split('/')[-3].replace('_dcm', ''), 
                                                     experiment_to_upload.split('/')[-2].replace('.','_')]).replace(' ', '_'))
                         params['experiment_id'] = self.exp.get()
+                    except Exception as e:
+                        messagebox.showerror("XNAT-PIC", "Error: " + str(e))  
+                        raise
 
                     progressbar.set_caption('Uploading ' + str(self.exp.get()) + ' ...')
 
