@@ -303,19 +303,19 @@ class xnat_pic_gui():
         self.convert_btn.place(relx=0.6, rely=0.5, anchor=tk.CENTER, relwidth=0.21)
         Hovertip(self.convert_btn,'Convert images from Bruker ParaVision format to DICOM standard')
         
-        # Fill in the info
-        self.info_btn = ttk.Button(self.frame, text="Edit Custom Forms", 
-                                    command=partial(self.metadata, self), cursor=CURSOR_HAND)
-        self.info_btn.place(relx=0.6, rely=0.6, anchor=tk.CENTER, relwidth=0.21)
-        Hovertip(self.info_btn,'Fill information regarding group, timepoint, etc.')
-
         # Upload files
         def upload_callback(*args):
             self.XNATUploader(self)
         self.upload_btn = ttk.Button(self.frame, text="Uploader",
                                         command=upload_callback, cursor=CURSOR_HAND)
-        self.upload_btn.place(relx=0.6, rely=0.7, anchor=tk.CENTER, relwidth=0.21)
+        self.upload_btn.place(relx=0.6, rely=0.6, anchor=tk.CENTER, relwidth=0.21)
         Hovertip(self.upload_btn,'Upload DICOM images to XNAT')
+
+        # Fill in the info
+        self.info_btn = ttk.Button(self.frame, text="Edit Custom Forms", 
+                                    command=partial(self.metadata, self), cursor=CURSOR_HAND)
+        self.info_btn.place(relx=0.6, rely=0.7, anchor=tk.CENTER, relwidth=0.21)
+        Hovertip(self.info_btn,'Fill information regarding group, timepoint, etc.')
 
         # Close button
         def close_window(*args):
@@ -1194,1456 +1194,6 @@ class xnat_pic_gui():
             messagebox.showinfo("XNAT-PIC Converter","Done! Your experiment is successfully converted\n\n\n\n" + str_excep)
             self.convertion_state.set(1)
             enable_buttons([self.exit_btn])
-                 
-    # Fill in information
-    class metadata():
-        def __init__(self, master):
-            try:
-                destroy_widgets([master.toolbar_menu, master.convert_btn, master.info_btn, master.upload_btn, master.close_btn, master.xnat_pic_logo_label])
-            except:
-                pass
-            self.overall_projectdata(master)
-
-        def overall_projectdata(self, master):
-            
-            # Create new frame
-            master.frame_label.set("Edit Custom Forms")
-            
-            # Menu bar
-            self.menu = ttk.Menu(master.root)
-            file_menu = ttk.Menu(self.menu, tearoff=0)
-            clear_menu = ttk.Menu(self.menu, tearoff=0)
-            modify_ID_menu = ttk.Menu(self.menu, tearoff=0)
-            home_menu = ttk.Menu(self.menu, tearoff=0)
-            help_menu = ttk.Menu(self.menu, tearoff=0)
-
-            home_menu.add_command(label="Home", image = master.logo_home, compound='left', command = lambda: self.home_metadata(master))
-
-            modify_ID_menu.add_command(label="Project", compound='left', command = lambda: self.modify_ID_metadata(master, flag_ID='Project'))
-            modify_ID_menu.add_command(label="Subject", compound='left', command = lambda: self.modify_ID_metadata(master, flag_ID='Subject'))
-            modify_ID_menu.add_command(label="Experiment", compound='left', command = lambda: self.modify_ID_metadata(master, flag_ID='Experiment'))
-            modify_ID_menu.add_command(label="Acquisition Date", compound='left', command = lambda: self.modify_ID_metadata(master, flag_ID='Acquisition Date'))
-            file_menu.add_cascade(label="Modify Name ID", image = master.logo_edit, compound='left', menu=modify_ID_menu)
-            file_menu.add_separator()
-            clear_menu.add_command(label="Group", compound='left', command = lambda: self.clear_metadata(flag='Group'))
-            clear_menu.add_command(label="Timepoint", compound='left', command = lambda: self.clear_metadata(flag='Timepoint'))
-            clear_menu.add_command(label="Dose", compound='left', command = lambda: self.clear_metadata(flag='Dose'))
-            clear_menu.add_command(label="All", compound='left', command = lambda: self.clear_metadata(flag='All'))
-            file_menu.add_cascade(label="Clear Custom Forms", image = master.logo_clear, compound='left', menu=clear_menu)
-            file_menu.add_separator()
-            file_menu.add_command(label="Save All", image = master.logo_save, compound='left', command = lambda: self.save_metadata())
-
-            help_menu.add_command(label="Help", image = master.logo_help, compound='left', command = lambda: webbrowser.open('https://www.cim.unito.it/website/research/research_xnat.php'))
-
-            self.menu.add_cascade(label='Home', menu=home_menu)
-            self.menu.add_cascade(label="File", menu=file_menu)
-            self.menu.add_cascade(label="About", menu=help_menu)
-            master.root.config(menu=self.menu)
-
-            # Label Frame Main (for Title only)
-            self.frame_metadata = ttk.Frame(master.frame, style="Hidden.TLabelframe")
-            self.frame_metadata.place(relx = 0.2, rely= 0, relheight=1, relwidth=0.8, anchor=tk.NW)
-            # Frame Title
-            self.frame_title = ttk.Label(self.frame_metadata, text="Edit Custom Forms", style='Title.TLabel')
-            self.frame_title.place(relx = 0.5, rely = 0.05, anchor = CENTER)
-            
-            # Select a  Project
-            def prj_data_handler(*args):
-                self.select_button(master, press_btn='Project')
-            self.prj_data_btn = ttk.Button(self.frame_metadata, text="Select Project", 
-                                            command=prj_data_handler, cursor=CURSOR_HAND)
-            self.prj_data_btn.place(relx = 0.05, rely = 0.12, relwidth=0.22, anchor = NW)
-            Hovertip(self.prj_data_btn, "Select a project to add Custom Forms")
-
-            # Select a Subject
-            def sbj_data_handler(*args):
-                self.select_button(master, press_btn='Subject')
-            self.sbj_data_btn = ttk.Button(self.frame_metadata, text="Select Subject",
-                                            command=sbj_data_handler, cursor=CURSOR_HAND)
-            self.sbj_data_btn.place(relx = 0.5, rely = 0.12, relwidth=0.22, anchor = N)
-            Hovertip(self.sbj_data_btn, "Select a subject to add Custom Forms")
-
-            # Select a Experiment
-            def exp_data_handler(*args):
-                self.select_button(master, press_btn='Experiment')
-            self.exp_data_btn = ttk.Button(self.frame_metadata, text="Select Experiment",
-                                            command=exp_data_handler, cursor=CURSOR_HAND)
-            self.exp_data_btn.place(relx = 0.95, rely = 0.12, relwidth=0.22, anchor = NE)
-            Hovertip(self.exp_data_btn, "Select a experiment to add Custom Forms")
-
-            self.separator1 = ttk.Separator(self.frame_metadata, bootstyle="primary")
-            self.separator1.place(relx = 0.05, rely = 0.21, relwidth = 0.9, anchor = NW)
-
-            # Create the frame
-            self.notebook = ScrollableNotebook(self.frame_metadata, wheelscroll=True, tabmenu=True)
-            self.notebook.place(relx = 0.05, rely = 0.25, relheight=0.25, relwidth=0.34, anchor = tk.NW)
-                       
-            #################### Subject form ####################
-            # ID
-            # Label frame for ID: folder selected, project, subject, exp and acq. date
-            self.label_frame_ID = ttk.LabelFrame(self.frame_metadata, text="ID", padding=5, bootstyle="primary")
-            #
-            # Scroll bar in the Label frame ID
-            self.canvas_ID = tk.Canvas(self.label_frame_ID)
-            self.frame_ID = tk.Frame(self.canvas_ID)
-
-            self.vsb_ID = ttk.Scrollbar(self.label_frame_ID, orient="vertical", command=self.canvas_ID.yview)
-            self.canvas_ID.configure(yscrollcommand=self.vsb_ID.set)  
-
-            self.hsb_ID = ttk.Scrollbar(self.label_frame_ID, orient="horizontal", command=self.canvas_ID.xview)
-            self.canvas_ID.configure(xscrollcommand=self.hsb_ID.set)     
-
-            self.vsb_ID.pack(side="right", fill="y")
-            self.hsb_ID.pack(side="bottom", fill="x")
-
-            self.canvas_ID.pack(side = LEFT, fill = BOTH, expand = 1)
-            self.canvas_ID.create_window((0,0), window=self.frame_ID, anchor="nw")
-
-            # Be sure that we call OnFrameConfigure on the right canvas
-            self.frame_ID.bind("<Configure>", lambda event, canvas=self.canvas_ID: OnFrameConfigure(canvas))
-            self.label_frame_ID.place(relx = 0.5, rely = 0.25, relheight=0.25, relwidth=0.37, anchor = tk.NW)
-            def OnFrameConfigure(canvas):
-                    canvas.configure(scrollregion=canvas.bbox("all"))
-
-            keys_ID = ["Project", "Subject"]
-            # Entry ID 
-            self.entries_variable_ID = []  
-            self.entries_value_ID = []          
-            count = 0
-            for key in keys_ID:
-                # Variable
-                self.entries_variable_ID.append(ttk.Entry(self.frame_ID, takefocus = 0, width=15))
-                self.entries_variable_ID[-1].insert(0, key)
-                self.entries_variable_ID[-1]['state'] = 'disabled'
-                self.entries_variable_ID[-1].grid(row=count, column=0, padx = 5, pady = 5, sticky=W)
-                self.entries_value_ID.append(ttk.Entry(self.frame_ID, state='disabled', takefocus = 0, width= 20 if key == "Acquisition_Date" else 44))
-                self.entries_value_ID[-1].grid(row=count, column=1, padx = 5, pady = 5, sticky=W)
-                count += 1
-
-            #####################################################################
-            # Choose at which level to add the Custom Forms
-            self.label_frame_level = ttk.LabelFrame(self.frame_metadata, text="Custom Forms", padding = 5, bootstyle="primary") 
-            #self.label_level.place(relx = 0.05, rely = 0.6, relwidth = 0.34, anchor = tk.NW)
-            
-            # Scroll bar in the Label frame CF
-            self.canvas_level = tk.Canvas(self.label_frame_level)
-            self.frame_level = tk.Frame(self.canvas_level)
-            
-            self.vsb_level = ttk.Scrollbar(self.label_frame_level, orient="vertical", command=self.canvas_level.yview)
-            self.canvas_level.configure(yscrollcommand=self.vsb_level.set)  
-            self.hsb_level = ttk.Scrollbar(self.label_frame_level, orient="horizontal", command=self.canvas_level.xview)
-            self.canvas_level.configure(xscrollcommand=self.hsb_level.set)     
-            
-            self.vsb_level.pack(side="right", fill="y")
-            self.hsb_level.pack(side="bottom", fill="x")
-            self.canvas_level.pack(side = LEFT, fill = BOTH, expand = 1)
-            self.canvas_level.create_window((0,0), window=self.frame_level, anchor="nw")
-
-            # Be sure that we call OnFrameConfigure on the right canvas
-            self.frame_level.bind("<Configure>", lambda event, canvas=self.canvas_level: OnFrameConfigure(canvas))
-            self.label_frame_level.place(relx = 0.05, rely = 0.6, relheight = 0.2, relwidth = 0.34, anchor = tk.NW)
-            
-            def OnFrameConfigure(canvas):
-                    canvas.configure(scrollregion=canvas.bbox("all"))
-
-            self.label = ttk.Label(self.frame_level, text="Add Custom Forms to:")
-            self.label.grid(row=0, column=0, padx = 5, pady = 5, sticky=W)
-            # Project level
-            self.level_CF = tk.StringVar()
-            self.ProjectCF = ttk.Radiobutton(self.frame_level, text="Project", variable = self.level_CF, 
-                                                           value = "Project", style="Popup.TRadiobutton")   
-            self.ProjectCF.grid(row=1, column=0, padx = 5, pady = 5, sticky=N)
-            # Subject level
-            self.SubjectCF = ttk.Radiobutton(self.frame_level, text="Subjects", variable = self.level_CF, 
-                                                           value = "Subjects", state='disabled', style="Popup.TRadiobutton")   
-            self.SubjectCF.grid(row=1, column=1, padx = 5, pady = 5, sticky=N)
-            # Session level     
-            self.SessionCF = ttk.Radiobutton(self.frame_level, text="Sessions", variable = self.level_CF, 
-                                                           value = "Sessions", state='disabled', style="Popup.TRadiobutton")   
-            self.SessionCF.grid(row=1, column=2, padx = 5, pady = 5, sticky=N)
-            
-            self.level_CF.set("Project")
-            self.ProjectCF.config(state=DISABLED)
-            #####################################################################
-            # Custom Forms (CF)
-            textCF = "Custom Forms" 
-            self.label_frame_CF = ttk.LabelFrame(self.frame_metadata, text=textCF , padding = 5, bootstyle="primary")
-            
-            # Scroll bar in the Label frame CF
-            self.canvas_CF = tk.Canvas(self.label_frame_CF)
-            self.frame_CF = tk.Frame(self.canvas_CF)
-
-            self.vsb_CF = ttk.Scrollbar(self.label_frame_CF, orient="vertical", command=self.canvas_CF.yview)
-            self.canvas_CF.configure(yscrollcommand=self.vsb_CF.set)  
-            self.hsb_CF = ttk.Scrollbar(self.label_frame_CF, orient="horizontal", command=self.canvas_CF.xview)
-            self.canvas_CF.configure(xscrollcommand=self.hsb_CF.set)     
-
-            self.vsb_CF.pack(side="right", fill="y")     
-            self.hsb_CF.pack(side="bottom", fill="x")
-            self.canvas_CF.pack(side = LEFT, fill = BOTH, expand = 1)
-            self.canvas_CF.create_window((0,0), window=self.frame_CF, anchor="nw")
-
-            # Be sure that we call OnFrameConfigure on the right canvas
-            self.frame_CF.bind("<Configure>", lambda event, canvas=self.canvas_CF: OnFrameConfigure(canvas))
-            self.label_frame_CF.place(relx = 0.5, rely = 0.60, relheight=0.2, relwidth=0.43, anchor = tk.NW)
-            
-            def OnFrameConfigure(canvas):
-                    canvas.configure(scrollregion=canvas.bbox("all"))
-
-            keys_CF = ["Group", "Timepoint", "Dose"]
-
-            # Entry CF  
-            self.entries_variable_CF = []  
-            self.entries_value_CF = []          
-            count = 0
-            for key in keys_CF:
-                # Variable
-                self.entries_variable_CF.append(ttk.Entry(self.frame_CF, takefocus = 0, width=15))
-                self.entries_variable_CF[-1].insert(0, key)
-                self.entries_variable_CF[-1]['state'] = 'disabled'
-                self.entries_variable_CF[-1].grid(row=count, column=0, padx = 5, pady = 5, sticky=W)
-                # Value
-                self.entries_value_CF.append(ttk.Entry(self.frame_CF, state='disabled', takefocus = 0, width=25))
-                self.entries_value_CF[-1].grid(row=count, column=1, padx = 5, pady = 5, sticky=W)
-                count += 1
-            
-            # Dose: the dose entry has a StringVar because the unit of measure will be automatically added to the entered value
-            self.dosevar = tk.StringVar()
-            self.entries_value_CF[2].config(textvariable=self.dosevar)
-
-            # Group Menu
-            OPTIONS = ["untreated", "treated"]
-            self.selected_group = tk.StringVar()
-            self.group_menu = ttk.Combobox(self.frame_CF, takefocus = 0, textvariable=self.selected_group, width=10)
-            self.group_menu['values'] = OPTIONS
-            self.group_menu['state'] = 'disabled'
-            self.group_menu.grid(row=0, column=2, padx = 5, pady = 5, sticky=W)
-            
-            # Timepoint
-            self.OPTIONS = ["pre", "post"]
-            self.selected_timepoint = tk.StringVar()
-            self.timepoint_menu = ttk.Combobox(self.frame_CF, takefocus = 0, textvariable=self.selected_timepoint, width=10)
-            self.timepoint_menu['values'] = self.OPTIONS
-            self.timepoint_menu['state'] = 'disabled'
-            self.timepoint_menu.grid(row=1, column=2, padx = 5, pady = 5, sticky=W)
-            
-            self.time_entry_value = tk.StringVar()
-            self.time_entry = ttk.Entry(self.frame_CF, state='disabled', takefocus = 0, width=5, textvariable=self.time_entry_value)
-            self.time_entry.grid(row=1, column=3, padx = 5, pady = 5, sticky=W)
-
-            self.OPTIONS1 = ["seconds", "minutes", "hours", "days", "weeks", "months", "years"]
-            self.selected_timepoint1 = tk.StringVar()
-            self.timepoint_menu1 = ttk.Combobox(self.frame_CF, takefocus = 0, textvariable=self.selected_timepoint1, width=7)
-            self.timepoint_menu1['values'] = self.OPTIONS1
-            self.timepoint_menu1['state'] = 'disabled'
-            self.timepoint_menu1.grid(row=1, column=4, padx = 5, pady = 5, sticky=W)
-
-            # Dose
-            OPTIONS2 = ["mg/kg"]
-            self.selected_dose = tk.StringVar()
-            self.dose_menu = ttk.Combobox(self.frame_CF, takefocus = 0, textvariable=self.selected_dose, width=10)
-            self.dose_menu['values'] = OPTIONS2
-            self.dose_menu['state'] = 'disabled'
-            self.dose_menu.grid(row=2, column=2, padx = 5, pady = 5, sticky=W)
-            
-            self.sep1 = ttk.Separator(self.frame_level, bootstyle="primary")
-            self.sep1.grid(row=2, column=0, padx = 5, pady = 5, sticky=EW)
-            self.lab1 = ttk.Label(self.frame_level, text='Actions:', bootstyle="primary")
-            self.lab1.grid(row=2, column=1, padx = 5, pady = 5, sticky=N)
-            self.sep2 = ttk.Separator(self.frame_level, bootstyle="primary")
-            self.sep2.grid(row=2, column=2, padx = 5, pady = 5, sticky=EW)
-
-
-            #################### Modify the metadata ####################
-            self.modify_btn = ttk.Button(self.frame_level, text="Modify", command = lambda: self.modify_metadata(), cursor=CURSOR_HAND, takefocus = 0, state = tk.DISABLED, style = "Secondary1.TButton")
-            #self.modify_btn.place(relx=0.39, rely=0.60, anchor=tk.NE, relwidth=0.22)
-            self.modify_btn.config(width = 13)
-            self.modify_btn.grid(row=3, column=0, padx = 5, pady = 5, sticky=NSEW)
-            Hovertip(self.modify_btn, "Edit the Custom Forms")
-            #################### Confirm the metadata ####################
-            self.confirm_btn = ttk.Button(self.frame_level, text="Confirm", command = lambda: self.confirm_metadata(), cursor=CURSOR_HAND, takefocus = 0, state = tk.DISABLED, style = "Secondary1.TButton")
-            #self.confirm_btn.place(relx=0.39, rely=0.70, anchor=tk.NE, relwidth=0.22)
-            self.confirm_btn.config(width = 13)
-            self.confirm_btn.grid(row=3, column=1, padx = 5, pady = 5, sticky=NSEW)
-            Hovertip(self.modify_btn, "Confirm the Custom Forms for the selected project/subject/experiment")
-            #################### Confirm multiple metadata ####################
-            self.multiple_confirm_btn = ttk.Button(self.frame_level, text="Confirm +", command = lambda: self.confirm_multiple_metadata(master), cursor=CURSOR_HAND, takefocus = 0, state = tk.DISABLED, style = "Secondary1.TButton")
-            #self.multiple_confirm_btn.place(relx=0.39, rely=0.80, anchor=tk.NE, relwidth=0.22)
-            self.multiple_confirm_btn.config(width = 13)
-            self.multiple_confirm_btn.grid(row=3, column=2, padx = 5, pady = 5, sticky=NSEW)
-            Hovertip(self.modify_btn, "Confirm Custom Forms for multiple subjects/experiments")
-            #################### Back button ####################
-            self.back_btn = ttk.Button(self.frame_metadata, text="Back", command = lambda: self.back_action(master), cursor=CURSOR_HAND, takefocus = 0, state = tk.DISABLED, style = "Secondary1.TButton")
-            self.back_btn.place(relx = 0.05, rely = 0.90, relwidth = 0.15, anchor = tk.NW)
-        
-        def back_action(self, master):
-            try:
-                destroy_widgets([self.frame_metadata, self.menu])
-                self.overall_projectdata(master)
-            except Exception as e:
-                messagebox.showerror("XNAT-PIC", 'Error:' + str(e))
-                raise
-
-        def select_button(self, master, press_btn):
-            disable_buttons([self.prj_data_btn, self.sbj_data_btn, self.exp_data_btn])
-            # Choose your directory (button and menu)
-            self.information_folder = filedialog.askdirectory(parent=master.root, initialdir=os.path.expanduser("~"), title="XNAT-PIC: Select " + press_btn + " directory!")
-            if not self.information_folder:
-                enable_buttons([self.prj_data_btn, self.sbj_data_btn, self.exp_data_btn])
-                return
-            enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SubjectCF, self.SessionCF, self.back_btn])
-            # Read the data
-            if press_btn == "Project":
-                # Check if the selected folder is related to the right conversion flag
-                if glob(self.information_folder + "//**//**//**//**//*.dcm", recursive=False) == [] and glob(self.information_folder + "//**//**//**//**//**//2dseq", recursive=False) == []:
-                    messagebox.showerror("XNAT-PIC Project Data", "The selected folder is not project related.\nPlease select an other directory!")
-                    destroy_widgets([self.frame_metadata])
-                    self.overall_projectdata(master)
-                    return
-                self.project_name = (self.information_folder.rsplit("/",1)[1])
-                params = metadata_params(self.information_folder, value = 0)
-                self.selection = 'Selected Project: ' + self.project_name
-            elif press_btn == "Subject":
-                # Check if the selected folder is related to the right conversion flag
-                if glob(self.information_folder + "//**//**//**//*.dcm", recursive=False) == [] and glob(self.information_folder + "//**//**//**//**//2dseq", recursive=False) == []:
-                    messagebox.showerror("XNAT-PIC Project Data", "The selected folder is not subject related.\nPlease select an other directory!")
-                    destroy_widgets([self.frame_metadata])
-                    self.overall_projectdata(master)
-                    return
-                self.subject_name = (self.information_folder.rsplit("/",1)[1])
-                params = metadata_params(self.information_folder, value = 1)
-                self.selection = 'Selected Subject: ' + self.subject_name
-            elif press_btn == "Experiment":
-                # Check if the selected folder is related to the right conversion flag
-                if glob(self.information_folder + "//**//**//*.dcm", recursive=False) == [] and glob(self.information_folder + "//**//**//**//2dseq", recursive=False) == []:
-                    messagebox.showerror("XNAT-PIC Project Data", "The selected folder is not experiment related.\nPlease select an other directory!")
-                    destroy_widgets([self.frame_metadata])
-                    self.overall_projectdata(master)
-                    return
-                self.experiment_name = (self.information_folder.rsplit("/",1)[1])
-                params = metadata_params(self.information_folder, value = 2)
-                self.selection = 'Selected Experiment: ' + self.experiment_name
-            self.results_dict = params[0]
-            self.todos = params[1]
-            self.path_list = params[2]
-            self.path_list1 = params[3]
-
-            frame_notebook = []
-            self.listbox_notebook = []
-            for key in sorted(self.todos, key=len):
-                frame_notebook.append(tk.Frame(self.notebook))
-                frame_notebook[-1].pack()
-                self.notebook.add(frame_notebook[-1], text=key, underline=0, sticky=tk.NE + tk.SW)
-                self.listbox_notebook.append(tk.Listbox(frame_notebook[-1], selectbackground = AZURE, relief=tk.FLAT, font=SMALL_FONT_3, takefocus = 0))
-                self.listbox_notebook[-1].insert(tk.END, *self.todos[key])
-                self.listbox_notebook[-1].config(state=DISABLED)
-                self.listbox_notebook[-1].pack(side=LEFT, fill = BOTH, expand = 1, padx = 5, pady=5)
-                
-                # Yscrollbar for listbox
-                self.my_yscrollbar = ttk.Scrollbar(self.listbox_notebook[-1], orient="vertical")
-                self.listbox_notebook[-1].config(yscrollcommand = self.my_yscrollbar.set)
-                self.my_yscrollbar.config(command = self.listbox_notebook[-1].yview)
-                self.my_yscrollbar.pack(side="right", fill="y")
-
-                # Xscrollbar for listbox
-                self.my_xscrollbar = ttk.Scrollbar(self.listbox_notebook[-1], orient="horizontal")
-                self.listbox_notebook[-1].config(xscrollcommand = self.my_xscrollbar.set)
-                self.my_xscrollbar.config(command = self.listbox_notebook[-1].xview)
-                self.my_xscrollbar.pack(side="bottom", fill="x")
-
-            self.notebook.enable_traversal()
-            self.load_info(master)
-
-            def change_frame(*args):
-                # Normal entry CF
-                for i in range(0, len(self.entries_value_CF)):
-                    self.entries_value_CF[i]['state'] = 'normal'
-                    self.entries_value_CF[i].delete(0, tk.END)
-                    self.entries_value_CF[i]['state'] = 'disabled'
-                # Clear all the combobox and the entry
-                self.selected_group.set('')
-                self.selected_timepoint.set('')
-                self.selected_timepoint1.set('')
-                self.time_entry.delete(0, tk.END)
-                self.selected_dose.set('')     
-                disable_buttons([self.group_menu, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.dose_menu])              
-                if str(self.level_CF.get()) == "Subjects":
-                    # Notebook
-                    for i in range(len(self.listbox_notebook)):
-                        self.listbox_notebook[i].config(state=DISABLED)
-                    # Entries
-                    if len(self.entries_variable_ID) > 2:
-                        for i in range(2, len(self.entries_variable_ID)):
-                            self.entries_variable_ID[i].destroy() 
-                            self.entries_value_ID[i].destroy() 
-                        del self.entries_variable_ID[2 : len(self.entries_variable_ID)]
-                        del self.entries_value_ID[2 : len(self.entries_value_ID)]
-                        self.cal.destroy()
-                        del self.cal
-                elif str(self.level_CF.get()) == "Sessions":
-                    # Notebook
-                    for i in range(len(self.listbox_notebook)):
-                        self.listbox_notebook[i].config(state=NORMAL)
-                    # Entries
-                    if len(self.entries_variable_ID) == 2:
-                        keys_ID = ["Experiment", "Acquisition_Date"]
-                        # Entry ID         
-                        count = 3
-                        for key in keys_ID:
-                            # Variable
-                            self.entries_variable_ID.append(ttk.Entry(self.frame_ID, takefocus = 0, width=15))
-                            self.entries_variable_ID[-1].insert(0, key)
-                            self.entries_variable_ID[-1]['state'] = 'disabled'
-                            self.entries_variable_ID[-1].grid(row=count, column=0, padx = 5, pady = 5, sticky=W)
-                            self.entries_value_ID.append(ttk.Entry(self.frame_ID, state='disabled', takefocus = 0, width= 20 if key == "Acquisition_Date" else 44))
-                            self.entries_value_ID[-1].grid(row=count, column=1, padx = 5, pady = 5, sticky=W)
-                            count += 1
-                        # Calendar for acq. date
-                        self.datevar = tk.StringVar()
-                        self.cal = ttk.DateEntry(self.frame_ID, dateformat = '%Y-%m-%d')
-                        self.cal.entry.config(textvariable=self.datevar)         
-                        self.cal.entry.configure(width=10)
-                        self.cal.entry['state'] = 'normal'
-                        self.cal.entry.delete(0, tk.END)
-                        self.cal.entry['state'] = 'disabled'
-                        self.cal.button['state'] = 'disabled'
-                        self.cal.grid(row=4, column=1, padx = 5, pady = 5, sticky=E)
-                
-                #################################################################
-                # Load subject Custom Forms when switching from session to subject
-                try: 
-                    self.notebook.notebookContent.select(self.notebook.notebookTab.index("current"))
-                except Exception as e:
-                    pass
-                # Events for the Subjects
-                if str(self.level_CF.get()) == "Subjects":
-                    # Clear all the combobox and the entry
-                    self.selected_group.set('')
-                    self.selected_timepoint.set('')
-                    self.selected_timepoint1.set('')
-                    self.time_entry.delete(0, tk.END)
-                    self.selected_dose.set('')
-
-                    disable_buttons([self.group_menu, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.dose_menu])
-                    
-                    # Find the tab
-                    self.index_tab = self.notebook.notebookTab.index("current")
-                    self.tab_name =  self.notebook.notebookTab.tab(self.index_tab, "text")
-                    self.my_listbox = self.listbox_notebook[self.index_tab]
-                    
-                    def find_selected_folder():
-                        for k,v in self.path_list1.items():
-                            if str(self.tab_name) in str(k):
-                                path = v.split('/')
-                                sub_name = path[len(path)-2]
-                                if sub_name == str(self.tab_name):
-                                        self.selected_folder = k
-                                        return
-                    find_selected_folder()
-                    tmp_dict = self.results_dict[self.selected_folder]
-
-                    # Split the dictionary into ID and CF
-                    complete_list = [list(group) for key, group in itertools.groupby(tmp_dict, lambda x: x == "SubjectsCF" or x == "SessionsCF") if not key]
-                    dict_ID = {'Folder' : self.selected_folder}
-                    dict_ID.update({k: v for k, v in tmp_dict.items() if k in complete_list[0]})
-                    if str(self.level_CF.get()) == "Subjects":
-                        dict_CF =  {k: v for k, v in tmp_dict.items() if k in complete_list[1]}
-                    elif str(self.level_CF.get()) == "Sessions":
-                        dict_CF =  {k: v for k, v in tmp_dict.items() if k in complete_list[2]} 
-                    #################################################################                   
-                    # ID: Modify the values ​​of the entries with the values ​​of the selected experiment
-                    ind = 0
-                    for key, value in dict_ID.items():
-                        if ind==1 or ind==2:
-                            # Variable ID
-                            self.entries_variable_ID[ind-1]['state'] = 'normal'
-                            self.entries_variable_ID[ind-1].delete(0, tk.END)
-                            self.entries_variable_ID[ind-1].insert(0, key)
-                            self.entries_variable_ID[ind-1]['state'] = 'disabled'
-                            # Value ID
-                            self.entries_value_ID[ind-1]['state'] = 'normal'
-                            self.entries_value_ID[ind-1].delete(0, tk.END)
-                            self.entries_value_ID[ind-1].insert(0, value if value is not None else '')
-                            self.entries_value_ID[ind-1]['state'] = 'disabled'
-                        ind += 1   
-                    #################################################################
-                    # Updates the CF frame based on the selected variables and values
-                    diff_CF = len(self.entries_variable_CF) - len(dict_CF) 
-                    
-                    # If the number of entries is greater than the number of variables, eliminate the excess entries
-                    if diff_CF > 0:
-                        for i in range(len(dict_CF), len(self.entries_variable_CF)):
-                            self.entries_variable_CF[i].destroy() 
-                            self.entries_value_CF[i].destroy() 
-                        del self.entries_variable_CF[len(dict_CF) : len(self.entries_variable_CF)]
-                        del self.entries_value_CF[len(dict_CF) : len(self.entries_value_CF)]
-                    # If the number of entries is less than the number of variables, insert the entries
-                    elif diff_CF < 0:
-                        for j in range(len(self.entries_variable_CF), len(dict_CF)):
-                            self.entries_variable_CF.append(ttk.Entry(self.frame_CF, takefocus = 0, width=15))
-                            self.entries_variable_CF[-1].grid(row=j, column=0, padx = 5, pady = 5, sticky=W)
-                            self.entries_value_CF.append(ttk.Entry(self.frame_CF, state='disabled', takefocus = 0, width = 25))
-                            self.entries_value_CF[-1].grid(row=j, column=1, padx = 5, pady = 5, sticky=W)
-                    
-                    # Modify the values ​​of the entries with the values ​​of the selected experiment
-                    ind = 0
-                    for key, value in dict_CF.items():
-                        # Variable CF
-                        if str(self.level_CF.get()) == "Subjects":
-                            key1 = str(key).replace('Subjects', '')
-                        elif str(self.level_CF.get()) == "Sessions":
-                            key1 = str(key).replace('Sessions', '')
-                        self.entries_variable_CF[ind]['state'] = 'normal'
-                        self.entries_variable_CF[ind].delete(0, tk.END)
-                        self.entries_variable_CF[ind].insert(0, key1)
-                        self.entries_variable_CF[ind]['state'] = 'disabled'
-                        # Value CF
-                        self.entries_value_CF[ind]['state'] = 'normal'
-                        self.entries_value_CF[ind].delete(0, tk.END)
-                        self.entries_value_CF[ind].insert(0, value if value is not None else '')
-                        self.entries_value_CF[ind]['state'] = 'disabled'
-                        ind += 1
-                elif str(self.level_CF.get()) == "Session":
-                    return
-                
-
-            self.level_CF.trace('w', change_frame)
-         #################### Load the info about the selected subject ####################
-        def load_info(self, master):
-            # Find the initial tab
-            self.index_tab = self.notebook.notebookTab.index("current")
-            self.tab_name = self.notebook.notebookTab.tab(self.index_tab, "text")
-            self.my_listbox = self.listbox_notebook[self.index_tab]
-            self.selected_index = None
-            self.selected_folder = None
-
-            def items_selected_subjects(event):
-                try: 
-                    self.notebook.notebookContent.select(self.notebook.notebookTab.index("current"))
-                except Exception as e:
-                    pass
-                # Events for the Subjects
-                if str(self.level_CF.get()) == "Subjects":
-                    # Clear all the combobox and the entry
-                    self.selected_group.set('')
-                    self.selected_timepoint.set('')
-                    self.selected_timepoint1.set('')
-                    self.time_entry.delete(0, tk.END)
-                    self.selected_dose.set('')
-
-                    disable_buttons([self.group_menu, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.dose_menu])
-                    
-                    # Find the tab
-                    self.index_tab = self.notebook.notebookTab.index("current")
-                    self.tab_name =  self.notebook.notebookTab.tab(self.index_tab, "text")
-                    self.my_listbox = self.listbox_notebook[self.index_tab]
-                    
-                    def find_selected_folder():
-                        for k,v in self.path_list1.items():
-                            if str(self.tab_name) in str(k):
-                                path = v.split('/')
-                                sub_name = path[len(path)-2]
-                                if sub_name == str(self.tab_name):
-                                        self.selected_folder = k
-                                        return
-                    find_selected_folder()
-                    tmp_dict = self.results_dict[self.selected_folder]
-
-                    # Split the dictionary into ID and CF
-                    complete_list = [list(group) for key, group in itertools.groupby(tmp_dict, lambda x: x == "SubjectsCF" or x == "SessionsCF") if not key]
-                    dict_ID = {'Folder' : self.selected_folder}
-                    dict_ID.update({k: v for k, v in tmp_dict.items() if k in complete_list[0]})
-                    if str(self.level_CF.get()) == "Subjects":
-                        dict_CF =  {k: v for k, v in tmp_dict.items() if k in complete_list[1]}
-                    elif str(self.level_CF.get()) == "Sessions":
-                        dict_CF =  {k: v for k, v in tmp_dict.items() if k in complete_list[2]}
-                    
-                    #################################################################                   
-                    # ID: Modify the values ​​of the entries with the values ​​of the selected experiment
-                    ind = 0
-                    for key, value in dict_ID.items():
-                        if ind==1 or ind==2:
-                            # Variable ID
-                            self.entries_variable_ID[ind-1]['state'] = 'normal'
-                            self.entries_variable_ID[ind-1].delete(0, tk.END)
-                            self.entries_variable_ID[ind-1].insert(0, key)
-                            self.entries_variable_ID[ind-1]['state'] = 'disabled'
-                            # Value ID
-                            self.entries_value_ID[ind-1]['state'] = 'normal'
-                            self.entries_value_ID[ind-1].delete(0, tk.END)
-                            self.entries_value_ID[ind-1].insert(0, value if value is not None else '')
-                            self.entries_value_ID[ind-1]['state'] = 'disabled'
-                        ind += 1   
-
-                    #################################################################
-                    # Updates the CF frame based on the selected variables and values
-                    diff_CF = len(self.entries_variable_CF) - len(dict_CF) 
-                    
-                    # If the number of entries is greater than the number of variables, eliminate the excess entries
-                    if diff_CF > 0:
-                        for i in range(len(dict_CF), len(self.entries_variable_CF)):
-                            self.entries_variable_CF[i].destroy() 
-                            self.entries_value_CF[i].destroy() 
-                        del self.entries_variable_CF[len(dict_CF) : len(self.entries_variable_CF)]
-                        del self.entries_value_CF[len(dict_CF) : len(self.entries_value_CF)]
-                    # If the number of entries is less than the number of variables, insert the entries
-                    elif diff_CF < 0:
-                        for j in range(len(self.entries_variable_CF), len(dict_CF)):
-                            self.entries_variable_CF.append(ttk.Entry(self.frame_CF, takefocus = 0, width=15))
-                            self.entries_variable_CF[-1].grid(row=j, column=0, padx = 5, pady = 5, sticky=W)
-                            self.entries_value_CF.append(ttk.Entry(self.frame_CF, state='disabled', takefocus = 0, width = 25))
-                            self.entries_value_CF[-1].grid(row=j, column=1, padx = 5, pady = 5, sticky=W)
-                    
-                    # Modify the values ​​of the entries with the values ​​of the selected experiment
-                    ind = 0
-                    for key, value in dict_CF.items():
-                        # Variable CF
-                        if str(self.level_CF.get()) == "Subjects":
-                            key1 = str(key).replace('Subjects', '')
-                        elif str(self.level_CF.get()) == "Sessions":
-                            key1 = str(key).replace('Sessions', '')
-                        self.entries_variable_CF[ind]['state'] = 'normal'
-                        self.entries_variable_CF[ind].delete(0, tk.END)
-                        self.entries_variable_CF[ind].insert(0, key1)
-                        self.entries_variable_CF[ind]['state'] = 'disabled'
-                        # Value CF
-                        self.entries_value_CF[ind]['state'] = 'normal'
-                        self.entries_value_CF[ind].delete(0, tk.END)
-                        self.entries_value_CF[ind].insert(0, value if value is not None else '')
-                        self.entries_value_CF[ind]['state'] = 'disabled'
-                        ind += 1
-                elif str(self.level_CF.get()) == "Session":
-                    return
-            # Add the event: change Tab  
-            self.notebook.notebookTab.bind("<<NotebookTabChanged>>", items_selected_subjects)
-            
-            def items_selected_sessions(event):
-                # Events for the Sessions
-                if str(self.level_CF.get()) == "Sessions":
-                    # Clear all the combobox and the entry
-                    self.selected_group.set('')
-                    self.selected_timepoint.set('')
-                    self.selected_timepoint1.set('')
-                    self.time_entry.delete(0, tk.END)
-                    self.selected_dose.set('')
-
-                    disable_buttons([self.group_menu, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.dose_menu])
-                    
-                    # Find the tab
-                    self.index_tab = self.notebook.notebookTab.index("current")
-                    self.tab_name =  self.notebook.notebookTab.tab(self.index_tab, "text")
-                    self.my_listbox = self.listbox_notebook[self.index_tab]
-
-                    # Get selected index in the listbox
-                    self.selected_index = self.my_listbox.curselection()[0]
-                    self.selected_folder = self.tab_name + '#' + self.my_listbox.get(self.selected_index)
-
-                    tmp_dict = self.results_dict[self.selected_folder]
-
-                    # Split the dictionary into ID and CF
-                    complete_list = [list(group) for key, group in itertools.groupby(tmp_dict, lambda x: x == "SubjectsCF" or x == "SessionsCF") if not key]
-                    dict_ID = {'Folder' : self.selected_folder}
-                    dict_ID.update({k: v for k, v in tmp_dict.items() if k in complete_list[0]})
-                    if str(self.level_CF.get()) == "Subjects":
-                        dict_CF =  {k: v for k, v in tmp_dict.items() if k in complete_list[1]}
-                    elif str(self.level_CF.get()) == "Sessions":
-                        dict_CF =  {k: v for k, v in tmp_dict.items() if k in complete_list[2]}
-                    
-                    #################################################################
-                    # Modify the values ​​of the entries with the values ​​of the selected experiment
-                    ind = 0
-                    for key, value in dict_ID.items():
-                        if ind > 0:
-                            # Variable ID
-                            self.entries_variable_ID[ind-1]['state'] = 'normal'
-                            self.entries_variable_ID[ind-1].delete(0, tk.END)
-                            self.entries_variable_ID[ind-1].insert(0, key)
-                            self.entries_variable_ID[ind-1]['state'] = 'disabled'
-                            # Value ID
-                            self.entries_value_ID[ind-1]['state'] = 'normal'
-                            self.entries_value_ID[ind-1].delete(0, tk.END)
-                            self.entries_value_ID[ind-1].insert(0, value if value is not None else '')
-                            self.entries_value_ID[ind-1]['state'] = 'disabled'
-                        ind += 1
-
-                    #################################################################
-                    # Updates the CF frame based on the selected variables and values
-                    diff_CF = len(self.entries_variable_CF) - len(dict_CF) 
-                    
-                    # If the number of entries is greater than the number of variables, eliminate the excess entries
-                    if diff_CF > 0:
-                        for i in range(len(dict_CF), len(self.entries_variable_CF)):
-                            self.entries_variable_CF[i].destroy() 
-                            self.entries_value_CF[i].destroy() 
-                        del self.entries_variable_CF[len(dict_CF) : len(self.entries_variable_CF)]
-                        del self.entries_value_CF[len(dict_CF) : len(self.entries_value_CF)]
-                    # If the number of entries is less than the number of variables, insert the entries
-                    elif diff_CF < 0:
-                        for j in range(len(self.entries_variable_CF), len(dict_CF)):
-                            self.entries_variable_CF.append(ttk.Entry(self.frame_CF, takefocus = 0, width=15))
-                            self.entries_variable_CF[-1].grid(row=j, column=0, padx = 5, pady = 5, sticky=W)
-                            self.entries_value_CF.append(ttk.Entry(self.frame_CF, state='disabled', takefocus = 0, width = 25))
-                            self.entries_value_CF[-1].grid(row=j, column=1, padx = 5, pady = 5, sticky=W)
-                    
-                    # Modify the values ​​of the entries with the values ​​of the selected experiment
-                    ind = 0
-                    for key, value in dict_CF.items():
-                        # Variable CF
-                        if str(self.level_CF.get()) == "Subjects":
-                            key1 = str(key).replace('Subjects', '')
-                        elif str(self.level_CF.get()) == "Sessions":
-                            key1 = str(key).replace('Sessions', '')
-                        self.entries_variable_CF[ind]['state'] = 'normal'
-                        self.entries_variable_CF[ind].delete(0, tk.END)
-                        self.entries_variable_CF[ind].insert(0, key1)
-                        self.entries_variable_CF[ind]['state'] = 'disabled'
-                        # Value CF
-                        self.entries_value_CF[ind]['state'] = 'normal'
-                        self.entries_value_CF[ind].delete(0, tk.END)
-                        self.entries_value_CF[ind].insert(0, value if value is not None else '')
-                        self.entries_value_CF[ind]['state'] = 'disabled'
-                        ind += 1
-                
-            # Add the event to the list of listbox (press Tab)   
-            for i in range(len(self.listbox_notebook)):
-                self.listbox_notebook[i].bind('<Tab>', items_selected_sessions)
-        # Modify Metadata
-        def modify_metadata(self):
-            # Check before editing the data
-            if str(self.level_CF.get()) == "Sessions" and not self.entries_value_ID[3].get():
-                messagebox.showerror("XNAT-PIC", "Click Tab to select a folder from the list box on the left")
-                return 
-                       
-            # Normal entry CF
-            for i in range(0, len(self.entries_value_CF)):
-                self.entries_value_CF[i]['state'] = 'normal'
-          
-            # The timepoint field remains locked. Only one value can be entered from the entry.
-            self.entries_value_CF[1]['state'] = 'disabled'
-
-            # Option menu for the group (treated/untreated)
-            self.group_menu['state'] = 'readonly'
-            def group_changed(event):
-                """ handle the group changed event """
-                self.entries_value_CF[0].delete(0, tk.END)
-                self.entries_value_CF[0].insert(0, str(self.selected_group.get()))  
-                if str(self.level_CF.get()) == "Sessions":                  
-                    self.my_listbox.selection_set(self.selected_index)
-
-            self.group_menu.bind("<<ComboboxSelected>>", group_changed)
-
-            # Add the unit of measure to the number entered for the dose
-            self.dose_menu['state'] = 'readonly'
-            def dose_changed(event):
-                """ handle the dose changed event """
-                value_dose = ''
-                if self.entries_value_CF[2].get():
-                    try:
-                        dose = str(self.entries_value_CF[2].get())
-                        value_dose = dose.replace(' mg/kg','')
-                        float(value_dose)
-                    except Exception as e:
-                        messagebox.showerror("XNAT-PIC", 'Insert a number in dose')
-                        raise
-
-                self.entries_value_CF[2].delete(0, tk.END)
-                self.entries_value_CF[2].insert(0, str(value_dose) + ' ' + str(self.selected_dose.get()))    
-                if str(self.level_CF.get()) == "Sessions":                
-                    self.my_listbox.selection_set(self.selected_index)
-
-            self.dose_menu.bind("<<ComboboxSelected>>", dose_changed)
-            
-            # Option menu for the timepoint
-            self.timepoint_menu1['state'] = 'readonly'
-            self.time_entry['state'] = 'normal'
-            self.timepoint_menu['state'] = 'readonly'
-
-            def timepoint_changed(*args):
-                self.entries_value_CF[1].config(state=tk.NORMAL)
-                """ handle the timepoint changed event """
-                if str(self.time_entry.get()) or str(self.selected_timepoint1.get()):
-                    timepoint_str = str(self.selected_timepoint.get()) + "-" + str(self.time_entry.get()) + "-" + str(self.selected_timepoint1.get())
-                else:
-                    timepoint_str = str(self.selected_timepoint.get()) 
-                
-                if str(self.level_CF.get()) == "Sessions":
-                    self.my_listbox.selection_set(self.selected_index)
-
-                if self.time_entry.get():
-                    try:
-                        float(self.time_entry.get())
-                    except Exception as e: 
-                        messagebox.showerror("XNAT-PIC", "Insert a number in the timepoint entry")
-
-                self.entries_value_CF[1].delete(0, tk.END)
-                self.entries_value_CF[1].insert(0, timepoint_str)
-                self.entries_value_CF[1].config(state=tk.DISABLED)
-
-            self.timepoint_menu.bind("<<ComboboxSelected>>", timepoint_changed)
-            self.time_entry.bind('<Return>', timepoint_changed)
-            self.time_entry.bind('<FocusOut>', timepoint_changed)
-            #self.time_entry_value.trace('w', timepoint_changed)
-            self.timepoint_menu1.bind("<<ComboboxSelected>>", timepoint_changed)
-
-        def check_entries(self):
-
-            if not self.entries_value_ID[0].get():
-                raise Exception ("Insert the name of the project!")
-
-            if not self.entries_value_ID[1].get():
-                raise Exception ("Insert the name of the subject!")
-
-            if self.entries_value_CF[1].get() and '-' in  self.entries_value_CF[1].get(): 
-                if not str(self.entries_value_CF[1].get()).split('-')[0] in self.OPTIONS:
-                    raise Exception ("Select pre/post in timepoint!")
-                if not str(self.entries_value_CF[1].get()).split('-')[2] in self.OPTIONS1:
-                    raise Exception ("Select seconds, minutes, hours, days, weeks, months, years in timepoint")
-
-                input_num = str(self.entries_value_CF[1].get()).split('-')[1]
-                try:
-                    float(input_num)
-                except Exception as e: 
-                    raise Exception ("Insert a number in timepoint between pre/post and seconds, minutes, hours..")  
-
-            if  self.entries_value_CF[2].get():
-                try:
-                    # Check if the entry is a number
-                    dose_value = self.entries_value_CF[2].get().replace(' mg/kg',"")
-                    float(dose_value)
-                except Exception as e: 
-                    raise Exception ("Insert a number in dose")
-
-        # Update the values and save the values in a txt file        
-        def save_entries(self, my_key, multiple, sub_name):
-            def savetxt(my_key):
-                # Saves the changes made by the user in the txt file
-                substring = self.path_list1.get(my_key)
-                name_txt = str(my_key).rsplit('#', 1)[1] + "_" + "Custom_Variables.txt"
-                tmp_path = ''
-                for dirpath, dirnames, filenames in os.walk(substring.replace('\\', '/')):
-                # Check if the visu pars file is in the scans
-                    for filename in [f for f in filenames if f.startswith("visu_pars")]:
-                        tmp_path = substring + "\\" + name_txt
-                        break
-                    # Check if the DICOM is in the scans
-                    for filename in [f for f in filenames if f.endswith(".dcm")]:
-                        tmp_path = substring + "\\MR\\" + name_txt
-                        break
-                    if tmp_path:
-                        break
-                try:
-                    with open(tmp_path.replace('\\', '/'), 'w+') as meta_file:
-                        meta_file.write(tabulate(self.results_dict[my_key].items(), headers=['Variable', 'Value']))
-                except Exception as e: 
-                        messagebox.showerror("XNAT-PIC", "Confirmation failed: " + str(e))  
-                        raise    
-
-            if multiple == 0:
-            # Single confirm
-                array_CF = range(0, len(self.entries_variable_CF))
-            elif multiple ==1:
-            # Multple confirm
-                array_CF = self.list_CF
-                
-            tmp_CF = {}
-            
-            if str(self.level_CF.get()) == "Subjects":
-                # Update the info in the txt file CF
-                for i in array_CF:
-                    keyCF = "Subjects" + str(self.entries_variable_CF[i].get())
-                    keyCF1 = "Sessions" + str(self.entries_variable_CF[i].get())
-                    new_value_sub = self.entries_value_CF[i].get() 
-                    new_value_sub = "" if new_value_sub is None else new_value_sub
-                    tmp_CF.update({keyCF : new_value_sub, keyCF1 : new_value_sub})    
-                    self.entries_variable_CF[i]['state'] = tk.DISABLED
-                    self.entries_value_CF[i]['state'] = tk.DISABLED 
-                # Find all the keys for the subject (Sub+Exp) that you want to update
-                keys = []
-                for k,v in self.path_list1.items():
-                    if str(sub_name) in str(k):
-                        path = v.split('/')
-                        sub_name1 = path[len(path)-2]
-                        if sub_name == str(sub_name1):
-                            keys.append(k)
-                for x in range(len(keys)):
-                    my_key = keys[x]           
-                    self.results_dict[my_key].update(tmp_CF)
-                    savetxt(my_key)
-            elif str(self.level_CF.get()) == "Sessions":
-                # Update the info in the txt file CF
-                for i in array_CF:
-                    keyCF = "Sessions" + str(self.entries_variable_CF[i].get())
-                    new_value_ses = self.entries_value_CF[i].get() 
-                    tmp_CF.update({keyCF : new_value_ses})     
-                    self.entries_variable_CF[i]['state'] = tk.DISABLED
-                    self.entries_value_CF[i]['state'] = tk.DISABLED 
-         
-                self.results_dict[my_key].update(tmp_CF)
-                savetxt(my_key)
-           
-            # Clear all 
-            self.selected_group.set('')
-            self.selected_timepoint.set('')
-            self.selected_timepoint1.set('')
-            self.time_entry.delete(0, tk.END)
-            self.selected_dose.set('')
-            disable_buttons([self.group_menu, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.dose_menu])            
-
-        def confirm_metadata(self):
-            # Check before editing the data
-            if str(self.level_CF.get()) == "Sessions" and not self.entries_value_ID[2].get():
-                messagebox.showerror("XNAT-PIC", "Click Tab to select a folder from the list box on the left")
-                return 
-
-            try:
-                self.check_entries()
-            except Exception as e: 
-                messagebox.showerror("XNAT-PIC", "Error in checking fields: " + str(e))  
-                raise
-
-            try:
-                self.save_entries(self.selected_folder, multiple=0, sub_name = self.tab_name)
-            except Exception as e: 
-                messagebox.showerror("XNAT-PIC", "Error in saving: " + str(e))  
-                raise  
-        ##################### Confirm multiple metadata ####################
-        def confirm_multiple_metadata(self, master):
-
-            disable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-            
-            for i in range(len(self.entries_variable_CF)):  
-                self.entries_variable_CF[i]['state'] = tk.DISABLED
-                self.entries_value_CF[i]['state'] = tk.DISABLED    
-
-            # Clear all 
-            self.selected_group.set('')
-            self.selected_timepoint.set('')
-            self.selected_timepoint1.set('')
-            self.time_entry.delete(0, tk.END)
-            self.selected_dose.set('')
-
-            # Check before editing the data
-            if str(self.level_CF.get()) == "Sessions" and not self.entries_value_ID[3].get():
-                enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-                messagebox.showerror("XNAT-PIC", "Click Tab to select a folder from the list box on the left")
-                return 
-            self.select_CF(master)
-
-        def select_CF(self, master):
-            messagebox.showinfo("Project Data","Select the Custom Forms you want to copy.")
-            #self.my_listbox.selection_set(self.selected_index)
-            # Select the fields that you want to copy
-            self.list_CF = []
-            # Confirm ID
-            def multiple_confirm_CF(row):
-                self.list_CF.append(row)
-                btn_multiple_confirm_CF[row].destroy()
-                btn_multiple_delete_CF[row].destroy()
-                count_list.pop()
-                # If the user has finished all the selections of the CF, he moves on to the selection of experiments
-                if len(count_list) == 0:
-                    if str(self.level_CF.get()) == "Sessions":
-                        self.select_exp(master)
-                    if str(self.level_CF.get()) == "Subjects":
-                        self.select_sub(master)
-
-            # Delete ID
-            def multiple_delete_CF(row):
-                btn_multiple_confirm_CF[row].destroy()
-                btn_multiple_delete_CF[row].destroy()
-                count_list.pop()
-                # If the user has finished all the selections of the CF, he moves on to the selection of experiments
-                if len(count_list) == 0:
-                    if str(self.level_CF.get()) == "Sessions":
-                        self.select_exp(master)
-                    if str(self.level_CF.get()) == "Subjects":
-                        self.select_sub(master)
-
-            btn_multiple_confirm_CF = []
-            btn_multiple_delete_CF = []
-            count_list = []
-            for i in range(0, len(self.entries_variable_CF)):
-                btn_multiple_confirm_CF.append(ttk.Button(self.frame_CF, image = master.logo_accept, 
-                                                command=lambda row=i: multiple_confirm_CF(row), cursor=CURSOR_HAND))
-                btn_multiple_confirm_CF[-1].grid(row=i, column=5, padx = 5, pady = 5, sticky=NW)
-                btn_multiple_delete_CF.append(ttk.Button(self.frame_CF, image = master.logo_delete, 
-                                                command=lambda row=i: multiple_delete_CF(row), cursor=CURSOR_HAND))
-                btn_multiple_delete_CF[-1].grid(row=i, column=6, padx = 5, pady = 5, sticky=NW)
-                count_list = btn_multiple_confirm_CF.copy()
-        
-        def select_exp(self, master):
-            
-            messagebox.showinfo("Metadata","Select the folders from the box on the left for which to copy the info and then press confirm or cancel!")
-            self.my_listbox.selection_set(self.selected_index) 
-            for i in range(len(self.listbox_notebook)):
-                self.listbox_notebook[i]['selectmode'] = MULTIPLE
-                self.listbox_notebook[i]['exportselection']=False   
-
-            # The user presses confirm 
-            def items_selected2():
-                self.no_btn.destroy()
-                self.ok_btn.destroy()
-                #self.list_tab_listbox.append(self.seltext)
-                result = messagebox.askquestion("Multiple Confirm", "Are you sure you want to save data for the selected folders?\n", icon='warning')
-                seltext = []
-                self.list_tab_listbox = []
-
-                if result == 'yes':
-                    # Read all the selected item
-                    for i in self.notebook.notebookTab.tabs():
-                        index_tab = self.notebook.notebookTab.index(i)
-                        tab_name = self.notebook.notebookTab.tab(i, "text")
-                        seltext = [tab_name + '#' + self.listbox_notebook[int(index_tab)].get(index) 
-                                        for index in self.listbox_notebook[int(index_tab)].curselection()]
-                        if seltext:
-                            self.list_tab_listbox.append(seltext)
-
-                    try:
-                        self.check_entries()
-                    except Exception as e: 
-                        messagebox.showerror("XNAT-PIC", "Error in checking fields" + str(e))  
-                        raise
-                
-                for x in range(len(self.list_tab_listbox)):
-                    for y in range(len(self.list_tab_listbox[x])):
-                        try:
-                            self.save_entries(self.list_tab_listbox[x][y], multiple=1, sub_name=self.tab_name)
-                        except Exception as e: 
-                            messagebox.showerror("XNAT-PIC", "Error in saving" + str(e))  
-                            raise
-                
-                # Clear all 
-                self.selected_group.set('')
-                self.selected_dose.set('')
-                self.selected_timepoint.set('')
-                self.selected_timepoint1.set('')
-                self.time_entry.delete(0, tk.END)
-                disable_buttons([self.dose_menu, self.group_menu, self.timepoint_menu, self.time_entry, self.timepoint_menu1])
-                # Clear the focus and the select mode of the listbox is single
-                enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-                self.my_listbox.selection_clear(0, 'end')
-                for i in range(len(self.listbox_notebook)):
-                    self.listbox_notebook[i]['selectmode'] = SINGLE 
-                    self.listbox_notebook[i]['exportselection']= TRUE  
-                self.load_info(master)
-
-            self.ok_btn = ttk.Button(self.frame_metadata, image = master.logo_accept, command = items_selected2, cursor=CURSOR_HAND)
-            self.ok_btn.place(relx = 0.18, rely = 0.53, anchor = NW)
-            
-            # The user presses cancel
-            def items_cancel():
-                self.no_btn.destroy()
-                self.ok_btn.destroy()
-                # Clear the focus and the select mode of the listbox is single
-                messagebox.showinfo("Metadata","The information was not saved for the selected folders!")
-                enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-                for i in range(len(self.listbox_notebook)):
-                    self.listbox_notebook[i]['selectmode'] = SINGLE 
-                    self.listbox_notebook[i]['exportselection']= TRUE 
-            self.no_btn = ttk.Button(self.frame_metadata, image = master.logo_delete, command = items_cancel, cursor=CURSOR_HAND)
-            self.no_btn.place(relx = 0.26, rely = 0.53, anchor = NE)
-        def select_sub(self, master):
-            # Popup
-            self.popup_subject = ttk.Toplevel()
-            self.popup_subject.title("XNAT-PIC ~ Project Data")
-            master.root.eval(f'tk::PlaceWindow {str(self.popup_subject)} center')
-            self.popup_subject.resizable(False, False)
-            self.popup_subject.grab_set()
-            
-            # If you want the logo 
-            self.popup_subject.iconbitmap(PATH_IMAGE + "logo3.ico")
-
-            # Select the subjects to copy the Custom Forms to
-            self.popup_subject_frame = ttk.LabelFrame(self.popup_subject, text="Custom Forms", style="Popup.TLabelframe")
-            self.popup_subject_frame.grid(row=1, column=0, padx=10, pady=5, sticky=tk.E+tk.W+tk.N+tk.S, columnspan=2)
-            
-            self.canvas_sub = tk.Canvas(self.popup_subject_frame)
-            self.frame_sub = tk.Frame(self.canvas_sub)
-
-            # Scrollbar
-            self.vsb_sub = ttk.Scrollbar(self.popup_subject_frame, orient="vertical", command=self.canvas_sub.yview)
-            self.canvas_sub.configure(yscrollcommand=self.vsb_sub.set)  
-            self.hsb_sub = ttk.Scrollbar(self.popup_subject_frame, orient="horizontal", command=self.canvas_sub.xview)
-            self.canvas_sub.configure(xscrollcommand=self.hsb_sub.set)
-
-            self.vsb_sub.pack(side="right", fill="y")     
-            self.hsb_sub.pack(side="bottom", fill="x")
-            self.canvas_sub.pack(side = LEFT, fill = BOTH, expand = 1)
-            self.canvas_sub.create_window((0,0), window=self.frame_sub, anchor="nw")
-
-            # Be sure that we call OnFrameConfigure on the right canvas
-            self.frame_sub.bind("<Configure>", lambda event, canvas=self.canvas_sub: OnFrameConfigure(canvas))
-
-            def OnFrameConfigure(canvas):
-                    canvas.configure(scrollregion=canvas.bbox("all"))
-                                     
-            # Label     
-            self.popup_subject.label = ttk.Label(self.frame_sub, text="Select the subjects to copy the Custom Forms to:")  
-            self.popup_subject.label.grid(row=1, column=0, padx=10, pady=10, sticky=tk.W)
-
-            # List of subjects
-            self.subjects = []        
-            count = 2
-            self.sub_flag = []
-            for key in self.todos:
-                # Variable
-                self.sub_flag.append(BooleanVar(value=False))
-                ttk.Checkbutton(self.frame_sub, variable=self.sub_flag[count-2], 
-                                text=key, cursor=CURSOR_HAND).grid(row=count, column=0, padx = 5, pady = 5, sticky=W)
-                if str(key) == self.tab_name:
-                    self.sub_flag[-1].set(True)
-                    ttk.Checkbutton(self.frame_sub, variable=self.sub_flag[count-2], 
-                                text=key, state=tk.DISABLED,cursor=CURSOR_HAND).grid(row=count, column=0, padx = 5, pady = 5, sticky=W)
-                    
-                count += 1
-
-            def save_prj():
-                try:
-                    self.popup_subject.destroy()
-                except:
-                    pass
-                enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-                for text, var in zip(self.todos, self.sub_flag):
-                    if var.get():
-                        try:
-                            self.save_entries(self.selected_folder, multiple=1, sub_name = text)
-                        except Exception as e: 
-                            messagebox.showerror("XNAT-PIC", "Error in saving" + str(e))  
-                            raise
-
-            self.popup_subject.button_ok = ttk.Button(self.popup_subject, image = master.logo_accept,
-                                                command = save_prj , cursor=CURSOR_HAND)
-            self.popup_subject.button_ok.grid(row=2, column=1, padx=10, pady=5, sticky=NW)
-            
-            # If the popup is closed, it re-enables the buttons
-            def enable():
-                try:
-                    self.popup_subject.destroy()
-                except:
-                    pass
-                enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-               
-            self.popup_subject.button_cancel = ttk.Button(self.popup_subject, image = master.logo_delete,
-                                                command = enable, cursor=CURSOR_HAND)
-            self.popup_subject.button_cancel.grid(row=2, column=0, padx=10, pady=5, sticky=NE)
-
-            self.popup_subject.protocol('WM_DELETE_WINDOW', enable)
-             
-        ##################### Modify ID Name ########################
-        def modify_ID_metadata(self, master, flag_ID):
-            # Check before editing the data
-            if not self.entries_value_ID[0].get():
-                messagebox.showerror("XNAT-PIC", "Select a folder")
-                return 
-            # Normal entry CF
-            for i in range(0, len(self.entries_value_CF)):
-                self.entries_value_CF[i]['state'] = 'disabled'
-        
-            # Clear all 
-            self.selected_group.set('')
-            self.selected_dose.set('')
-            self.selected_timepoint.set('')
-            self.selected_timepoint1.set('')
-            self.time_entry.delete(0, tk.END)
-            disable_buttons([self.dose_menu, self.group_menu, self.timepoint_menu, self.time_entry, self.timepoint_menu1])
-            disable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-
-            if flag_ID == "Project":               
-                # Modify Project Name
-                self.entries_value_ID[0]['state'] = 'normal'
-                self.project_name = self.entries_value_ID[0].get()
-                self.subject_name = self.entries_value_ID[1].get()
-                def confirm_project_name():
-                    new_prj = self.entries_value_ID[0].get()
-                    if not new_prj:
-                        messagebox.showerror("XNAT-PIC", "Insert the name of the project!")
-                        return
-                    self.entries_value_ID[0]['state'] = 'disabled'
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-                    for k,v in self.results_dict.items():
-                        self.results_dict[k]['Project'] = new_prj
-                    for k,v in self.path_list1.items():
-                        # Saves the changes made by the user in the txt file
-                        substring = v
-                        name_txt = str(k).rsplit('#', 1)[1] + "_" + "Custom_Variables.txt"
-                        tmp_path = ''
-                        for dirpath, dirnames, filenames in os.walk(substring.replace('\\', '/')):
-                        # Check if the visu pars file is in the scans
-                            for filename in [f for f in filenames if f.startswith("visu_pars")]:
-                                tmp_path = substring + "\\" + name_txt
-                                break
-                            # Check if the DICOM is in the scans
-                            for filename in [f for f in filenames if f.endswith(".dcm")]:
-                                tmp_path = substring + "\\MR\\" + name_txt
-                                break
-                            if tmp_path:
-                                break
-                        try:
-                            with open(tmp_path.replace('\\', '/'), 'w+') as meta_file:
-                                meta_file.write(tabulate(self.results_dict[k].items(), headers=['Variable', 'Value']))
-                        except Exception as e: 
-                                messagebox.showerror("XNAT-PIC", "Confirmation failed: " + str(e))  
-                                raise    
-                    btn_project_delete_ID.destroy()        
-                    btn_project_confirm_ID.destroy()
-                    
-                btn_project_confirm_ID = ttk.Button(self.frame_metadata, image = master.logo_accept, 
-                                                command=confirm_project_name, cursor=CURSOR_HAND)
-                btn_project_confirm_ID.place(relx = 0.65, rely = 0.53, anchor = NE)
-
-                def delete_project_name():
-                    self.entries_value_ID[0].delete(0, tk.END)
-                    self.entries_value_ID[0].insert(0, self.project_name)
-                    self.entries_value_ID[0]['state'] = 'disabled'
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-                    btn_project_delete_ID.destroy()
-                    btn_project_confirm_ID.destroy()
-
-                btn_project_delete_ID = ttk.Button(self.frame_metadata, image = master.logo_delete, 
-                                                command=delete_project_name, cursor=CURSOR_HAND)
-                btn_project_delete_ID.place(relx = 0.71, rely = 0.53, anchor = NE)
-
-            elif flag_ID == "Subject":
-                # Modify Project Name
-                self.entries_value_ID[1]['state'] = 'normal'
-                
-                def confirm_subject_name():
-                    new_sub = self.entries_value_ID[1].get()
-                    if not new_sub:
-                        messagebox.showerror("XNAT-PIC", "Insert the name of the subject!")
-                        return 
-                    self.entries_value_ID[1]['state'] = 'disabled'
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-                    
-                    keys = []
-                    for k,v in self.path_list1.items():
-                        if str(self.tab_name) in str(k):
-                            path = v.split('/')
-                            sub_name = path[len(path)-2]
-                            if sub_name == str(self.tab_name):
-                                self.results_dict[k]['Subject'] = new_sub
-                                keys.append(k)
-                    for x in range(len(keys)):
-                        my_key = keys[x]           
-                        substring = self.path_list1.get(my_key)
-                        name_txt = str(my_key).rsplit('#', 1)[1] + "_" + "Custom_Variables.txt"
-                        tmp_path = ''
-                        for dirpath, dirnames, filenames in os.walk(substring.replace('\\', '/')):
-                        # Check if the visu pars file is in the scans
-                            for filename in [f for f in filenames if f.startswith("visu_pars")]:
-                                tmp_path = substring + "\\" + name_txt
-                                break
-                            # Check if the DICOM is in the scans
-                            for filename in [f for f in filenames if f.endswith(".dcm")]:
-                                tmp_path = substring + "\\MR\\" + name_txt
-                                break
-                            if tmp_path:
-                                break
-                        try:
-                            with open(tmp_path.replace('\\', '/'), 'w+') as meta_file:
-                                meta_file.write(tabulate(self.results_dict[my_key].items(), headers=['Variable', 'Value']))
-                        except Exception as e: 
-                                messagebox.showerror("XNAT-PIC", "Confirmation failed: " + str(e))  
-                                raise    
-
-                    btn_subject_delete_ID.destroy()        
-                    btn_subject_confirm_ID.destroy()
-                    
-                btn_subject_confirm_ID = ttk.Button(self.frame_metadata, image = master.logo_accept, 
-                                                command=confirm_subject_name, cursor=CURSOR_HAND)
-                btn_subject_confirm_ID.place(relx = 0.65, rely = 0.53, anchor = NE)
-
-                def delete_subject_name():
-                    self.entries_value_ID[1].delete(0, tk.END)
-                    self.entries_value_ID[1].insert(0, self.subject_name)
-                    self.entries_value_ID[1]['state'] = 'disabled'
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-                    btn_subject_delete_ID.destroy()
-                    btn_subject_confirm_ID.destroy()
-
-                btn_subject_delete_ID = ttk.Button(self.frame_metadata, image = master.logo_delete, 
-                                                command=delete_subject_name, cursor=CURSOR_HAND)
-                btn_subject_delete_ID.place(relx = 0.71, rely = 0.53, anchor = NE)
-
-            elif flag_ID == "Experiment":
-                if str(self.level_CF.get()) == "Subjects":
-                    messagebox.showerror("XNAT-PIC", "Select Sessions Level")
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-                    return 
-                if str(self.level_CF.get()) == "Sessions" and not self.entries_value_ID[2].get():
-                    messagebox.showerror("XNAT-PIC", "Click Tab to select a folder from the list box on the left")
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-                    return 
-                # Modify Project Name
-                self.entries_value_ID[2]['state'] = 'normal'
-                self.experiment_name = self.entries_value_ID[2].get()
-                def confirm_exp_name():
-                    new_exp = self.entries_value_ID[2].get()
-                    if not new_exp:
-                        messagebox.showerror("XNAT-PIC", "Insert the name of the experiment!")
-                        return 
-                    self.entries_value_ID[2]['state'] = 'disabled'
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
- 
-                    self.results_dict[self.selected_folder]['Experiment'] = new_exp
-                    self.confirm_metadata()
-
-                    btn_exp_delete_ID.destroy()        
-                    btn_exp_confirm_ID.destroy()
-                    
-                btn_exp_confirm_ID = ttk.Button(self.frame_metadata, image = master.logo_accept, 
-                                                command=confirm_exp_name, cursor=CURSOR_HAND)
-                btn_exp_confirm_ID.place(relx = 0.65, rely = 0.53, anchor = NE)
-
-                def delete_exp_name():
-                    self.entries_value_ID[2].delete(0, tk.END)
-                    self.entries_value_ID[2].insert(0, self.experiment_name)
-                    self.entries_value_ID[2]['state'] = 'disabled'
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-                    btn_exp_delete_ID.destroy()
-                    btn_exp_confirm_ID.destroy()
-
-                btn_exp_delete_ID = ttk.Button(self.frame_metadata, image = master.logo_delete, 
-                                                command=delete_exp_name, cursor=CURSOR_HAND)
-                btn_exp_delete_ID.place(relx = 0.71, rely = 0.53, anchor = NE)
-
-            elif flag_ID == "Acquisition Date":
-                if str(self.level_CF.get()) == "Subjects":
-                    messagebox.showerror("XNAT-PIC", "Select Sessions Level")
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-                    return 
-                if str(self.level_CF.get()) == "Sessions" and not self.entries_value_ID[2].get():
-                    messagebox.showerror("XNAT-PIC", "Click Tab to select a folder from the list box on the left")
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-                    return 
-
-                # Modify acq date Name
-                self.cal.entry['state'] = 'normal'
-                self.cal.button['state'] = 'normal'
-                self.flag = 0
-                self.entries_value_ID[3]['state'] = 'normal'
-                self.acquisition_date_name = self.entries_value_ID[3].get()
-
-                            # # Acquisition date: you can modify date with the calendar           
-                def date_entry_selected(*args):
-                    if self.flag == 0:
-                        self.entries_value_ID[3]['state'] = tk.NORMAL
-                        self.entries_value_ID[3].delete(0, tk.END)
-                        self.entries_value_ID[3].insert(0, str(self.cal.entry.get()))
-                        if self.entries_value_ID[3].get():
-                            try:
-                                acq_date = dt.datetime.strptime(self.entries_value_ID[3].get(), '%Y-%m-%d')
-                                self.today = date.today()
-                                self.today = self.today.strftime('%Y-%m-%d')
-                                if acq_date.strftime('%Y-%m-%d') > self.today:
-                                    self.entries_value_ID[3].delete(0, tk.END)
-                                    raise Exception("The date entered is greater than today's date")
-                            except Exception as e:
-                                messagebox.showerror("XNAT-PIC", str(e))
-                                self.entries_value_ID[3].delete(0, tk.END)
-                                self.entries_value_ID[3]['state'] = tk.DISABLED
-                                raise
-
-                        self.entries_value_ID[3]['state'] = tk.DISABLED
-                        self.my_listbox.selection_set(self.selected_index)
-            
-                self.datevar.trace('w', date_entry_selected)
-
-                def confirm_date_name():
-                    self.flag = 1
-                    self.cal.entry.delete(0, tk.END)
-                    self.cal.entry['state'] = 'disabled'
-                    self.cal.button['state'] = 'disabled'
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-                    
-                    new_date = self.entries_value_ID[3].get()
-
-                    self.results_dict[self.selected_folder]['Acquisition_date'] = new_date
-                    self.confirm_metadata()
-
-                    btn_date_delete_ID.destroy()        
-                    btn_date_confirm_ID.destroy()
-                    
-                btn_date_confirm_ID = ttk.Button(self.frame_metadata, image = master.logo_accept, 
-                                                command=confirm_date_name, cursor=CURSOR_HAND)
-                btn_date_confirm_ID.place(relx = 0.65, rely = 0.53, anchor = NE)
-
-                def delete_date_name():
-                    self.flag = 1
-                    self.entries_value_ID[3]['state'] = tk.NORMAL
-                    self.cal.entry.delete(0, tk.END)
-                    self.entries_value_ID[3].delete(0, tk.END)
-                    self.entries_value_ID[3].insert(0, self.acquisition_date_name)
-                    self.cal.entry['state'] = 'disabled'
-                    self.cal.button['state'] = 'disabled'
-                    self.entries_value_ID[3]['state'] = tk.DISABLED
-                    enable_buttons([self.modify_btn, self.confirm_btn, self.multiple_confirm_btn, self.SessionCF, self.SubjectCF])
-                    btn_date_delete_ID.destroy()
-                    btn_date_confirm_ID.destroy()
-
-                btn_date_delete_ID = ttk.Button(self.frame_metadata, image = master.logo_delete, 
-                                                command=delete_date_name, cursor=CURSOR_HAND)
-                btn_date_delete_ID.place(relx = 0.71, rely = 0.53, anchor = NE)
-        ##################### Clear the metadata ####################              
-        def clear_metadata(self, flag):
-            # Check before editing the data
-            if not self.entries_value_ID[0].get():
-                messagebox.showerror("XNAT-PIC", "Select a folder")
-                return 
-            # Clear all the combobox and the entry
-            self.selected_dose.set('')
-            self.selected_group.set('')
-            self.selected_timepoint.set('')
-            self.selected_timepoint1.set('')
-            self.time_entry.delete(0, tk.END)
-            state = self.entries_value_ID[1]['state']
-            if flag =='All':
-                # Set empty string in all the entries
-                for i in range(0, len(self.entries_variable_CF)):
-                        self.entries_value_CF[i]['state'] = tk.NORMAL
-                        self.entries_value_CF[i].delete(0, tk.END)
-                        self.entries_value_CF[i]['state'] = state
-            elif flag == 'Group':
-                self.entries_value_CF[0]['state'] = tk.NORMAL
-                self.entries_value_CF[0].delete(0, tk.END)
-                self.entries_value_CF[0]['state'] = state
-            elif flag == 'Timepoint':
-                    self.entries_value_CF[1]['state'] = tk.NORMAL
-                    self.entries_value_CF[1].delete(0, tk.END)
-                    self.entries_value_CF[1]['state'] = state
-            elif flag == 'Dose':
-                    self.entries_value_CF[2]['state'] = tk.NORMAL
-                    self.entries_value_CF[2].delete(0, tk.END)
-                    self.entries_value_CF[2]['state'] = state
-            self.confirm_metadata()
-        # #################### Save all the metadata ####################
-        def save_metadata(self):
-            # Check before editing the data
-            if not self.entries_value_ID[0].get():
-                messagebox.showerror("XNAT-PIC", "Select a folder")
-                return 
-            tmp_global_path = str(self.information_folder) + "\\" + self.project_name + '_' + 'Custom_Variables.xlsx'
-            try:
-                df = pandas.DataFrame.from_dict(self.results_dict, orient='index')
-                writer = pandas.ExcelWriter(tmp_global_path.replace('\\', '/'), engine='xlsxwriter')
-                df.to_excel(writer, sheet_name='Sheet1')
-                writer.save()
-                messagebox.showinfo("XNAT-PIC", "File saved successfully")
-            except Exception as e: 
-                    messagebox.showerror("XNAT-PIC", "Save failed: " + str(e))  
-                    raise
-            
-        # #################### Exit the metadata ####################
-        def exit_metadata(self, master):
-            result = messagebox.askquestion("Exit", "Do you want to go back to home?", icon='warning')
-            if result == 'yes':
-                destroy_widgets([self.frame_metadata, self.menu])
-                master.root.after(1500, xnat_pic_gui.choose_your_action(master))
-
-        ##################### Home ####################
-        def home_metadata(self, master):
-                destroy_widgets([self.frame_metadata, self.menu])
-                master.root.after(2000, xnat_pic_gui.choose_your_action(master))
 
     class XNATUploader():
 
@@ -3129,7 +1679,6 @@ class xnat_pic_gui():
             self.sub = tk.StringVar()
             self.subject_list = ttk.OptionMenu(self.frame_uploader, self.sub, default_value, *self.OPTIONS2)
             self.subject_list.configure(state="disabled", cursor=CURSOR_HAND)
-            
             self.subject_list.place(relx = 0.5, rely = 0.72, relwidth=0.15, anchor = N)
             
             # Button to add a new subject
@@ -3631,7 +2180,225 @@ class xnat_pic_gui():
             # Clear and update session cache
             self.session.clearcache()
             self.overall_uploader(master)
+    
+    # Fill in information
+    class metadata():
+        def __init__(self, master):
+            
+            # Disable main frame buttons
+            disable_buttons([master.convert_btn, master.info_btn, master.upload_btn, master.close_btn])
 
+            access_manager = AccessManager(master.root)
+            master.root.wait_window(access_manager.popup)
+            self.manager = access_manager.login
+
+            if access_manager.connected == False:
+                enable_buttons([master.convert_btn, master.info_btn, master.upload_btn, master.close_btn])
+            else:
+                destroy_widgets([master.toolbar_menu, master.convert_btn, master.info_btn, master.upload_btn, master.close_btn, master.xnat_pic_logo_label])
+                self.session = access_manager.session
+                self.full_andress = access_manager.popup.entry_address_complete
+                self.password = access_manager.popup.entry_password
+                self.overall_projectdata(master)
+ 
+        def overall_projectdata(self, master):
+            
+            # Create new frame
+            master.frame_label.set("Edit Custom Forms")
+            
+            ################################### Menu bar ###################################
+            self.menu = ttk.Menu(master.root)
+            home_menu = ttk.Menu(self.menu, tearoff=0)
+            help_menu = ttk.Menu(self.menu, tearoff=0)
+
+            home_menu.add_command(label="Home", image = master.logo_home, compound='left', command = lambda: self.home_metadata(master))
+            help_menu.add_command(label="Help", image = master.logo_help, compound='left', command = lambda: webbrowser.open('https://www.cim.unito.it/website/research/research_xnat.php'))
+            self.menu.add_cascade(label='Home', menu=home_menu)
+            self.menu.add_cascade(label="About", menu=help_menu)
+
+            master.root.config(menu=self.menu)
+
+            # Label Frame Main (for Title only)
+            self.frame_metadata = ttk.Frame(master.frame, style="Hidden.TLabelframe")
+            self.frame_metadata.place(relx = 0.2, rely= 0, relheight=1, relwidth=0.8, anchor=tk.NW)
+            # Frame Title
+            self.frame_title = ttk.Label(self.frame_metadata, text="Edit Custom Forms", style='Title.TLabel')
+            self.frame_title.place(relx = 0.5, rely = 0.05, anchor = CENTER)
+            
+            # User Icon
+            self.user_btn = ttk.Menubutton(self.frame_metadata, text=self.session.logged_in_user, image=master.user_icon, compound='right',
+                                                cursor=CURSOR_HAND)
+            self.user_btn.menu = Menu(self.user_btn, tearoff=0)
+            self.user_btn["menu"] = self.user_btn.menu
+            
+            self.user_btn.menu.add_command(label="Exit", image = master.logo_exit, compound='left', command = lambda: self.home_metadata(master))
+            self.user_btn.place(relx = 0.95, rely = 0.05, anchor = NE)
+            
+            ################################### Project, Subject, Experiment buttons ###################################
+            # Select a  Project
+            # Initialize variables
+            self.metadata_type = tk.IntVar()
+            def prj_data_handler(*args):
+                self.group_entry.config(bootstyle='primary')
+                self.metadata_type.set(0)
+                self.check_buttons(master, press_btn=0)
+            self.prj_data_btn = ttk.Button(self.frame_metadata, text="Project", 
+                                            command=prj_data_handler, cursor=CURSOR_HAND)
+            self.prj_data_btn.place(relx = 0.05, rely = 0.12, relwidth=0.22, anchor = NW)
+            Hovertip(self.prj_data_btn, "Select a project to add Custom Forms")
+
+            # Select a Subject
+            def sbj_data_handler(*args):
+                self.metadata_type.set(1)
+                self.check_buttons(master, press_btn=1)
+            self.sbj_data_btn = ttk.Button(self.frame_metadata, text="Subject",
+                                            command=sbj_data_handler, cursor=CURSOR_HAND)
+            self.sbj_data_btn.place(relx = 0.5, rely = 0.12, relwidth=0.22, anchor = N)
+            Hovertip(self.sbj_data_btn, "Select a subject to add Custom Forms")
+
+            # Select a Experiment
+            def exp_data_handler(*args):
+                self.metadata_type.set(2)
+                self.check_buttons(master, press_btn=2)
+            self.exp_data_btn = ttk.Button(self.frame_metadata, text="Experiment",
+                                            command=exp_data_handler, cursor=CURSOR_HAND)
+            self.exp_data_btn.place(relx = 0.95, rely = 0.12, relwidth=0.22, anchor = NE)
+            Hovertip(self.exp_data_btn, "Select a experiment to add Custom Forms")
+
+            self.separator1 = ttk.Separator(self.frame_metadata, bootstyle="primary")
+            self.separator1.place(relx = 0.05, rely = 0.21, relwidth = 0.9, anchor = NW)
+            
+            ################################### Project, Subject, Experiment Lists ###################################
+            ################# Project ###################
+            # Menu
+            self.project_list_label = ttk.Label(self.frame_metadata, text="Project", font = 'bold', anchor='center')
+            self.project_list_label.place(relx = 0.16, rely = 0.26, relwidth=0.15, anchor = N)
+            Hovertip(self.project_list_label, "Select an existing project")
+            self.OPTIONSPRJ = list(self.session.projects)
+            self.prj = tk.StringVar()
+            default_value = "--"
+            self.project_list = ttk.OptionMenu(self.frame_metadata, self.prj, default_value, *self.OPTIONSPRJ)
+            self.project_list.configure(state="disabled", cursor=CURSOR_HAND)
+            self.project_list.place(relx = 0.16, rely = 0.30, relwidth=0.15, anchor = N)
+            ################# Subject ###################
+            # Menu
+            if self.prj.get() != '--':
+                self.OPTIONSSBJ = list(self.session.projects[self.prj.get()].subjects.key_map.keys())
+            else:
+                self.OPTIONSSBJ = []
+            self.subject_list_label = ttk.Label(self.frame_metadata, text="Subject", font = 'bold', anchor=CENTER)
+            self.subject_list_label.place(relx = 0.5, rely = 0.26, relwidth=0.15, anchor = N)
+            Hovertip(self.subject_list_label, "Select an existing subject")
+            self.sub = tk.StringVar()
+            self.subject_list = ttk.OptionMenu(self.frame_metadata, self.sub, default_value, *self.OPTIONSSBJ)
+            self.subject_list.configure(state="disabled", cursor=CURSOR_HAND)
+            self.subject_list.place(relx = 0.5, rely = 0.30, relwidth=0.15, anchor = N)
+            ################# Experiment ################
+            # Menu
+            if self.prj.get() != '--' and self.sub.get() != '--':
+                self.OPTIONSEXP = list(self.session.projects[self.prj.get()].subjects[self.sub.get()].experiments.key_map.keys())
+            else:
+                self.OPTIONSEXP = []
+            self.experiment_list_label = ttk.Label(self.frame_metadata, text="Experiment", font = 'bold', anchor='center')
+            self.experiment_list_label.place(relx = 0.84, rely = 0.26, relwidth=0.15, anchor = N)
+            Hovertip(self.experiment_list_label, "Select an existing experiment")
+            self.exp = tk.StringVar()
+            self.experiment_list = ttk.OptionMenu(self.frame_metadata, self.exp, default_value, *self.OPTIONSEXP)
+            self.experiment_list.configure(state="disabled", cursor=CURSOR_HAND)
+            self.experiment_list.place(relx = 0.84, rely = 0.30, relwidth=0.15, anchor = N)
+
+            ################################### Custom Forms ###################################
+            #self.separator2 = ttk.Separator(self.frame_metadata, bootstyle="primary")
+            #self.separator2.place(relx = 0.05, rely = 0.40, relwidth = 0.9, anchor = NW)
+            self.CF_label = ttk.Label(self.frame_metadata, text = "Custom Forms", font = SMALL_FONT)
+            self.CF_label.place(relx = 0.5, rely = 0.40, anchor = CENTER)
+            
+            #### Group ####
+            self.group_label = ttk.Label(self.frame_metadata, text = "Group", font = SMALL_FONT)
+            self.group_label.place(relx = 0.33, rely = 0.45, anchor = N)
+            self.group_entry = ttk.Entry(self.frame_metadata, takefocus = 0, state='disabled', bootstyle="light")
+            self.group_entry.place(relx = 0.5, rely = 0.45, anchor = N, relwidth=0.22)
+            # Group Menu
+            default_value1 = ''
+            self.OPTIONS0 = ["untreated", "treated"]
+            self.selected_group = tk.StringVar()
+            self.group_menu = ttk.OptionMenu(self.frame_metadata, self.selected_group, default_value1, self.OPTIONS0)
+            self.group_menu['state'] = 'disabled'
+            self.group_menu.place(relx = 0.61, rely = 0.49, anchor = NE, relwidth=0.08)
+            
+            #### Timepoint ####
+            self.timepoint_label = ttk.Label(self.frame_metadata, text = "Timepoint", font = SMALL_FONT)
+            self.timepoint_label.place(relx = 0.33, rely = 0.55, anchor = N)
+            self.timepoint_entry = ttk.Entry(self.frame_metadata, state='disabled', takefocus = 0, bootstyle="light")
+            self.timepoint_entry.place(relx = 0.5, rely = 0.55, anchor = N, relwidth=0.22)
+            # Timepoint menu
+            self.OPTIONS1 = ["pre", "post"]
+            self.selected_timepoint = tk.StringVar()
+            self.timepoint_menu = ttk.OptionMenu(self.frame_metadata, self.selected_timepoint, default_value1, self.OPTIONS1)
+            self.timepoint_menu['state'] = 'disabled'
+            self.timepoint_menu.place(relx = 0.39, rely = 0.59, anchor = NW, relwidth=0.06)
+            
+            self.time_entry_value = tk.StringVar()
+            self.time_entry = ttk.Entry(self.frame_metadata, state='disabled', takefocus = 0, textvariable=self.time_entry_value, bootstyle="light")
+            self.time_entry.place(relx = 0.5, rely = 0.59, anchor = N, relwidth=0.06)
+
+            self.OPTIONS2 = ["seconds", "minutes", "hours", "days", "weeks", "months", "years"]
+            self.selected_timepoint1 = tk.StringVar()
+            self.timepoint_menu1 = ttk.OptionMenu(self.frame_metadata, self.selected_timepoint1, default_value1, self.OPTIONS2)
+            self.timepoint_menu1['state'] = 'disabled'
+            self.timepoint_menu1.place(relx = 0.61, rely = 0.59, anchor = NE, relwidth=0.06)
+            
+            #### Dose ####
+            self.timepoint_label = ttk.Label(self.frame_metadata, text = "Dose", font = SMALL_FONT)
+            self.timepoint_label.place(relx = 0.33, rely = 0.65, anchor = N)
+            self.timepoint_entry = ttk.Entry(self.frame_metadata, state='disabled', takefocus = 0, bootstyle="light")
+            self.timepoint_entry.place(relx = 0.5, rely = 0.65, anchor = N, relwidth=0.22)
+            # Dose
+            self.OPTIONS3 = ["mg/kg"]
+            self.selected_dose = tk.StringVar()
+            self.dose_menu = ttk.OptionMenu(self.frame_metadata, self.selected_dose, default_value1, self.OPTIONS3)
+            self.dose_menu['state'] = 'disabled'
+            self.dose_menu.place(relx = 0.61, rely = 0.69, anchor = NE, relwidth=0.08)
+
+            ################ EXIT Button ################
+            self.exit_text = tk.StringVar() 
+            self.exit_btn = ttk.Button(self.frame_metadata, textvariable=self.exit_text, command = lambda: self.home_metadata(master), cursor=CURSOR_HAND, style="Secondary1.TButton")
+            self.exit_text.set("Home")
+            self.exit_btn.place(relx = 0.05, rely = 0.9, relwidth=0.15, anchor = NW)
+            #############################################
+            ################ NEXT Button ################
+            def next():
+                if self.press_btn == 0:
+                    self.project_uploader(master)
+                elif self.press_btn == 1:
+                    self.subject_uploader(master)
+                elif self.press_btn == 2:
+                    self.experiment_uploader(master)
+                elif self.press_btn == 3:
+                    self.file_uploader(master)
+                else:
+                    pass
+
+            self.next_text = tk.StringVar() 
+            self.next_btn = ttk.Button(self.frame_metadata, textvariable=self.next_text, state='disabled',
+                                        command=next, cursor=CURSOR_HAND, style="Secondary1.TButton")
+            self.next_text.set("Upload")
+            self.next_btn.place(relx = 0.95, rely = 0.9, relwidth=0.15, anchor = NE)
+
+        ##################### Exit the metadata ####################
+        def home_metadata(self, master):
+            result = messagebox.askquestion("Exit", "Do you want to go back to home?", icon='warning')
+            if result == 'yes':
+                destroy_widgets([self.frame_metadata, self.menu])
+                # Perform disconnection of the session if it is alive
+                try:
+                    self.session.disconnect()
+                    self.session = ''
+                except:
+                    pass
+                # Restore the main frame
+                xnat_pic_gui.choose_your_action(master)
+                master.root.after(2000, xnat_pic_gui.choose_your_action(master))
 
 if __name__ == "__main__":
     
