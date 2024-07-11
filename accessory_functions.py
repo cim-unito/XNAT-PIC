@@ -5,7 +5,7 @@ Created on May 30, 2022
 @author: Riccardo Gambino
 
 """
-import os
+import os, json
 import pandas as pd
 from tabulate import tabulate
 from PIL import Image, ImageTk
@@ -14,6 +14,7 @@ import pydicom
 import datetime 
 import datefinder
 import time
+
 
 # Accessory functions
 def disable_buttons(list_of_buttons):
@@ -330,3 +331,26 @@ def write_tree(folder_path):
     # Update the fields of the parent object
     dict_items['0']['values'] = (last_edit_time, str(round(total_weight/1024, 2)) + "GB", "Folder")
     return dict_items
+
+def get_custom_forms(session,  press_btn, project_name, subject_name = "", experiment_name = ""):
+        group = ""
+        timepoint = ""
+        dose= ""
+        if press_btn==0:
+            uri_get = f"/xapi/custom-fields/projects/{project_name}/fields"
+        elif press_btn==1:
+            uri_get = f"/xapi/custom-fields/projects/{project_name}/subjects/{subject_name}/fields"
+        elif press_btn==2:
+            uri_get = f"/xapi/custom-fields/projects/{project_name}/subjects/{subject_name}/experiments/{experiment_name}/fields"
+                
+        # GET        
+        response = session.get(uri_get)
+        get_dict = json.loads(response.text)
+        if bool(get_dict):
+            for key, value in get_dict.items():
+                group = value.get('group', '')
+                timepoint = value.get('timepoint', '')
+                dose = value.get('dose', '')
+        return [group, timepoint, dose]
+
+
