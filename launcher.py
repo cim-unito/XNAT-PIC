@@ -2429,7 +2429,25 @@ class xnat_pic_gui():
             # Change the EXIT button into BACK button and modify the command associated with it
             self.exit_text.set("Back")
             self.exit_btn.configure(command=back)
-
+            
+            def lock_widgets():
+                self.group_entry.config(bootstyle='light')
+                self.timepoint_entry.config(bootstyle='light')
+                self.dose_entry.config(bootstyle='light')
+                self.time_entry.config(bootstyle='light')
+                self.dose_entry1.config(bootstyle='light')
+                self.group_entry.delete(0,END)
+                self.timepoint_entry.delete(0,END)
+                self.dose_entry.delete(0,END)
+                # Clear option menu
+                self.selected_group.set("")
+                self.selected_timepoint.set("")
+                self.selected_timepoint1.set("")
+                self.selected_dose.set("")
+                self.time_entry.delete(0,END)
+                self.dose_entry1.delete(0,END)
+                disable_buttons([self.next_btn, self.group_entry, self.group_menu, self.timepoint_entry, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.dose_entry, self.dose_entry1, self.dose_menu])   
+            
             def unlock_widgets():
                 self.group_entry.config(bootstyle='primary')
                 self.timepoint_entry.config(bootstyle='primary')
@@ -2471,7 +2489,7 @@ class xnat_pic_gui():
                             raise
                         enable_buttons([self.next_btn])
                     else:
-                        disable_buttons([self.next_btn])
+                        lock_widgets()
                 self.prj.trace_add('write', enable_next)
                 
             elif press_btn == 1:
@@ -2491,7 +2509,7 @@ class xnat_pic_gui():
                             raise
                         enable_buttons([self.next_btn])
                     else:
-                        disable_buttons([self.next_btn])
+                        lock_widgets()
                 self.sub.trace_add('write', enable_next)
                 
             elif press_btn == 2:
@@ -2511,7 +2529,7 @@ class xnat_pic_gui():
                             raise
                         enable_buttons([self.next_btn])
                     else:
-                        disable_buttons([self.next_btn])
+                        lock_widgets()
                 self.exp.trace_add('write', enable_next)
 
         ##################### Exit the metadata ####################
