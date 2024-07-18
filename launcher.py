@@ -1,6 +1,7 @@
 import shutil
 import tkinter as tk
 from tkinter import MULTIPLE, NE, NW, SINGLE, W, filedialog, messagebox
+from tkinter.scrolledtext import ScrolledText
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 import ttkbootstrap.themes.standard 
@@ -2239,6 +2240,7 @@ class xnat_pic_gui():
             # Initialize variables
             self.metadata_type = tk.IntVar()
             def prj_data_handler(*args):
+                self.working_label.config(text="Edit Custom Forms to project level")
                 self.metadata_type.set(0)
                 self.check_buttons(master, press_btn=0)
             self.prj_data_btn = ttk.Button(self.frame_metadata, text="Project", 
@@ -2248,6 +2250,7 @@ class xnat_pic_gui():
 
             # Select a Subject
             def sbj_data_handler(*args):
+                self.working_label.config(text="Edit Custom Forms to subject level")
                 self.metadata_type.set(1)
                 self.check_buttons(master, press_btn=1)
             self.sbj_data_btn = ttk.Button(self.frame_metadata, text="Subject",
@@ -2257,6 +2260,7 @@ class xnat_pic_gui():
 
             # Select a Experiment
             def exp_data_handler(*args):
+                self.working_label.config(text="Edit Custom Forms to experiment level")
                 self.metadata_type.set(2)
                 self.check_buttons(master, press_btn=2)
             self.exp_data_btn = ttk.Button(self.frame_metadata, text="Experiment",
@@ -2309,9 +2313,20 @@ class xnat_pic_gui():
             ################################### Custom Forms ###################################
             #self.separator2 = ttk.Separator(self.frame_metadata, bootstyle="primary")
             #self.separator2.place(relx = 0.05, rely = 0.40, relwidth = 0.9, anchor = NW)
-            self.CF_label = ttk.Label(self.frame_metadata, text = "Custom Forms", font = SMALL_FONT)
-            self.CF_label.place(relx = 0.5, rely = 0.40, anchor = CENTER)
+            working_text = "Edit Custom Forms to..."
+            self.working_label = ttk.Label(self.frame_metadata, text=working_text, image = master.logo_edit, compound=tk.LEFT, font = SMALL_FONT, anchor='center')
+            self.working_label.place(relx = 0.5, rely = 0.40, anchor = CENTER)
             
+            # Label
+            # working_text = "Edit Custom Forms to..."
+            # self.working_label = ttk.Label(self.frame_metadata, text=working_text, image = master.logo_edit, compound=tk.LEFT, font = 'bold', anchor='center')
+            # self.working_label.place(relx = 0.16, rely = 0.57, relwidth = 0.15, anchor = CENTER)
+            # Scrolled text
+            # self.textbox = ScrolledText(self.frame_metadata)
+            # self.textbox.place(relx = 0.84, rely = 0.45, anchor = N, relheight=0.32, relwidth=0.15)
+            # default_txt = "lorem ipsum"
+            # self.textbox.insert(END, default_txt)
+            # self.textbox.configure(state='disabled')
             #### Group ####
             self.group_label = ttk.Label(self.frame_metadata, text = "Group", font = SMALL_FONT)
             self.group_label.place(relx = 0.33, rely = 0.45, anchor = N)
@@ -2324,13 +2339,13 @@ class xnat_pic_gui():
             self.selected_group.set("")
             self.group_menu = ttk.OptionMenu(self.frame_metadata, self.selected_group, self.default_value1, *self.OPTIONS0)
             self.group_menu['state'] = 'disabled'
-            self.group_menu.place(relx = 0.61, rely = 0.49, anchor = NE, relwidth=0.08)
+            self.group_menu.place(relx = 0.61, rely = 0.50, anchor = NE, relwidth=0.08)
             
             #### Timepoint ####
             self.timepoint_label = ttk.Label(self.frame_metadata, text = "Timepoint", font = SMALL_FONT)
-            self.timepoint_label.place(relx = 0.33, rely = 0.55, anchor = N)
+            self.timepoint_label.place(relx = 0.33, rely = 0.57, anchor = N)
             self.timepoint_entry = ttk.Entry(self.frame_metadata, state='disabled', takefocus = 0, bootstyle="light")
-            self.timepoint_entry.place(relx = 0.5, rely = 0.55, anchor = N, relwidth=0.22)
+            self.timepoint_entry.place(relx = 0.5, rely = 0.57, anchor = N, relwidth=0.22)
             # Timepoint menu
             self.OPTIONS1 = ["pre", "post"]
             self.default_value1 = ""
@@ -2338,43 +2353,53 @@ class xnat_pic_gui():
             self.selected_timepoint.set("")
             self.timepoint_menu = ttk.OptionMenu(self.frame_metadata, self.selected_timepoint, self.default_value1, *self.OPTIONS1)
             self.timepoint_menu['state'] = 'disabled'
-            self.timepoint_menu.place(relx = 0.39, rely = 0.59, anchor = NW, relwidth=0.06)
+            self.timepoint_menu.place(relx = 0.39, rely = 0.62, anchor = NW, relwidth=0.06)
             
             self.time_entry_value = tk.StringVar()
             self.time_entry = ttk.Entry(self.frame_metadata, state='disabled', takefocus = 0, textvariable=self.time_entry_value, bootstyle="light")
-            self.time_entry.place(relx = 0.5, rely = 0.59, anchor = N, relwidth=0.06)
+            self.time_entry.place(relx = 0.5, rely = 0.62, anchor = N, relwidth=0.06)
 
             self.OPTIONS2 = ["seconds", "minutes", "hours", "days", "weeks", "months", "years"]
             self.selected_timepoint1 = tk.StringVar()
             self.selected_timepoint1.set("")
             self.timepoint_menu1 = ttk.OptionMenu(self.frame_metadata, self.selected_timepoint1, self.default_value1, *self.OPTIONS2)
             self.timepoint_menu1['state'] = 'disabled'
-            self.timepoint_menu1.place(relx = 0.61, rely = 0.59, anchor = NE, relwidth=0.06)
+            self.timepoint_menu1.place(relx = 0.61, rely = 0.62, anchor = NE, relwidth=0.06)
             # Accept timepoint value 
             self.accept_timepoint_btn = ttk.Button(self.frame_metadata, image=master.logo_accept, state=DISABLED,
                                     cursor=CURSOR_HAND, command=lambda: self.load_timepoint(master))
-            self.accept_timepoint_btn.place(relx = 0.67, rely = 0.59, anchor = NE)
+            self.accept_timepoint_btn.place(relx = 0.64, rely = 0.62, anchor = N)
+
+            # Clear timepoint value 
+            self.clear_timepoint_btn = ttk.Button(self.frame_metadata, image=master.logo_delete, state=DISABLED,
+                                    cursor=CURSOR_HAND, command=lambda: self.delete_timepoint(master))
+            self.clear_timepoint_btn.place(relx = 0.67, rely = 0.62, anchor = NW)
             
             #### Dose ####
             self.dose_label = ttk.Label(self.frame_metadata, text = "Dose", font = SMALL_FONT)
-            self.dose_label.place(relx = 0.33, rely = 0.65, anchor = N)
+            self.dose_label.place(relx = 0.33, rely = 0.70, anchor = N)
             self.dose_entry = ttk.Entry(self.frame_metadata, state='disabled', takefocus = 0, bootstyle="light")
-            self.dose_entry.place(relx = 0.5, rely = 0.65, anchor = N, relwidth=0.22)
+            self.dose_entry.place(relx = 0.5, rely = 0.70, anchor = N, relwidth=0.22)
             # Dose
             self.dose_entry_value = tk.StringVar()
             self.dose_entry1 = ttk.Entry(self.frame_metadata, state='disabled', takefocus = 0, textvariable=self.dose_entry_value, bootstyle="light")
-            self.dose_entry1.place(relx = 0.5, rely = 0.69, anchor = N, relwidth=0.06)
-            # Accept Dose value 
-            self.accept_dose_btn = ttk.Button(self.frame_metadata, image=master.logo_accept, state=DISABLED,
-                                    cursor=CURSOR_HAND, command=lambda: self.load_dose(master))
-            self.accept_dose_btn.place(relx = 0.67, rely = 0.69, anchor = NE)
+            self.dose_entry1.place(relx = 0.5, rely = 0.75, anchor = N, relwidth=0.06)
 
             self.OPTIONS3 = ["mg/kg"]
             self.selected_dose = tk.StringVar()
             self.selected_dose.set("")
             self.dose_menu = ttk.OptionMenu(self.frame_metadata, self.selected_dose, self.default_value1, *self.OPTIONS3)
             self.dose_menu['state'] = 'disabled'
-            self.dose_menu.place(relx = 0.61, rely = 0.69, anchor = NE, relwidth=0.06)
+            self.dose_menu.place(relx = 0.61, rely = 0.75, anchor = NE, relwidth=0.06)
+            # Accept Dose value 
+            self.accept_dose_btn = ttk.Button(self.frame_metadata, image=master.logo_accept, state=DISABLED,
+                                    cursor=CURSOR_HAND, command=lambda: self.load_dose(master))
+            self.accept_dose_btn.place(relx = 0.64, rely = 0.75, anchor = N)
+
+            # Clear Dose value 
+            self.clear_dose_btn = ttk.Button(self.frame_metadata, image=master.logo_delete, state=DISABLED,
+                                    cursor=CURSOR_HAND, command=lambda: self.delete_dose(master))
+            self.clear_dose_btn.place(relx = 0.67, rely = 0.75, anchor = NW)
             
             ################ Callback methods ################
             def get_subjects(*args):
@@ -2445,7 +2470,7 @@ class xnat_pic_gui():
                 self.selected_dose.set("")
                 self.time_entry.delete(0,END)
                 self.dose_entry1.delete(0,END)
-                disable_buttons([self.next_btn, self.group_entry, self.group_menu, self.timepoint_entry, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.accept_timepoint_btn, self.dose_entry, self.dose_entry1, self.dose_menu, self.accept_dose_btn])   
+                disable_buttons([self.next_btn, self.group_entry, self.group_menu, self.timepoint_entry, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.accept_timepoint_btn, self.clear_timepoint_btn, self.dose_entry, self.dose_entry1, self.dose_menu, self.accept_dose_btn, self.clear_dose_btn])   
             
             def unlock_widgets():
                 self.group_entry.config(bootstyle='primary')
@@ -2453,7 +2478,7 @@ class xnat_pic_gui():
                 self.dose_entry.config(bootstyle='primary')
                 self.time_entry.config(bootstyle='primary')
                 self.dose_entry1.config(bootstyle='primary')
-                enable_buttons([self.group_entry, self.group_menu, self.timepoint_entry, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.accept_timepoint_btn, self.dose_entry, self.dose_entry1, self.dose_menu, self.accept_dose_btn])   
+                enable_buttons([self.group_entry, self.group_menu, self.timepoint_entry, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.accept_timepoint_btn, self.clear_timepoint_btn, self.dose_entry, self.dose_entry1, self.dose_menu, self.accept_dose_btn, self.clear_dose_btn])   
 
             def get_custom_form_GUI(custom_forms_value):
                     self.group_entry.delete(0,END)
@@ -2527,7 +2552,7 @@ class xnat_pic_gui():
                     self.group_entry.insert(0,str(self.selected_group.get()))
 
             self.selected_group.trace_add('write', load_group)
-        ##################### Load timepoint value ####################
+        ##################### Load and delete timepoint value ####################
         def load_timepoint(self, master):
             try:
                 tmp = int(self.time_entry_value.get())
@@ -2549,7 +2574,12 @@ class xnat_pic_gui():
                 self.selected_timepoint.set("")
                 self.selected_timepoint1.set("")
                 self.time_entry.delete(0,END)
-        
+
+        def delete_timepoint(self, master):
+                self.selected_timepoint.set("")
+                self.selected_timepoint1.set("")
+                self.time_entry.delete(0,END)
+        ##################### Load and delete dose value ####################
         def load_dose(self, master):
             try:
                 tmp = int(self.dose_entry_value.get())
@@ -2567,7 +2597,9 @@ class xnat_pic_gui():
                 self.dose_entry.insert(0,new_dose_value)      
                 self.selected_dose.set("")
                 self.dose_entry1.delete(0,END)
-
+        def delete_dose(self, master):
+                self.selected_dose.set("")
+                self.dose_entry1.delete(0,END)
         #################### Upload Custom Forms ###################
         def custom_forms_uploader(self, master):
             try:
@@ -2594,7 +2626,7 @@ class xnat_pic_gui():
                 self.selected_dose.set("")
                 self.time_entry.delete(0,END)
                 self.dose_entry1.delete(0,END)
-                disable_buttons([self.next_btn, self.group_entry, self.group_menu, self.timepoint_entry, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.accept_timepoint_btn, self.dose_entry, self.dose_entry1, self.dose_menu, self.accept_dose_btn])
+                disable_buttons([self.next_btn, self.group_entry, self.group_menu, self.timepoint_entry, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.accept_timepoint_btn, self.clear_timepoint_btn, self.dose_entry, self.dose_entry1, self.dose_menu, self.accept_dose_btn, self.clear_dose_btn])
                 messagebox.showinfo("XNAT-PIC", "Custom forms updated on XNAT!")
             except Exception as e:
                     messagebox.showerror("XNAT-PIC", "Error: " + str(e))  
