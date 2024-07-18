@@ -14,7 +14,7 @@ import pydicom
 import datetime 
 import datefinder
 import time
-
+from tkinter import  messagebox
 
 # Accessory functions
 def disable_buttons(list_of_buttons):
@@ -332,25 +332,60 @@ def write_tree(folder_path):
     dict_items['0']['values'] = (last_edit_time, str(round(total_weight/1024, 2)) + "GB", "Folder")
     return dict_items
 
-def get_custom_forms(session,  press_btn, project_name, subject_name = "", experiment_name = ""):
-        group = ""
-        timepoint = ""
-        dose= ""
-        if press_btn==0:
-            uri_get = f"/xapi/custom-fields/projects/{project_name}/fields"
-        elif press_btn==1:
-            uri_get = f"/xapi/custom-fields/projects/{project_name}/subjects/{subject_name}/fields"
-        elif press_btn==2:
-            uri_get = f"/xapi/custom-fields/projects/{project_name}/subjects/{subject_name}/experiments/{experiment_name}/fields"
-                
-        # GET        
-        response = session.get(uri_get)
-        get_dict = json.loads(response.text)
-        if bool(get_dict):
-            for key, value in get_dict.items():
-                group = value.get('group', '')
-                timepoint = value.get('timepoint', '')
-                dose = value.get('dose', '')
-        return [group, timepoint, dose]
+def get_custom_forms(session,  press_btn, project_name, subject_name, experiment_name):
+    group = ""
+    timepoint = ""
+    dose= ""
+    if press_btn==0:
+        uri_get = f"/xapi/custom-fields/projects/{project_name}/fields"
+    elif press_btn==1:
+        uri_get = f"/xapi/custom-fields/projects/{project_name}/subjects/{subject_name}/fields"
+    elif press_btn==2:
+        uri_get = f"/xapi/custom-fields/projects/{project_name}/subjects/{subject_name}/experiments/{experiment_name}/fields"
+            
+    # GET        
+    response = session.get(uri_get)
+    get_dict = json.loads(response.text)
+    if bool(get_dict):
+        for key, value in get_dict.items():
+            group = value.get('group', '')
+            timepoint = value.get('timepoint', '')
+            dose = value.get('dose', '')
+    return [group, timepoint, dose]
+
+def put_custom_forms(session,  press_btn, project_name, subject_name, experiment_name, group, timepoint, dose):
+    
+    new_custom_forms = {"group": group,
+                        "timepoint": timepoint,
+                        "dose": dose}
+    if press_btn==0:
+        uri_get = f"/xapi/custom-fields/projects/{project_name}/fields"
+        uri_put = f"/xapi/custom-fields/projects/{project_name}/fields"
+    elif press_btn==1:
+        uri_get = f"/xapi/custom-fields/projects/{project_name}/subjects/{subject_name}/fields"
+        uri_put = f"/xapi/custom-fields/projects/{project_name}/subjects/{subject_name}/fields"
+    elif press_btn==2:
+        uri_get = f"/xapi/custom-fields/projects/{project_name}/subjects/{subject_name}/experiments/{experiment_name}/fields"
+        uri_put = f"/xapi/custom-fields/projects/{project_name}/subjects/{subject_name}/experiments/{experiment_name}/fields"
+    # GET        
+    response = session.get(uri_get)
+    get_dict = json.loads(response.text)
+    if bool(get_dict):
+        outer_keys = list(get_dict.keys())
+        for outer_key in outer_keys:
+            for inner_key, inner_value in new_custom_forms.items():
+                if inner_key in get_dict[outer_key]:
+                    get_dict[outer_key][inner_key] = inner_value
+                else:
+                    if inner_value != "":
+                      messagebox.showwarning("XNAT-PIC", f"It is not possible to update the {inner_key} value because it is not valued on XNAT. Change it to XNAT and try again!")
+    payload = get_dict                
+    # PUT
+    headers = {'Content-Type': 'application/json'}
+    response = session.put(uri_put, json=payload, headers=headers)
+
+
+                     
+
 
 

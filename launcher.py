@@ -2350,6 +2350,10 @@ class xnat_pic_gui():
             self.timepoint_menu1 = ttk.OptionMenu(self.frame_metadata, self.selected_timepoint1, self.default_value1, *self.OPTIONS2)
             self.timepoint_menu1['state'] = 'disabled'
             self.timepoint_menu1.place(relx = 0.61, rely = 0.59, anchor = NE, relwidth=0.06)
+            # Accept timepoint value 
+            self.accept_timepoint_btn = ttk.Button(self.frame_metadata, image=master.logo_accept, state=DISABLED,
+                                    cursor=CURSOR_HAND, command=lambda: self.load_timepoint(master))
+            self.accept_timepoint_btn.place(relx = 0.67, rely = 0.59, anchor = NE)
             
             #### Dose ####
             self.dose_label = ttk.Label(self.frame_metadata, text = "Dose", font = SMALL_FONT)
@@ -2360,6 +2364,10 @@ class xnat_pic_gui():
             self.dose_entry_value = tk.StringVar()
             self.dose_entry1 = ttk.Entry(self.frame_metadata, state='disabled', takefocus = 0, textvariable=self.dose_entry_value, bootstyle="light")
             self.dose_entry1.place(relx = 0.5, rely = 0.69, anchor = N, relwidth=0.06)
+            # Accept Dose value 
+            self.accept_dose_btn = ttk.Button(self.frame_metadata, image=master.logo_accept, state=DISABLED,
+                                    cursor=CURSOR_HAND, command=lambda: self.load_dose(master))
+            self.accept_dose_btn.place(relx = 0.67, rely = 0.69, anchor = NE)
 
             self.OPTIONS3 = ["mg/kg"]
             self.selected_dose = tk.StringVar()
@@ -2400,16 +2408,7 @@ class xnat_pic_gui():
             #############################################
             ################ NEXT Button ################
             def next():
-                if self.press_btn == 0:
-                    self.project_uploader(master)
-                elif self.press_btn == 1:
-                    self.subject_uploader(master)
-                elif self.press_btn == 2:
-                    self.experiment_uploader(master)
-                elif self.press_btn == 3:
-                    self.file_uploader(master)
-                else:
-                    pass
+                self.custom_forms_uploader(master)
 
             self.next_text = tk.StringVar() 
             self.next_btn = ttk.Button(self.frame_metadata, textvariable=self.next_text, state='disabled',
@@ -2446,7 +2445,7 @@ class xnat_pic_gui():
                 self.selected_dose.set("")
                 self.time_entry.delete(0,END)
                 self.dose_entry1.delete(0,END)
-                disable_buttons([self.next_btn, self.group_entry, self.group_menu, self.timepoint_entry, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.dose_entry, self.dose_entry1, self.dose_menu])   
+                disable_buttons([self.next_btn, self.group_entry, self.group_menu, self.timepoint_entry, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.accept_timepoint_btn, self.dose_entry, self.dose_entry1, self.dose_menu, self.accept_dose_btn])   
             
             def unlock_widgets():
                 self.group_entry.config(bootstyle='primary')
@@ -2454,7 +2453,7 @@ class xnat_pic_gui():
                 self.dose_entry.config(bootstyle='primary')
                 self.time_entry.config(bootstyle='primary')
                 self.dose_entry1.config(bootstyle='primary')
-                enable_buttons([self.group_entry, self.group_menu, self.timepoint_entry, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.dose_entry, self.dose_entry1, self.dose_menu])   
+                enable_buttons([self.group_entry, self.group_menu, self.timepoint_entry, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.accept_timepoint_btn, self.dose_entry, self.dose_entry1, self.dose_menu, self.accept_dose_btn])   
 
             def get_custom_form_GUI(custom_forms_value):
                     self.group_entry.delete(0,END)
@@ -2472,6 +2471,17 @@ class xnat_pic_gui():
                     self.dose_entry1.delete(0,END)
                     self.group_entry.focus()
 
+            def enable_next_CF():
+                try:
+                    unlock_widgets()
+                    custom_forms_value = get_custom_forms(self.session,  self.press_btn, self.prj.get(), self.sub.get(), self.exp.get())
+                    get_custom_form_GUI(custom_forms_value)
+                except Exception as e:
+                    messagebox.showerror("XNAT-PIC", "Error: " + str(e))  
+                    raise
+                enable_buttons([self.next_btn])
+
+
             if press_btn == 0:
                 # Disable main buttons
                 disable_buttons([self.prj_data_btn , self.sbj_data_btn , self.exp_data_btn])
@@ -2480,14 +2490,7 @@ class xnat_pic_gui():
                 
                 def enable_next(*args):
                     if self.prj.get() != '--':
-                        try:
-                            unlock_widgets()
-                            custom_forms_value = get_custom_forms(self.session,  self.press_btn, self.prj.get())
-                            get_custom_form_GUI(custom_forms_value)
-                        except Exception as e:
-                            messagebox.showerror("XNAT-PIC", "Error: " + str(e))  
-                            raise
-                        enable_buttons([self.next_btn])
+                        enable_next_CF()
                     else:
                         lock_widgets()
                 self.prj.trace_add('write', enable_next)
@@ -2500,14 +2503,7 @@ class xnat_pic_gui():
                 # Enable NEXT button only if all the requested fields are filled
                 def enable_next(*args):
                     if self.prj.get() != '--' and self.sub.get() != '--':
-                        try:
-                            unlock_widgets()
-                            custom_forms_value = get_custom_forms(self.session,  self.press_btn, self.prj.get(), self.sub.get())
-                            get_custom_form_GUI(custom_forms_value)
-                        except Exception as e:
-                            messagebox.showerror("XNAT-PIC", "Error: " + str(e))  
-                            raise
-                        enable_buttons([self.next_btn])
+                        enable_next_CF()
                     else:
                         lock_widgets()
                 self.sub.trace_add('write', enable_next)
@@ -2520,18 +2516,89 @@ class xnat_pic_gui():
                 # Enable NEXT button only if all the requested fields are filled
                 def enable_next(*args):
                     if self.prj.get() != '--' and self.sub.get() != '--' and self.exp.get() != '--':
-                        try:
-                            unlock_widgets()
-                            custom_forms_value = get_custom_forms(self.session,  self.press_btn, self.prj.get(), self.sub.get(), self.exp.get() != '--')
-                            get_custom_form_GUI(custom_forms_value)
-                        except Exception as e:
-                            messagebox.showerror("XNAT-PIC", "Error: " + str(e))  
-                            raise
-                        enable_buttons([self.next_btn])
+                        enable_next_CF()
                     else:
                         lock_widgets()
                 self.exp.trace_add('write', enable_next)
+            
+            def load_group(*args):
+                if str(self.selected_group.get()) != "":
+                    self.group_entry.delete(0,END)
+                    self.group_entry.insert(0,str(self.selected_group.get()))
 
+            self.selected_group.trace_add('write', load_group)
+        ##################### Load timepoint value ####################
+        def load_timepoint(self, master):
+            try:
+                tmp = int(self.time_entry_value.get())
+                tmp1 = float(self.time_entry_value.get())
+            except:
+                messagebox.showerror("XNAT-PIC", "The timepoint value should be a number")
+                return
+
+            if str(self.selected_timepoint.get()) == "":
+                messagebox.showerror("XNAT-PIC", "Select pre/post value")
+                return
+            elif str(self.selected_timepoint1.get()) == "":
+                messagebox.showerror("XNAT-PIC", "Select seconds, minutes, hours, days, weeks, months, years")
+                return
+            else:
+                new_timepoint_value = str(self.selected_timepoint.get()) + "-" + str(self.time_entry_value.get()) + "-" + str(self.selected_timepoint1.get())
+                self.timepoint_entry.delete(0,END)
+                self.timepoint_entry.insert(0,new_timepoint_value)
+                self.selected_timepoint.set("")
+                self.selected_timepoint1.set("")
+                self.time_entry.delete(0,END)
+        
+        def load_dose(self, master):
+            try:
+                tmp = int(self.dose_entry_value.get())
+                tmp1 = float(self.dose_entry_value.get())
+            except:
+                messagebox.showerror("XNAT-PIC", "The dose value should be a number")
+                return
+
+            if str(self.selected_dose.get()) == "":
+                messagebox.showerror("XNAT-PIC", "Select the unit of measure for the dose")
+                return
+            else:
+                new_dose_value = str(self.dose_entry_value.get()) + "-" + str(self.selected_dose.get())
+                self.dose_entry.delete(0,END)
+                self.dose_entry.insert(0,new_dose_value)      
+                self.selected_dose.set("")
+                self.dose_entry1.delete(0,END)
+
+        #################### Upload Custom Forms ###################
+        def custom_forms_uploader(self, master):
+            try:
+                put_custom_forms(self.session,  self.press_btn, self.prj.get(), self.sub.get(), self.exp.get(), str(self.group_entry.get()), str(self.timepoint_entry.get()), str(self.dose_entry.get()))
+                # Update the interface
+                if self.press_btn == 0:
+                    self.prj.set('--')
+                elif self.press_btn == 1:
+                    self.sub.set('--')
+                elif self.press_btn == 2:
+                    self.exp.set('--')
+                self.group_entry.config(bootstyle='light')
+                self.timepoint_entry.config(bootstyle='light')
+                self.dose_entry.config(bootstyle='light')
+                self.time_entry.config(bootstyle='light')
+                self.dose_entry1.config(bootstyle='light')
+                self.group_entry.delete(0,END)
+                self.timepoint_entry.delete(0,END)
+                self.dose_entry.delete(0,END)
+                # Clear option menu
+                self.selected_group.set("")
+                self.selected_timepoint.set("")
+                self.selected_timepoint1.set("")
+                self.selected_dose.set("")
+                self.time_entry.delete(0,END)
+                self.dose_entry1.delete(0,END)
+                disable_buttons([self.next_btn, self.group_entry, self.group_menu, self.timepoint_entry, self.timepoint_menu, self.time_entry, self.timepoint_menu1, self.accept_timepoint_btn, self.dose_entry, self.dose_entry1, self.dose_menu, self.accept_dose_btn])
+                messagebox.showinfo("XNAT-PIC", "Custom forms updated on XNAT!")
+            except Exception as e:
+                    messagebox.showerror("XNAT-PIC", "Error: " + str(e))  
+                    raise
         ##################### Exit the metadata ####################
         def home_metadata(self, master):
             result = messagebox.askquestion("Exit", "Do you want to go back to home?", icon='warning')
