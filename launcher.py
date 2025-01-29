@@ -1318,24 +1318,24 @@ class xnat_pic_gui():
                 init_dir = os.path.expanduser("~").replace('\\', '/') + '/Desktop/Dataset'
                 # Ask the user to insert the desired directory
                 self.folder_to_upload.set(filedialog.askdirectory(parent=master.frame, initialdir=init_dir, 
-                                                        title="XNAT-PIC Uploader: Select directory in DICOM format to upload"))
+                                                        title="XNAT-PIC Uploader: Select the folder to uploadd"))
                 if self.folder_to_upload.get() == '':
                     #messagebox.showerror("XNAT-PIC Converter", "Please select a folder.")
                     return
                 # Check if the selected folder is related to the right conversion flag
                 print(self.folder_to_upload.get())
                 print(self.upload_type.get() == 0)
-                if self.upload_type.get() == 0 and glob(self.folder_to_upload.get() + "//**//**//**//**//*.dcm", recursive=False) == []:
+                if self.upload_type.get() == 0 and glob(self.folder_to_upload.get() + "//**//**//**//*.dcm", recursive=False) == []:
                     messagebox.showerror("XNAT-PIC Uploader", "The selected folder is not project related.\nPlease select an other directory!")
                     destroy_widgets([self.frame_uploader])
                     self.overall_uploader(master)
                     return
-                if self.upload_type.get() == 1 and glob(self.folder_to_upload.get() + "//**//**//**//*.dcm", recursive=False) == []:
+                if self.upload_type.get() == 1 and glob(self.folder_to_upload.get() + "//**//**//*.dcm", recursive=False) == []:
                     messagebox.showerror("XNAT-PIC Uploader", "The selected folder is not subject related.\nPlease select an other directory!")
                     destroy_widgets([self.frame_uploader])
                     self.overall_uploader(master)
                     return
-                if self.upload_type.get() == 2 and glob(self.folder_to_upload.get() + "//**//**//*.dcm", recursive=False) == []:
+                if self.upload_type.get() == 2 and glob(self.folder_to_upload.get() + "//**//*.dcm", recursive=False) == []:
                     messagebox.showerror("XNAT-PIC Uploader", "The selected folder is not experiment related.\nPlease select an other directory!")
                     destroy_widgets([self.frame_uploader])
                     self.overall_uploader(master)
@@ -1407,7 +1407,7 @@ class xnat_pic_gui():
 
                                     elif os.path.isdir(os.path.join(self.working_folder, sub, sub2)):
                                         tmp_exp_path = os.path.join(self.working_folder, sub, sub2)
-                                        if glob(tmp_exp_path + "/**/**/*.dcm", recursive=False) == []:
+                                        if glob(tmp_exp_path + "/**/*.dcm", recursive=False) == []:
                                             val_exp_1 = "Folder"
                                         else:
                                             val_exp_1 = "Experiment"
@@ -1471,7 +1471,7 @@ class xnat_pic_gui():
                                             dict_items[str(j)]['text'] = sub2
                                             if self.upload_type.get() == 0:
                                                 tmp_exp_path = os.path.join(self.working_folder, sub, sub2)
-                                                if glob(tmp_exp_path + "/**/**/*.dcm", recursive=False) == []:
+                                                if glob(tmp_exp_path + "/**/*.dcm", recursive=False) == []:
                                                     dict_items[str(j)]['values'] = ("Folder")
                                                 else:
                                                     dict_items[str(j)]['values'] = ("Experiment")
@@ -1485,7 +1485,7 @@ class xnat_pic_gui():
                                     if self.upload_type.get() == 0:    
                                         dict_items[str(branch_idx)]['values'] = ("Subject")
                                     elif self.upload_type.get() == 2:    
-                                        dict_items[str(branch_idx)]['values'] = ("Imaging-Technique")
+                                        dict_items[str(branch_idx)]['values'] = ("Scan")
 
                             # Update the fields of the parent object
                             if self.upload_type.get() == 0:
@@ -1523,7 +1523,7 @@ class xnat_pic_gui():
 
                                 elif os.path.isdir(os.path.join(self.working_folder, sub)):
                                     tmp_exp_path = os.path.join(self.working_folder, sub)
-                                    if glob(tmp_exp_path + "/**/**/*.dcm", recursive=False) == []:
+                                    if glob(tmp_exp_path + "/**/*.dcm", recursive=False) == []:
                                         val_exp = "Folder"
                                     else:
                                         val_exp = "Experiment"
@@ -1630,12 +1630,12 @@ class xnat_pic_gui():
             self.chkvar_entire_prj = tk.BooleanVar()
             self.chkvar_entire_prj.set(False)
             self.chkbtn_entire_prj = ttk.Checkbutton(self.frame_uploader, text="View the entire project", variable=self.chkvar_entire_prj, command=folder_selected_handler, state='disabled', bootstyle="round-toggle", cursor=CURSOR_HAND)
-            self.chkbtn_entire_prj.place(relx = 0.05, rely = 0.30, anchor = NW)
+            # self.chkbtn_entire_prj.place(relx = 0.05, rely = 0.30, anchor = NW)
             # Upload additional files
             self.add_file_flag = tk.IntVar()
             self.add_file_btn = ttk.Checkbutton(self.frame_uploader, variable=self.add_file_flag, onvalue=1, offvalue=0, 
                                 text="Additional Files", state='disabled', bootstyle="round-toggle", cursor=CURSOR_HAND)
-            self.add_file_btn.place(relx = 0.05, rely = 0.33, anchor = NW)
+            self.add_file_btn.place(relx = 0.05, rely = 0.31, anchor = NW)
             
             #############################################
             ################# Project ###################
@@ -1818,7 +1818,7 @@ class xnat_pic_gui():
             if press_btn == 0:
                 # Disable main buttons
                 disable_buttons([self.prj_btn, self.sub_btn, self.exp_btn, self.file_btn])
-                enable_buttons([self.project_list, self.new_prj_btn, self.select_folder_button, self.add_file_btn, self.chkbtn_entire_prj])
+                enable_buttons([self.project_list, self.new_prj_btn, self.select_folder_button, self.add_file_btn])
                 working_text = 'Upload Project from your PC...'
                 # Enable NEXT button only if all the requested fields are filled
                 def enable_next(*args):
@@ -1832,7 +1832,7 @@ class xnat_pic_gui():
             elif press_btn == 1:
                 # Disable main buttons
                 disable_buttons([self.prj_btn, self.sub_btn, self.exp_btn, self.file_btn])
-                enable_buttons([self.project_list, self.new_prj_btn, self.select_folder_button, self.add_file_btn, self.chkbtn_entire_prj])
+                enable_buttons([self.project_list, self.new_prj_btn, self.select_folder_button, self.add_file_btn])
                 working_text = 'Upload Subject from your PC...'
                 # Enable NEXT button only if all the requested fields are filled
                 def enable_next(*args):
@@ -1847,7 +1847,7 @@ class xnat_pic_gui():
                 # Disable main buttons
                 disable_buttons([self.prj_btn, self.sub_btn, self.exp_btn, self.file_btn])
                 enable_buttons([self.project_list, self.new_prj_btn, self.select_folder_button,
-                                self.subject_list, self.new_sub_btn, self.add_file_btn, self.chkbtn_entire_prj])
+                                self.subject_list, self.new_sub_btn, self.add_file_btn])
                 working_text = 'Upload Experiment from your PC...'
                 # Enable NEXT button only if all the requested fields are filled
                 def enable_next(*args):
@@ -1863,7 +1863,7 @@ class xnat_pic_gui():
                 disable_buttons([self.prj_btn, self.sub_btn, self.exp_btn, self.file_btn])
                 enable_buttons([self.project_list, self.new_prj_btn, self.select_folder_button,
                                 self.subject_list, self.new_sub_btn,
-                                self.experiment_list, self.new_exp_btn, self.add_file_btn, self.chkbtn_entire_prj])
+                                self.experiment_list, self.new_exp_btn, self.add_file_btn])
                 working_text = 'Upload File from your PC...'
                 # Enable NEXT button only if all the requested fields are filled
                 def enable_next(*args):
@@ -1907,21 +1907,17 @@ class xnat_pic_gui():
                         list_dirs_exp = os.listdir(sub)
                         for exp in list_dirs_exp:
                             exp = os.path.join(sub, exp)
-                            # Check if 'MR' folder is already into the folder_to_upload path
-                            if 'MR' != os.path.basename(exp):
-                                exp = os.path.join(exp, 'MR').replace('\\', '/')
-                            else:
-                                exp = exp.replace('\\', '/')
+                            exp = exp.replace('\\', '/')
                             params = {}
                             params['folder_to_upload'] = exp
                             params['project_id'] = self.prj.get()
                             
                             try:
                                 # Define the subject_id and the experiment_id 
-                                self.sub.set(exp.split('/')[-3].replace('.','_'))
+                                self.sub.set(exp.split('/')[-2].replace('.','_'))
                                 params['subject_id'] = self.sub.get()
-                                self.exp.set('_'.join([exp.split('/')[-4].replace('_dcm', ''), exp.split('/')[-3].replace('.', '_'),
-                                                             exp.split('/')[-2].replace('.', '_')]).replace(' ', '_'))
+                                self.exp.set('_'.join([exp.split('/')[-3].replace('_dcm', ''), exp.split('/')[-2].replace('.', '_'),
+                                                             exp.split('/')[-1].replace('.', '_')]).replace(' ', '_'))
                                 params['experiment_id'] = self.exp.get()
                                 
                             except Exception as e:
@@ -1993,11 +1989,7 @@ class xnat_pic_gui():
                 for exp in list_dirs:
                     exp = os.path.join(subject_to_upload, exp)
                     
-                    # Check if 'MR' folder is already into the folder_to_upload path
-                    if 'MR' != os.path.basename(exp):
-                        exp = os.path.join(exp, 'MR').replace('\\', '/')
-                    else:
-                        exp = exp.replace('\\', '/')
+                    exp = exp.replace('\\', '/')
 
                     params = {}
                     params['folder_to_upload'] = exp
@@ -2006,10 +1998,10 @@ class xnat_pic_gui():
                     try:
                         # Define the subject_id and the experiment_id 
                         if self.sub.get() == '--':
-                            self.sub.set(exp.split('/')[-3].replace('.','_'))
+                            self.sub.set(exp.split('/')[-2].replace('.','_'))
                         params['subject_id'] = self.sub.get()
                         if self.exp.get() == '--':
-                            self.exp.set('_'.join([exp.split('/')[-3].replace('_dcm',''), exp.split('/')[-2].replace('.','_')]).replace(' ', '_'))
+                            self.exp.set('_'.join([exp.split('/')[-2].replace('_dcm',''), exp.split('/')[-1].replace('.','_')]).replace(' ', '_'))
                         params['experiment_id'] = self.exp.get()
                     except Exception as e:
                         messagebox.showerror("XNAT-PIC", "Error: " + str(e))  
@@ -2074,11 +2066,8 @@ class xnat_pic_gui():
                     progressbar.start_indeterminate_bar()
 
                     start_time = time.time()
-                    # Check if 'MR' folder is already into the folder_to_upload path
-                    if 'MR' != os.path.basename(experiment_to_upload):
-                        experiment_to_upload = os.path.join(experiment_to_upload, 'MR').replace('\\', '/')
-                    else:
-                        experiment_to_upload = experiment_to_upload.replace('\\', '/')
+
+                    experiment_to_upload = experiment_to_upload.replace('\\', '/')
 
                     params = {}
                     params['folder_to_upload'] = experiment_to_upload
@@ -2087,11 +2076,11 @@ class xnat_pic_gui():
                     try:
                         # Define the subject_id and the experiment_id 
                         if self.sub.get() == '--':
-                            self.sub.set(experiment_to_upload.split('/')[-3].replace('.','_'))
+                            self.sub.set(experiment_to_upload.split('/')[-2].replace('.','_'))
                         params['subject_id'] = self.sub.get()
                         if self.exp.get() == '--':
-                            self.exp.set('_'.join([experiment_to_upload.split('/')[-3].replace('_dcm', ''), 
-                                                    experiment_to_upload.split('/')[-2].replace('.','_')]).replace(' ', '_'))
+                            self.exp.set('_'.join([experiment_to_upload.split('/')[-2].replace('_dcm', ''), 
+                                                    experiment_to_upload.split('/')[-1].replace('.','_')]).replace(' ', '_'))
                         params['experiment_id'] = self.exp.get()
                     except Exception as e:
                         messagebox.showerror("XNAT-PIC", "Error: " + str(e))  

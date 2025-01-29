@@ -55,15 +55,11 @@ class Dicom2XnatUploader():
             subject_id = params['subject_id']
             experiment_id = params['experiment_id']
 
-            print('Uploading ' + str(folder_to_upload.split('/')[-2]) + ' to ' + str(project_id))
-
-            project = self.session.classes.ProjectData(
-                                            name=project_id, parent=self.session)
-            subject = self.session.classes.SubjectData(
-                                            parent=project, label=subject_id)
+            print('Uploading ' + str(folder_to_upload.split('/')[-1]) + ' to ' + str(project_id))
 
 
-            zip_dst = shutil.make_archive(folder_to_upload.split('/')[-2], "zip", folder_to_upload) # .zip file of the current subfolder
+
+            zip_dst = shutil.make_archive(folder_to_upload.split('/')[-1], "zip", folder_to_upload) # .zip file of the current subfolder
 
             self.session.services.import_(zip_dst,
                                         overwrite="delete", # Overwrite parameter is important!
@@ -72,8 +68,8 @@ class Dicom2XnatUploader():
                                         experiment=experiment_id,
                                         content_type='application/zip')
             self.session.clearcache()
-            experiment = self.session.projects[project_id].subjects[subject_id].experiments[experiment_id]
-            subject = self.session.projects[project_id].subjects[subject_id]
+            # experiment = self.session.projects[project_id].subjects[subject_id].experiments[experiment_id]
+            # subject = self.session.projects[project_id].subjects[subject_id]
 
             os.remove(zip_dst)
 

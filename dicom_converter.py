@@ -51,7 +51,7 @@ class Bruker2DicomConverter():
     
         for dir in list_dirs:
             current_path = os.path.join(folder_to_convert, dir).replace('\\', '/')
-            current_dst = os.path.join(dst_folder, 'MR', dir).replace('\\', '/')
+            current_dst = os.path.join(dst_folder, dir).replace('\\', '/')
             if os.path.isdir(current_path):
                 if 'Results'.lower() in dir.lower() and self.results_flag == 1:
                     new_list_dirs.append((current_path, current_dst))
