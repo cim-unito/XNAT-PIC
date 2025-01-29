@@ -264,6 +264,7 @@ class Bruker2DicomConverter():
                 img_data[0x0028, 0x0107].VR = "US"
                 
                 add_cest_dict()
+                num_digits = len(str(len(img_data.pixel_array)))
                 # Loop over the number of frames found in img_data
                 for iteration, layer in enumerate(img_data.pixel_array, 0):
                     layer = np.reshape(layer, int(img_dims[0]) * int(img_dims[1]))
@@ -672,8 +673,9 @@ class Bruker2DicomConverter():
                     for elem in vect2:
                         vect3.append(float(elem))
                     ds_temp.ReconstructionFieldOfView = vect3
-
-                    outfile = "%s%s.dcm" % (filename_little_endian, str(iteration + 1))
+                    
+                    outfile = f"{filename_little_endian}{iteration+1:0{num_digits}d}.dcm"
+                    #outfile = "%s%s.dcm" % (filename_little_endian, str(iteration + 1))
                     
                     # Save DICOM files in separate slices
                     os.chdir(dst_path)
