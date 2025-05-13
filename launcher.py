@@ -38,7 +38,7 @@ from operator import *
 import webbrowser
 
 PATH_IMAGE = "images\\"
-# PATH_IMAGE = "lib\\images\\"
+## PATH_IMAGE = "lib\\images\\"
 PERCENTAGE_SCREEN = 1  # Defines the size of the canvas. If equal to 1 (100%) ,it takes the whole screen
 WHITE = "#ffffff"
 LIGHT_GREY = "#F1FFFE"
