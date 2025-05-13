@@ -266,6 +266,9 @@ class Bruker2DicomConverter():
                 add_cest_dict()
                 # Loop over the number of frames found in img_data
                 for iteration, layer in enumerate(img_data.pixel_array, 0):
+                    
+                    if nframes == 1:
+                        layer = img_data.pixel_array
                     layer = np.reshape(layer, int(img_dims[0]) * int(img_dims[1]))
 
                     # Populate required values for file meta information
@@ -680,6 +683,9 @@ class Bruker2DicomConverter():
                     ds_temp.is_little_endian = True
                     ds_temp.is_implicit_VR = False
                     ds_temp.save_as(outfile)
+
+                    if iteration == 0 and nframes == 1:
+                        break
 
             print(str(dirs[0].split('/')[-1]) + ' done!')
         except Exception as e:
