@@ -16,8 +16,15 @@ from ttkbootstrap.constants import *
 from tkinter import HORIZONTAL
 # from threading import Thread
 # import time
+import os, tkinter as tk
+from tkinter import TclError
+
+
+
 
 PATH_IMAGE = "images\\"
+ICON_PATH = os.path.join(os.path.dirname(__file__), "images", "logo3.ico")
+
 class ProgressBar():
     def __init__(self, root, bar_title):
 
@@ -26,7 +33,12 @@ class ProgressBar():
         self.popup.grab_set() # when you show the popup
         self.popup.geometry("%dx%d+%d+%d" % (500, 100, 700, 500))
         self.popup.resizable(False, False)
-        self.popup.iconbitmap(PATH_IMAGE + "logo3.ico")
+        try:
+            if os.path.isfile(ICON_PATH):
+                self.popup.iconbitmap(ICON_PATH)
+        except TclError:
+            pass   # niente icona, ma la GUI continua
+        # self.popup.iconbitmap(PATH_IMAGE + "logo3.ico")
         self.popup.title(bar_title)
         self.progress_var = tk.DoubleVar()
         self.bar_length = 400

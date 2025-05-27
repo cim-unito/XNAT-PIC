@@ -37,7 +37,11 @@ import xnat
 from operator import * 
 import webbrowser
 
+N_WORKERS = cpu_count()
+#N_WORKERS = 4
+
 PATH_IMAGE = "images\\"
+ICON_PATH = os.path.join(os.path.dirname(__file__), "images", "logo3.ico")
 ## PATH_IMAGE = "lib\\images\\"
 PERCENTAGE_SCREEN = 1  # Defines the size of the canvas. If equal to 1 (100%) ,it takes the whole screen
 WHITE = "#ffffff"
@@ -62,7 +66,7 @@ CURSOR_HAND = "hand2"
 QUESTION_HAND = "question_arrow"
 BORDERWIDTH = 3
 
-
+        
 def check_credentials(root):
     
     dir = os.getcwd().replace('\\', '/')
@@ -607,33 +611,38 @@ class xnat_pic_gui():
 
             def display_converted_folder_tree(*args):
 
-                if self.converted_folder.get() != '' and self.convertion_state.get() == 1:
+                folder_path = self.converted_folder.get()
+                if not folder_path:
+                    return
+                if not os.path.isdir(folder_path):
+                    return
+                if folder_path != '' and self.convertion_state.get() == 1:
                     dict_items = {}
                     progressbar_tree = ProgressBar(master.root, "XNAT-PIC Converter")
                     progressbar_tree.start_indeterminate_bar()
                     if self.tree_converted.tree.exists(0):
                         self.tree_converted.tree.delete(*self.tree_converted.tree.get_children())
-                    head, tail = os.path.split(self.converted_folder.get())
+                    head, tail = os.path.split(folder_path)
                     j = 0
                     dict_items[str(j)] = {}
                     dict_items[str(j)]['parent'] = ""
-                    dict_items[str(j)]['text'] = self.converted_folder.get().split('/')[-1]
+                    dict_items[str(j)]['text'] = folder_path.split('/')[-1]
 
-                    subdir = os.listdir(self.converted_folder.get())
+                    subdir = os.listdir(folder_path)
                     subdirectories = [x for x in subdir if x.endswith('.ini') == False]
                     total_weight = 0
                     last_edit_time = ''
                     j = 1
                     for sub in subdirectories:
-                        
-                        if os.path.isfile(os.path.join(self.converted_folder.get(), sub)):
+
+                        if os.path.isfile(os.path.join(folder_path, sub)):
                             # Check for last edit time
-                            edit_time = str(time.strftime("%d/%m/%Y,%H:%M:%S", time.localtime(os.path.getmtime(os.path.join(self.converted_folder.get(), sub)))))
+                            edit_time = str(time.strftime("%d/%m/%Y,%H:%M:%S", time.localtime(os.path.getmtime(os.path.join(folder_path, sub)))))
                             if last_edit_time == '' or edit_time > last_edit_time:
                                 # Update the last edit time
                                 last_edit_time = edit_time
                             # Check for file dimension
-                            file_weight = round(os.path.getsize(os.path.join(self.converted_folder.get(), sub))/1024, 2)
+                            file_weight = round(os.path.getsize(os.path.join(folder_path, sub))/1024, 2)
                             total_weight += round(file_weight/1024, 2)
                             # Add the item like a file
                             dict_items[str(j)] = {}
@@ -643,7 +652,7 @@ class xnat_pic_gui():
                             # Update the j counter
                             j += 1
 
-                        elif os.path.isdir(os.path.join(self.converted_folder.get(), sub)):
+                        elif os.path.isdir(os.path.join(folder_path, sub)):
                             current_weight = 0
                             last_edit_time_lev2 = ''
                             branch_idx = j
@@ -652,19 +661,19 @@ class xnat_pic_gui():
                             dict_items[str(j)]['text'] = sub
                             j += 1
                             # Scansiona le directory interne per ottenere il tree CHIUSO
-                            sub_level2 = os.listdir(os.path.join(self.converted_folder.get(), sub))
+                            sub_level2 = os.listdir(os.path.join(folder_path, sub))
                             subdirectories2 = [x for x in sub_level2 if x.endswith('.ini') == False]
                             for sub2 in subdirectories2:
-                                if os.path.isfile(os.path.join(self.converted_folder.get(), sub, sub2)):
+                                if os.path.isfile(os.path.join(folder_path, sub, sub2)):
                                     # Check for last edit time
-                                    edit_time = str(time.strftime("%d/%m/%Y,%H:%M:%S", time.localtime(os.path.getmtime(os.path.join(self.converted_folder.get(), sub, sub2)))))
+                                    edit_time = str(time.strftime("%d/%m/%Y,%H:%M:%S", time.localtime(os.path.getmtime(os.path.join(folder_path, sub, sub2)))))
                                     if last_edit_time_lev2 == '' or edit_time > last_edit_time_lev2:
                                         # Update the last edit time
                                         last_edit_time_lev2 = edit_time
                                     if last_edit_time_lev2 > last_edit_time:
                                         last_edit_time = last_edit_time_lev2
                                     # Check for file dimension
-                                    file_weight = round(os.path.getsize(os.path.join(self.converted_folder.get(), sub, sub2))/1024, 2)
+                                    file_weight = round(os.path.getsize(os.path.join(folder_path, sub, sub2))/1024, 2)
                                     current_weight += round(file_weight/1024, 2)
                                     # Add the item like a file
                                     dict_items[str(j)] = {}
@@ -674,16 +683,16 @@ class xnat_pic_gui():
                                     # Update the j counter
                                     j += 1
 
-                                elif os.path.isdir(os.path.join(self.converted_folder.get(), sub, sub2)):
+                                elif os.path.isdir(os.path.join(folder_path, sub, sub2)):
                                     # Check for last edit time
-                                    edit_time = str(time.strftime("%d/%m/%Y,%H:%M:%S", time.localtime(os.path.getmtime(os.path.join(self.converted_folder.get(), sub, sub2)))))
+                                    edit_time = str(time.strftime("%d/%m/%Y,%H:%M:%S", time.localtime(os.path.getmtime(os.path.join(folder_path, sub, sub2)))))
                                     if last_edit_time_lev2 == '' or edit_time > last_edit_time_lev2:
                                         # Update the last edit time
                                         last_edit_time_lev2 = edit_time
                                     if last_edit_time_lev2 > last_edit_time:
                                         last_edit_time = last_edit_time_lev2
 
-                                    folder_size = round(get_dir_size(os.path.join(self.converted_folder.get(), sub, sub2))/1024/1024, 2)
+                                    folder_size = round(get_dir_size(os.path.join(folder_path, sub, sub2))/1024/1024, 2)
                                     current_weight += folder_size
                                     dict_items[str(j)] = {}
                                     dict_items[str(j)]['parent'] = '1'
@@ -812,7 +821,7 @@ class xnat_pic_gui():
                     self.popup_experiment.grab_set()
                     
                     # If you want the logo 
-                    self.popup_experiment.iconbitmap(PATH_IMAGE + "logo3.ico")
+                    self.popup_experiment.iconbitmap(ICON_PATH)
 
                     # Select the subjects to copy the custom variables to
                     self.popup_experiment_frame = ttk.LabelFrame(self.popup_experiment, text="Destination path", style="Popup.TLabelframe")
@@ -990,7 +999,7 @@ class xnat_pic_gui():
                             list_scans = self.converter.get_list_of_folders(exp_folder, exp_dst)
 
                             # Start the multiprocessing conversion: one pool per each scan folder
-                            with Pool(processes=int(cpu_count() - 1)) as pool:
+                            with Pool(processes=int(N_WORKERS - 1)) as pool:
                                 pool.map(self.converter.convert, list_scans)
                             
                             # Delete converted folders that are empty due to exceptions
@@ -1099,7 +1108,7 @@ class xnat_pic_gui():
                     list_scans = self.converter.get_list_of_folders(exp_folder, exp_dst)
         
                     progressbar.set_caption('Converting ' + str(exp_folder.split('/')[-1]) + ' ...')
-                    with Pool(processes=int(cpu_count() - 1)) as pool:
+                    with Pool(processes=int(N_WORKERS - 1)) as pool:
                         pool.map(self.converter.convert, list_scans)
                         # Delete converted folders that are empty due to exceptions
                     for scan in list_scans:
@@ -1160,15 +1169,23 @@ class xnat_pic_gui():
                 
                 self.list_scans_err = []
                 progressbar.set_caption('Converting ' + str(self.folder_to_convert.get().split('/')[-1]) + ' ...')
-                with Pool(processes=int(cpu_count() - 1)) as pool:
+                
+                with Pool(processes=int(n_workers - 1)) as pool:
                     pool.map(self.converter.convert, list_scans)
                 for scan in list_scans:
-                    if not os.listdir(scan[1]):
-                        os.rmdir(scan[1])
-                        split_path_list = scan[0].rsplit('/',2)
-                        split_path_str = '/'.join(split_path_list[1:])
-                        self.list_scans_err.append(".../" + split_path_str)                
-                progressbar.set_caption('Converting ' + str(self.folder_to_convert.get().split('/')[-1]) + ' ...done!')
+                    dir_path = scan[1]
+                    if not os.path.isdir(dir_path):
+                        continue
+                    try:
+                        is_empty = len(os.listdir(dir_path)) == 0
+                    except FileNotFoundError:
+                        continue
+                    if is_empty:
+                        os.rmdir(dir_path)
+                    split_path_list = scan[0].rsplit('/',2)
+                    split_path_str = '/'.join(split_path_list[1:])
+                    self.list_scans_err.append(".../" + split_path_str)                
+                    progressbar.set_caption('Converting ' + str(self.folder_to_convert.get().split('/')[-1]) + ' ...done!')
 
             start_time = time.time()
 

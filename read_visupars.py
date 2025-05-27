@@ -15,6 +15,8 @@ Adapted from Matteo Caffini
 import re
 import numpy as np
 from datetime import datetime
+import locale
+from dateutil import parser
 
 
 def read_visupars_parameters(filename):
@@ -96,7 +98,12 @@ def read_visupars_parameters(filename):
                 ]
                 if ":" in second_part[0]:
                     datestring = " ".join(second_part)
-                    second_part = datetime.strptime(datestring, "%H:%M:%S %d %b %Y")
+                    try:
+                        locale.setlocale(locale.LC_TIME, "C")
+                        second_part = datetime.strptime(datestring, "%H:%M:%S %d %b %Y")
+                    except (ValueError, locale.Error):
+                        second_part = parser.parse(datestring)
+                    
                 else:
                     pass
                 try:

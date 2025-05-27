@@ -15,6 +15,30 @@ import os, sys, traceback, re, time
 # from threading import Thread
 from glob import glob
 import numpy as np
+
+_pp_map = {
+    "HEAD_SUPINE": "HFS",
+    "HEAD_PRONE": "HFP",
+    "HEAD_DECUBITUS_LEFT": "HFDL",
+    "HEAD_DECUBITUS_RIGHT": "HFDR",
+    "FEET_SUPINE": "FFS",
+    "FEET_PRONE": "FFP",
+    "FEET_DECUBITUS_LEFT": "FFDL",
+    "FEET_DECUBITUS_RIGHT": "FFDR"}
+
+# --- helper to safely get scalar or list parameter ---
+def _safe_param_get(param_val, idx=0):
+    """Return param_val[idx] if param_val is indexable, else param_val itself."""
+    try:
+        # treat numpy array, list or tuple
+        if isinstance(param_val, (list, tuple)):
+            return param_val[idx if idx < len(param_val) else 0]
+        # numpy ndarray
+        if hasattr(param_val, 'shape'):
+            return param_val[idx if idx < param_val.shape[0] else 0]
+    except Exception:
+        pass
+    return param_val
 import shutil
 from read_visupars import read_visupars_parameters
 from cest_dict import add_cest_dict
@@ -24,6 +48,7 @@ from pydicom.dataset import Dataset, FileDataset
 import pydicom.uid
 import dateutil.parser
 import datetime
+import traceback, logging
 
 def scan_directory(directory):
     list_dirs = sorted(os.listdir(directory))
@@ -131,6 +156,15 @@ class Bruker2DicomConverter():
                     PV_version = parameters.get("VisuCreatorVersion")
                     if PV_version == '':
                         PV_version = acqp_parameters.get("ACQ_sw_version")
+                    # --- Harmonize legacy ParaVision versions ---
+                    # pv_raw = str(PV_version).strip('<>').split()[0]
+                    pv_raw = PV_version
+                    if pv_raw.startswith('5.') or 'Beta' in pv_raw:
+                        PV_version = '5.1'
+                    elif pv_raw.startswith('6.'):
+                        PV_version = '6.0.1'
+                    elif '360' in pv_raw:
+                        PV_version = '360'
                 except Exception as e:
                     messagebox.showerror("XNAT-PIC - Bruker2Dicom", e)
                     exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -143,6 +177,15 @@ class Bruker2DicomConverter():
                 img_endianness = parameters.get("VisuCoreByteOrder")
                 img_frames = parameters.get("VisuCoreFrameCount")
                 img_dims = parameters.get("VisuCoreSize")
+                img_dims_arr = np.asarray(img_dims, dtype=int).flatten()   # → array di int, qualunque fosse il tipo
+                
+                if img_dims_arr.size == 2:          # acquisizione 2D: aggiungi Nz=1
+                    img_dims_arr = np.append(img_dims_arr, 1)
+                
+                if img_dims_arr.size != 3:
+                    raise ValueError(f"VisuCoreSize non valido: {img_dims!r}")
+                
+                Nx, Ny, Nz = img_dims_arr.tolist()
                 core_ext = parameters.get("VisuCoreExtent")
 
                 if isinstance(parameters.get("VisuCoreDataSlope"), str) and isinstance(parameters.get("VisuCoreDataOffs"), str):
@@ -221,6 +264,27 @@ class Bruker2DicomConverter():
                     )
                     os._exit(0)
 
+                # -------- Handle legacy 3D volumes saved as a single frame --------
+                if int(parameters.get("VisuCoreDim")) == 3 and int(parameters.get("VisuCoreFrameCount")) == 1:
+                    nz = int(parameters.get("VisuCoreSize")[2])
+                    img = img.reshape((nz, int(img_dims[1]), int(img_dims[0])))
+                    parameters["VisuCoreFrameCount"] = nz
+                    nframes = nz
+                    try:
+                        import numpy as _np
+                        pos0 = _np.asarray(parameters.get("VisuCorePosition")[0], dtype=float)
+                        orient = _np.asarray(parameters.get("VisuCoreOrientation")[0], dtype=float).reshape(3,3)
+                        k = orient[:,2]
+                        dz = core_ext[2] / img_dims[2]
+                        positions = []
+                        for s in range(nz):
+                            pos = pos0 + k * (s - nz / 2 + 0.5) * dz
+                            positions.append(pos)
+                        parameters["VisuCorePosition"] = _np.asarray(positions)
+                        parameters["VisuCoreOrientation"] = _np.tile(parameters.get("VisuCoreOrientation")[0], (nz,1))
+                    except Exception as _e:
+                        print("Warning: could not synthesize slice positions:", _e)
+
                 # Populate required values for file meta information
                 file_meta = Dataset()
                 file_meta.MediaStorageSOPClassUID = "1.2.840.10008.5.1.4.1.1.4"
@@ -233,8 +297,13 @@ class Bruker2DicomConverter():
                 img_data.file_meta.TransferSyntaxUID = pydicom.uid.ExplicitVRLittleEndian
 
                 # This group is responsible for describing how to read the pixels
-                nframes = int(parameters.get("VisuCoreFrameCount"))
-                img_data.NumberOfFrames = parameters.get("VisuCoreFrameCount")
+                # Determine number of frames, accounting for legacy 3D volumes
+                is_volume = int(parameters.get("VisuCoreDim")) == 3 and int(parameters.get("VisuCoreFrameCount")) == 1
+                if is_volume:
+                    nframes = int(parameters.get("VisuCoreSize")[2])
+                else:
+                    nframes = int(parameters.get("VisuCoreFrameCount"))
+                img_data.NumberOfFrames = nframes
                 img_data.SamplesPerPixel = 1
                 img_data.PhotometricInterpretation = "MONOCHROME2"
                 img_data.PixelRepresentation = 0  # unsigned (0)
@@ -264,10 +333,15 @@ class Bruker2DicomConverter():
                 img_data[0x0028, 0x0107].VR = "US"
                 
                 add_cest_dict()
+                is_single_slice_2d = (
+                            nframes == 1 and                        # una sola frame nel file
+                            int(parameters.get("VisuCoreDim")) == 2 and
+                            Nz== 1                  # Nz = 1
+                        )
                 # Loop over the number of frames found in img_data
                 for iteration, layer in enumerate(img_data.pixel_array, 0):
                     
-                    if nframes == 1:
+                    if is_single_slice_2d:
                         layer = img_data.pixel_array
                     layer = np.reshape(layer, int(img_dims[0]) * int(img_dims[1]))
 
@@ -357,7 +431,7 @@ class Bruker2DicomConverter():
                     ds_temp.EchoTrainLength = parameters.get("VisuAcqEchoTrainLength")
                     ds_temp.PixelBandwidth = parameters.get("VisuAcqPixelBandwidth")
                     ds_temp.FlipAngle = str(parameters.get("VisuAcqFlipAngle"))
-                    ds_temp.PatientPosition = parameters.get("VisuSubjectPosition")
+                    ds_temp.PatientPosition = _pp_map.get(str(parameters.get("VisuSubjectPosition")).upper(), "HFS")
                     ds_temp.PatientOrientation = method_parameters.get("PVM_SPackArrReadOrient")[0][1:]
                     ds_temp.StationName = parameters.get("VisuStation")
                     ds_temp.InstitutionName = " ".join(parameters.get("VisuInstitution"))
@@ -414,16 +488,16 @@ class Bruker2DicomConverter():
                         ds_temp.Columns = int(img_dims[0])
                         ds_temp.Rows = int(img_dims[1])
                         if np.size(VisuAcqImagePhaseEncDir) == 1:
-                            ds_temp.InPlanePhaseEncodingDirection = parameters.get("VisuAcqImagePhaseEncDir").split("_")[0]
+                            ds_temp.InPlanePhaseEncodingDirection = (parameters.get("VisuAcqImagePhaseEncDir").split("_")[0]).upper()
                         else:
-                            ds_temp.InPlanePhaseEncodingDirection = parameters.get("VisuAcqImagePhaseEncDir")[0].split("_")[0]
-                        if ds_temp.InPlanePhaseEncodingDirection == "row":
+                            ds_temp.InPlanePhaseEncodingDirection = (parameters.get("VisuAcqImagePhaseEncDir")[0].split("_")[0]).upper()
+                        if ds_temp.InPlanePhaseEncodingDirection == 'ROW':
                             acqmat = np.pad(parameters.get("VisuAcqSize"), 1, "constant")
                             ds_temp.AcquisitionMatrix = list(np.array(acqmat, dtype=int))
                             ds_temp.PixelSpacing = [core_ext[0] / img_dims[0], core_ext[1] / img_dims[1]]
                             pixel_spacing = [core_ext[0] / img_dims[0], core_ext[1] / img_dims[1]]
                             ds_temp.PixelSpacing = pixel_spacing[::-1]
-                        elif ds_temp.InPlanePhaseEncodingDirection == "col":
+                        elif ds_temp.InPlanePhaseEncodingDirection == 'COL':
                             acqmat = np.insert(parameters.get("VisuAcqSize"), 1, [0, 0])
                             ds_temp.AcquisitionMatrix = list(np.flip(np.array(acqmat, dtype=int), 0))
                             ds_temp.PixelSpacing = [core_ext[1] / img_dims[1], core_ext[0] / img_dims[0]]
@@ -443,7 +517,7 @@ class Bruker2DicomConverter():
                         acquisitiondate = dateutil.parser.parse(acqdate)
                         ds_temp.AcquisitionDate = acquisitiondate.strftime("%Y%m%d")
                         ds_temp.AcquisitionTime = acquisitiondate.strftime("%H%M%S")
-                        ds_temp.InPlanePhaseEncodingDirection = parameters.get("VisuAcqGradEncoding")
+                        ds_temp.InPlanePhaseEncodingDirection = (parameters.get("VisuAcqGradEncoding")).upper()
                         if ds_temp.InPlanePhaseEncodingDirection[0] == "read_enc":
                             ds_temp.Columns = int(img_dims[0])
                             ds_temp.Rows = int(img_dims[1])
@@ -472,7 +546,7 @@ class Bruker2DicomConverter():
                         AcqDate = dateutil.parser.parse(AcqDate)
                         ds_temp.AcquisitionDate = AcqDate.strftime("%Y%m%d")
                         ds_temp.AcquisitionTime = AcqDate.strftime("%H%M%S")
-                        ds_temp.InPlanePhaseEncodingDirection = parameters.get("VisuAcqGradEncoding")
+                        ds_temp.InPlanePhaseEncodingDirection = (parameters.get("VisuAcqGradEncoding")).upper()
                         if ds_temp.InPlanePhaseEncodingDirection[0] == 'read_enc':
                             ds_temp.Columns = int(img_dims[0])
                             ds_temp.Rows = int(img_dims[1])
@@ -658,7 +732,7 @@ class Bruker2DicomConverter():
                     ds_temp[0x0028, 0x0107].VR = "US"
                     ds_temp.RescaleSlope = 1/factor
                     for j in range(0, nframes - 1):
-                        ds_temp.RescaleIntercept = str(parameters.get("VisuCoreDataOffs")[j])
+                        ds_temp.RescaleIntercept = str(_safe_param_get(parameters.get("VisuCoreDataOffs"), j))
 
                     # Set creation date/time
                     dt = datetime.datetime.now()
@@ -682,12 +756,13 @@ class Bruker2DicomConverter():
                     os.chdir(dst_path)
                     ds_temp.is_little_endian = True
                     ds_temp.is_implicit_VR = False
-                    ds_temp.save_as(outfile)
+                    ds_temp.save_as(outfile, write_like_original=False)
 
-                    if iteration == 0 and nframes == 1:
+                    if iteration == 0 and is_single_slice_2d:
                         break
 
             print(str(dirs[0].split('/')[-1]) + ' done!')
         except Exception as e:
-            pass
-         
+            logging.error("[ERRORE] %s", e)
+            traceback.print_exc()
+            raise
