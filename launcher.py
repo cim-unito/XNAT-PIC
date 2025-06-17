@@ -1170,7 +1170,7 @@ class xnat_pic_gui():
                 self.list_scans_err = []
                 progressbar.set_caption('Converting ' + str(self.folder_to_convert.get().split('/')[-1]) + ' ...')
                 
-                with Pool(processes=int(n_workers - 1)) as pool:
+                with Pool(processes=int(N_WORKERS - 1)) as pool:
                     pool.map(self.converter.convert, list_scans)
                 for scan in list_scans:
                     dir_path = scan[1]
