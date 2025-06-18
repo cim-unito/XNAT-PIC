@@ -179,6 +179,7 @@ class Bruker2DicomConverter():
                 img_dims = parameters.get("VisuCoreSize")
                 img_dims_arr = np.asarray(img_dims, dtype=int).flatten()   # → array di int, qualunque fosse il tipo
                 
+                
                 if img_dims_arr.size == 2:          # acquisizione 2D: aggiungi Nz=1
                     img_dims_arr = np.append(img_dims_arr, 1)
                 
@@ -432,7 +433,15 @@ class Bruker2DicomConverter():
                     ds_temp.PixelBandwidth = parameters.get("VisuAcqPixelBandwidth")
                     ds_temp.FlipAngle = str(parameters.get("VisuAcqFlipAngle"))
                     ds_temp.PatientPosition = _pp_map.get(str(parameters.get("VisuSubjectPosition")).upper(), "HFS")
-                    ds_temp.PatientOrientation = method_parameters.get("PVM_SPackArrReadOrient")[0][1:]
+                    #ds_temp.PatientOrientation = method_parameters.get("PVM_SPackArrReadOrient")[0][1:]
+                    orient_raw = method_parameters.get("PVM_SPackArrReadOrient")
+                    if orient_raw and len(orient_raw) > 0 and len(orient_raw[0]) > 1:
+                        # es. orient_raw = ["aCOR-T_lps", "LPS"] → prendo "PS"
+                        ds_temp.PatientOrientation = orient_raw[0][1:]
+                    else:
+                        # fallback: imposta un valore di default o salta il tag
+                        # per es. 'HFS' (Head First Supine) o usa un orientation fittizio
+                        ds_temp.PatientOrientation = "HFS"
                     ds_temp.StationName = parameters.get("VisuStation")
                     ds_temp.InstitutionName = " ".join(parameters.get("VisuInstitution"))
                     ds_temp.Manufacturer = parameters.get("ORIGIN")
@@ -474,7 +483,7 @@ class Bruker2DicomConverter():
 
                     # Get other parameters which differ among PV versions
                     
-                    if PV_version == "5.1":
+                    if PV_version == "5.1" or PV_version == "4.0":
                         ########################### ParaVision 5.1 ##############################
                         studydate = parameters.get("VisuStudyDate").date()
                         studytime = parameters.get("VisuStudyDate").time()
@@ -517,19 +526,59 @@ class Bruker2DicomConverter():
                         acquisitiondate = dateutil.parser.parse(acqdate)
                         ds_temp.AcquisitionDate = acquisitiondate.strftime("%Y%m%d")
                         ds_temp.AcquisitionTime = acquisitiondate.strftime("%H%M%S")
-                        ds_temp.InPlanePhaseEncodingDirection = (parameters.get("VisuAcqGradEncoding")).upper()
-                        if ds_temp.InPlanePhaseEncodingDirection[0] == "read_enc":
+                        # ds_temp.InPlanePhaseEncodingDirection = (parameters.get("VisuAcqGradEncoding")).upper()
+                        # ds_temp.InPlanePhaseEncodingDirection = parameters.get("VisuAcqGradEncoding")
+                        # if ds_temp.InPlanePhaseEncodingDirection[0] == "read_enc":
+                        #     ds_temp.Columns = int(img_dims[0])
+                        #     ds_temp.Rows = int(img_dims[1])
+                        #     acqmat = np.pad(parameters.get("VisuAcqSize"), 1, "constant")
+                        #     ds_temp.AcquisitionMatrix = list(np.array(acqmat, dtype=int))
+                        #     ds_temp.PixelSpacing = [core_ext[1] / img_dims[1], core_ext[0] / img_dims[0]]
+                        # elif ds_temp.InPlanePhaseEncodingDirection[0] == "phase_enc":
+                        #     ds_temp.Columns = int(img_dims[1])
+                        #     ds_temp.Rows = int(img_dims[0])
+                        #     acqmat = np.insert(parameters.get("VisuAcqSize"), 1, [0, 0])
+                        #     ds_temp.AcquisitionMatrix = list(np.flip(np.array(acqmat, dtype=int), 0))  # check
+                        #     ds_temp.PixelSpacing = [core_ext[0] / img_dims[0], core_ext[1] / img_dims[1]]
+                        grad_enc = parameters.get("VisuAcqGradEncoding")
+                        print(grad_enc)
+                        if isinstance(grad_enc, (list, tuple)) or hasattr(grad_enc, "shape"):
+                           grad_enc = " ".join(str(x) for x in grad_enc)
+                        tokens = str(grad_enc).strip().lower().split()
+                        phase_token = tokens[1] if len(tokens) > 1 else next((t for t in tokens if "phase" in t), tokens[0])
+                        if "phase" in phase_token:
+                            dicom_dir = "COL"
+                        elif "read" in phase_token:
+                            dicom_dir = "ROW"
+                        else:
+                            dicom_dir = "COL"
+                        
+                        ds_temp.InPlanePhaseEncodingDirection = dicom_dir
+                        if dicom_dir == "ROW":
+                            # phase-encoding along rows (read_enc case)
                             ds_temp.Columns = int(img_dims[0])
-                            ds_temp.Rows = int(img_dims[1])
-                            acqmat = np.pad(parameters.get("VisuAcqSize"), 1, "constant")
+                            ds_temp.Rows    = int(img_dims[1])
+                        
+                            acqmat = np.pad(parameters.get("VisuAcqSize"), 1, 'constant')
                             ds_temp.AcquisitionMatrix = list(np.array(acqmat, dtype=int))
-                            ds_temp.PixelSpacing = [core_ext[1] / img_dims[1], core_ext[0] / img_dims[0]]
-                        elif ds_temp.InPlanePhaseEncodingDirection[0] == "phase_enc":
+                            ds_temp.PixelSpacing = [
+                                core_ext[1] / img_dims[1],  # mm/px in phase (Y) direction
+                                core_ext[0] / img_dims[0]   # mm/px in read (X) direction
+                            ]
+                        
+                        elif dicom_dir == "COL":
+                            # phase-encoding along columns (phase_enc case)
                             ds_temp.Columns = int(img_dims[1])
-                            ds_temp.Rows = int(img_dims[0])
+                            ds_temp.Rows    = int(img_dims[0])
+                        
                             acqmat = np.insert(parameters.get("VisuAcqSize"), 1, [0, 0])
-                            ds_temp.AcquisitionMatrix = list(np.flip(np.array(acqmat, dtype=int), 0))  # check
-                            ds_temp.PixelSpacing = [core_ext[0] / img_dims[0], core_ext[1] / img_dims[1]]
+                            ds_temp.AcquisitionMatrix = list(np.flip(np.array(acqmat, dtype=int), 0))
+                            ds_temp.PixelSpacing = [
+                                core_ext[0] / img_dims[0],  # mm/px in read (X) direction
+                                core_ext[1] / img_dims[1]   # mm/px in phase (Y) direction
+                            ]
+
+                        
                         gamma = 42.5756
                         Bo = round(ds_temp.ImagingFrequency / gamma)
                         ds_temp.MagneticFieldStrength = Bo
@@ -546,19 +595,60 @@ class Bruker2DicomConverter():
                         AcqDate = dateutil.parser.parse(AcqDate)
                         ds_temp.AcquisitionDate = AcqDate.strftime("%Y%m%d")
                         ds_temp.AcquisitionTime = AcqDate.strftime("%H%M%S")
-                        ds_temp.InPlanePhaseEncodingDirection = (parameters.get("VisuAcqGradEncoding")).upper()
-                        if ds_temp.InPlanePhaseEncodingDirection[0] == 'read_enc':
+                        # ds_temp.InPlanePhaseEncodingDirection = (parameters.get("VisuAcqGradEncoding")).upper()
+                        # ds_temp.InPlanePhaseEncodingDirection = parameters.get("VisuAcqGradEncoding")
+                        # if ds_temp.InPlanePhaseEncodingDirection[0] == 'read_enc':
+                        #     ds_temp.Columns = int(img_dims[0])
+                        #     ds_temp.Rows = int(img_dims[1])
+                        #     acqmat = np.pad(parameters.get("VisuAcqSize"),1,'constant')
+                        #     ds_temp.AcquisitionMatrix = list(np.array(acqmat,dtype=int))
+                        #     ds_temp.PixelSpacing = [core_ext[1]/img_dims[1],core_ext[0]/img_dims[0]]
+                        # elif ds_temp.InPlanePhaseEncodingDirection[0] == 'phase_enc':
+                        #     ds_temp.Columns = int(img_dims[1])
+                        #     ds_temp.Rows = int(img_dims[0])
+                        #     acqmat = np.insert(parameters.get("VisuAcqSize"),1,[0,0])
+                        #     ds_temp.AcquisitionMatrix = list(np.flip(np.array(acqmat,dtype=int),0))
+                        #     ds_temp.PixelSpacing = ([core_ext[0]/img_dims[0],core_ext[1]/img_dims[1]])
+                        grad_enc = parameters.get("VisuAcqGradEncoding")
+                        print(grad_enc)
+                        if isinstance(grad_enc, (list, tuple)) or hasattr(grad_enc, "shape"):
+                           grad_enc = " ".join(str(x) for x in grad_enc)
+                        tokens = str(grad_enc).strip().lower().split()
+                        phase_token = tokens[1] if len(tokens) > 1 else next((t for t in tokens if "phase" in t), tokens[0])
+                        if "phase" in phase_token:
+                            dicom_dir = "COL"
+                        elif "read" in phase_token:
+                            dicom_dir = "ROW"
+                        else:
+                            dicom_dir = "COL"
+                        
+                        ds_temp.InPlanePhaseEncodingDirection = dicom_dir
+                        if dicom_dir == "ROW":
+                            # phase-encoding along rows (read_enc case)
                             ds_temp.Columns = int(img_dims[0])
-                            ds_temp.Rows = int(img_dims[1])
-                            acqmat = np.pad(parameters.get("VisuAcqSize"),1,'constant')
-                            ds_temp.AcquisitionMatrix = list(np.array(acqmat,dtype=int))
-                            ds_temp.PixelSpacing = [core_ext[1]/img_dims[1],core_ext[0]/img_dims[0]]
-                        elif ds_temp.InPlanePhaseEncodingDirection[0] == 'phase_enc':
+                            ds_temp.Rows    = int(img_dims[1])
+                        
+                            acqmat = np.pad(parameters.get("VisuAcqSize"), 1, 'constant')
+                            ds_temp.AcquisitionMatrix = list(np.array(acqmat, dtype=int))
+                            ds_temp.PixelSpacing = [
+                                core_ext[1] / img_dims[1],  # mm/px in phase (Y) direction
+                                core_ext[0] / img_dims[0]   # mm/px in read (X) direction
+                            ]
+                        
+                        elif dicom_dir == "COL":
+                            # phase-encoding along columns (phase_enc case)
                             ds_temp.Columns = int(img_dims[1])
-                            ds_temp.Rows = int(img_dims[0])
-                            acqmat = np.insert(parameters.get("VisuAcqSize"),1,[0,0])
-                            ds_temp.AcquisitionMatrix = list(np.flip(np.array(acqmat,dtype=int),0))
-                            ds_temp.PixelSpacing = ([core_ext[0]/img_dims[0],core_ext[1]/img_dims[1]])
+                            ds_temp.Rows    = int(img_dims[0])
+                        
+                            acqmat = np.insert(parameters.get("VisuAcqSize"), 1, [0, 0])
+                            ds_temp.AcquisitionMatrix = list(np.flip(np.array(acqmat, dtype=int), 0))
+                            ds_temp.PixelSpacing = [
+                                core_ext[0] / img_dims[0],  # mm/px in read (X) direction
+                                core_ext[1] / img_dims[1]   # mm/px in phase (Y) direction
+                            ]
+                        
+                        
+                        
                         ds_temp.MagneticFieldStrength = parameters.get('VisuMagneticFieldStrength')
 
                     # DCE acquisition
