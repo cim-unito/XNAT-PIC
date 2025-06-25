@@ -32,11 +32,13 @@ from create_objects import ProjectManager, SubjectManager, ExperimentManager
 from content_reader import *
 from access_manager import AccessManager
 from new_project_manager import NewProjectManager, NewSubjectManager, NewExperimentManager
+from new_datatype_manager import NewDataTypeProjectManager
 import itertools
 from Treeview import Treeview
 import xnat
 from operator import * 
 import webbrowser
+
 
 PATH_IMAGE = "images\\"
 # PATH_IMAGE = "lib\\images\\"
@@ -1325,23 +1327,36 @@ class xnat_pic_gui():
                 # Check if the selected folder is related to the right conversion flag
                 print(self.folder_to_upload.get())
                 print(self.upload_type.get() == 0)
-                if self.upload_type.get() == 0 and glob(self.folder_to_upload.get() + "//**//**//**//*.dcm", recursive=False) == []:
+                if self.upload_type.get() == 0 and not (glob(self.folder_to_upload.get() + "//**//**//**//*.dcm", recursive=False) or glob(self.folder_to_upload.get() + "//**//**//**//*.dicom", recursive=False)):
                     messagebox.showerror("XNAT-PIC Uploader", "The selected folder is not project related.\nPlease select an other directory!")
                     destroy_widgets([self.frame_uploader])
                     self.overall_uploader(master)
                     return
-                if self.upload_type.get() == 1 and glob(self.folder_to_upload.get() + "//**//**//*.dcm", recursive=False) == []:
+                if self.upload_type.get() == 1 and not (glob(self.folder_to_upload.get() + "//**//**//*.dcm", recursive=False) or glob(self.folder_to_upload.get() + "//**//**//*.dicom", recursive=False)):
                     messagebox.showerror("XNAT-PIC Uploader", "The selected folder is not subject related.\nPlease select an other directory!")
                     destroy_widgets([self.frame_uploader])
                     self.overall_uploader(master)
                     return
-                if self.upload_type.get() == 2 and glob(self.folder_to_upload.get() + "//**//*.dcm", recursive=False) == []:
+                if self.upload_type.get() == 2 and not (glob(self.folder_to_upload.get() + "//**//*.dcm", recursive=False) or glob(self.folder_to_upload.get() + "//**//*.dicom", recursive=False)):
                     messagebox.showerror("XNAT-PIC Uploader", "The selected folder is not experiment related.\nPlease select an other directory!")
                     destroy_widgets([self.frame_uploader])
                     self.overall_uploader(master)
                     return
 
                 self.selected_item_path.set('')
+
+                # New datatype
+                if self.upload_type.get() == 0:
+                    self.working_folder = self.folder_to_upload.get()
+                    project_manager = NewDataTypeProjectManager(master.root, self.working_folder)
+                    master.root.wait_window(project_manager.popup_dicom_prj)
+                elif self.upload_type.get() == 1:
+                    subject_manager = NewSubjectManager(self.root)
+                    self.root.wait_window(subject_manager.popup_sub)
+                elif self.upload_type.get() == 2:
+                    experiment_manager = NewExperimentManager(self.root)
+                    self.root.wait_window(experiment_manager.popup_exp)
+
 
             def folder_selected_handler(*args):
                 if self.folder_to_upload.get() != '':
@@ -1407,7 +1422,10 @@ class xnat_pic_gui():
 
                                     elif os.path.isdir(os.path.join(self.working_folder, sub, sub2)):
                                         tmp_exp_path = os.path.join(self.working_folder, sub, sub2)
-                                        if glob(tmp_exp_path + "/**/*.dcm", recursive=False) == []:
+                                        if not (
+                                            glob(tmp_exp_path + "/**/*.dcm", recursive=False) or
+                                            glob(tmp_exp_path + "/**/*.dicom", recursive=False)
+                                        ):
                                             val_exp_1 = "Folder"
                                         else:
                                             val_exp_1 = "Experiment"
@@ -1471,13 +1489,19 @@ class xnat_pic_gui():
                                             dict_items[str(j)]['text'] = sub2
                                             if self.upload_type.get() == 0:
                                                 tmp_exp_path = os.path.join(self.working_folder, sub, sub2)
-                                                if glob(tmp_exp_path + "/**/*.dcm", recursive=False) == []:
+                                                if not (
+                                                    glob(tmp_exp_path + "/**/*.dcm", recursive=False) or
+                                                    glob(tmp_exp_path + "/**/*.dicom", recursive=False)
+                                                ):
                                                     dict_items[str(j)]['values'] = ("Folder")
                                                 else:
                                                     dict_items[str(j)]['values'] = ("Experiment")
                                             elif self.upload_type.get() == 2:
                                                 tmp_exp_path1 = os.path.join(self.working_folder, sub, sub2)
-                                                if glob(tmp_exp_path1 + "/*.dcm", recursive=False) == []:
+                                                if not (
+                                                    glob(tmp_exp_path1 + "/*.dcm", recursive=False) or
+                                                    glob(tmp_exp_path1 + "/*.dicom", recursive=False)
+                                                ):
                                                     dict_items[str(j)]['values'] = ("Folder")
                                                 else:
                                                     dict_items[str(j)]['values'] = ("Scan")
@@ -1494,6 +1518,7 @@ class xnat_pic_gui():
                                 dict_items['0']['values'] = ("Experiment")
                             
                             self.tree.set(dict_items)
+
                         # Treeview for the subject
                         if self.upload_type.get() == 1:
                             
@@ -1523,7 +1548,10 @@ class xnat_pic_gui():
 
                                 elif os.path.isdir(os.path.join(self.working_folder, sub)):
                                     tmp_exp_path = os.path.join(self.working_folder, sub)
-                                    if glob(tmp_exp_path + "/**/*.dcm", recursive=False) == []:
+                                    if not (
+                                        glob(tmp_exp_path + "/**/*.dcm", recursive=False) or
+                                        glob(tmp_exp_path + "/**/*.dicom", recursive=False)
+                                    ):
                                         val_exp = "Folder"
                                     else:
                                         val_exp = "Experiment"
