@@ -18,6 +18,8 @@ class NewDataTypeProjectManager():
         self.root = root
         self.current_item = None
         self.current_column = None
+        self.dict_exp = {}
+        self.dict_exp_changed = {}
         self.working_folder = working_folder
 
         self.setup_popup()
@@ -26,8 +28,9 @@ class NewDataTypeProjectManager():
         self.setup_buttons()
 
         try:
-            self.populate_table_view()
+            self.populate_tree_view()
         except Exception as e:
+            messagebox.showerror('XNAT-PIC Uploader', str(e))
             raise RuntimeError(f"Unexpected error while reading files: {e}") from e
 
     def setup_popup(self):
@@ -60,15 +63,15 @@ class NewDataTypeProjectManager():
 
     def setup_treeview(self):
         self.columns = ("Id", "Subject","Experiment", "Modality")
-        self.tree = ttk.Treeview(self.popup_dicom_prj, columns=self.columns, show="headings", height=6, style="primary")
-        self.tree.heading("Id", text="Id")
-        self.tree.heading("Subject", text="Subject")
-        self.tree.heading("Experiment", text="Experiment")
-        self.tree.heading("Modality", text="Modality")
-        # self.tree.column("Id", width=150)
-        # self.tree.column("Subject", width=150)
-        # self.tree.column("Experiment", width=150)
-        # self.tree.column("Modality", width=150)
+        self.tree = ttk.Treeview(self.popup_dicom_prj, columns=self.columns, show="headings", height=10, style="secondary")
+        self.tree.heading("Id", text="Id", anchor=tk.CENTER)
+        self.tree.heading("Subject", text="Subject", anchor=tk.CENTER)
+        self.tree.heading("Experiment", text="Experiment", anchor=tk.CENTER)
+        self.tree.heading("Modality", text="Modality", anchor=tk.CENTER)
+        self.tree.column("Id", width=50, anchor=tk.CENTER)
+        self.tree.column("Subject", width=300, anchor=tk.CENTER)
+        self.tree.column("Experiment", width=300, anchor=tk.CENTER)
+        self.tree.column("Modality", width=80, anchor=tk.CENTER)
         self.tree.bind("<Button-1>", self.on_cell_click)
         self.tree.grid(row=0, column=0, sticky="nsew")
 
@@ -135,58 +138,19 @@ class NewDataTypeProjectManager():
         self.current_column = column
 
         current_value = self.tree.set(item, column=column)
-        self.combo.set(current_value if current_value in self.combo['values'] else '')
-
-    def check_dicom(self, path_dicom):
-        # Check that all dicom files inside the experiment have valid dicom headers
-        for path in path_dicom:
-            ds = dcmread(path)
-            # Meta info
-            if not hasattr(ds, 'file_meta') or ds.file_meta is None:
-                ds.file_meta = FileMetaDataset()
-
-           # SOP Class UID per Raw Data Storage
-            if not hasattr(ds.file_meta, 'MediaStorageSOPClassUID') or ds.file_meta.MediaStorageSOPClassUID is None:
-                ds.file_meta.MediaStorageSOPClassUID = UID("1.2.840.10008.5.1.4.1.1.66")  # Raw Data Storage
-
-            if not hasattr(ds, 'SOPClassUID') or ds.SOPClassUID is None:
-                ds.SOPClassUID = ds.file_meta.MediaStorageSOPClassUID
-
-            # SOP Instance UID
-            if not hasattr(ds, 'SOPInstanceUID') or ds.SOPInstanceUID is None:
-                ds.SOPInstanceUID = generate_uid()
-            if not hasattr(ds.file_meta, 'MediaStorageSOPInstanceUID') or ds.file_meta.MediaStorageSOPInstanceUID is None:
-                ds.file_meta.MediaStorageSOPInstanceUID = ds.SOPInstanceUID
-
-            # Transfer Syntax
-            if not hasattr(ds.file_meta, 'TransferSyntaxUID') or ds.file_meta.TransferSyntaxUID is None:
-                ds.file_meta.TransferSyntaxUID = ExplicitVRLittleEndian
-
-            # Tag fissi
-            if not hasattr(ds, 'PatientID') or ds.PatientID is None:
-                ds.PatientID = str(os.path.basename(os.path.dirname(os.path.dirname(path))))
-            if not hasattr(ds, 'StudyInstanceUID') or ds.StudyInstanceUID is None:
-                ds.StudyInstanceUID = generate_uid()
-            if not hasattr(ds, 'SeriesInstanceUID') or ds.SeriesInstanceUID is None:
-                ds.SeriesInstanceUID = generate_uid()
-            if not hasattr(ds, 'Modality') or ds.Modality is None:
-                ds.Modality = "OT"
-
-            ds.save_as(path, write_like_original=False)
-            
+        self.combo.set(current_value if current_value in self.combo['values'] else '')           
         
     def read_dicom(self, path_dicom):
         ds = dcmread(path_dicom)
-        return ds.Modality if getattr(ds, 'Modality', None) else "OT"
+        return getattr(ds, 'Modality', None) 
 
-    def populate_table_view(self):
+    def populate_tree_view(self):
 
         # Scan the folder to get its tree
         subdir = os.listdir(self.working_folder)
         # Check for OS configuration files and remove them
         subdirectories = [x for x in subdir if x.endswith('.ini') == False]
         # Dict of subjects and experiments in the project to upload
-        dict_exp = {}
         j = 0
         for sub in subdirectories:
             if os.path.isdir(os.path.join(self.working_folder, sub)):
@@ -198,15 +162,134 @@ class NewDataTypeProjectManager():
                         tmp_exp_path = os.path.join(self.working_folder, sub, sub2)
                         list_dcm = glob(tmp_exp_path + "/**/*.dcm", recursive=False)
                         list_dicom = glob(tmp_exp_path + "/**/*.dicom", recursive=False)
-                        if (list_dcm or list_dcm):
+                        if (list_dcm or list_dicom):
                             modality = self.read_dicom((list_dcm or list_dicom)[0])
-                            dict_exp[j] = [sub, sub2, tmp_exp_path, modality]
+                            self.dict_exp[str(j)] = [sub, sub2, tmp_exp_path, modality]
                             j += 1
 
-        print(dict_exp)
+        for k, v in self.dict_exp.items():
+            self.tree.insert("", 'end', values=[str(k), str(v[0]), str(v[1]), str(v[3]) if v[3] is not None else "OT"])
+    
 
-        for k, v in dict_exp.items():
-            self.tree.insert("", 'end', values=[str(k), str(v[0]), str(v[1]), str(v[3])])
+    # Helper per controllare se un attributo esiste ed è non nullo
+    def has_tag(self, obj, tag):
+        return getattr(obj, tag, None) is not None
+
+    # Controlla se un dataset è completo
+    def is_dataset_complete(self, ds):
+        return all([
+            self.has_tag(ds.file_meta, 'MediaStorageSOPClassUID'),
+            self.has_tag(ds.file_meta, 'MediaStorageSOPInstanceUID'),
+            self.has_tag(ds.file_meta, 'TransferSyntaxUID'),
+            self.has_tag(ds, 'SOPClassUID'),
+            self.has_tag(ds, 'SOPInstanceUID'),
+            self.has_tag(ds, 'PatientID'),
+            self.has_tag(ds, 'StudyInstanceUID'),
+            self.has_tag(ds, 'SeriesInstanceUID'),
+            self.has_tag(ds, 'Modality'),
+        ])
+
+    # Aggiorna dataset con UID comuni
+    def update_dataset(self, ds, patient_id, study_uid, series_uid, modality):
+        ds.file_meta = ds.file_meta or FileMetaDataset()
+
+        ds.file_meta.MediaStorageSOPClassUID = ds.file_meta.get('MediaStorageSOPClassUID') or UID("1.2.840.10008.5.1.4.1.1.66")
+        ds.SOPClassUID = ds.get('SOPClassUID') or ds.file_meta.MediaStorageSOPClassUID
+
+        ds.SOPInstanceUID = ds.get('SOPInstanceUID') or generate_uid()
+        ds.file_meta.MediaStorageSOPInstanceUID = ds.file_meta.get('MediaStorageSOPInstanceUID') or ds.SOPInstanceUID
+
+        ds.file_meta.TransferSyntaxUID = ds.file_meta.get('TransferSyntaxUID') or ExplicitVRLittleEndian
+
+        ds.PatientID = ds.get('PatientID') or patient_id
+        ds.StudyInstanceUID = ds.get('StudyInstanceUID') or study_uid
+        ds.SeriesInstanceUID = ds.get('SeriesInstanceUID') or series_uid
+        ds.Modality = modality
+
+        return ds
+
+    def check_dicom(self):
+
+        for k,v in self.dict_exp.items():
+            path_dicom = str(v[2])
+
+            dicom_files = glob(path_dicom + "/**/*.dcm", recursive=False) + glob(path_dicom + "/**/*.dicom", recursive=False)
+
+            if not dicom_files:
+                continue
+
+            # Legge solo il primo file per decidere se elaborare
+            first_ds = dcmread(dicom_files[0], stop_before_pixels=True)
+            if self.is_dataset_complete(first_ds) and self.dict_exp_changed[k][2] == v[3]:
+                continue  # Completo → salta
+
+            # UID comuni generati solo se necessario
+            study_uid = generate_uid()
+            series_uid = generate_uid()
+            patient_id = v[1]
+            modality = self.dict_exp_changed[k][2]
+
+            for path in dicom_files:
+                ds = dcmread(path)
+                ds = self.update_dataset(ds, patient_id, study_uid, series_uid, modality)
+                ds.save_as(path, write_like_original=False)
+   
+   
+    def save_prj(self):
+        exception_container = []
+        cancel_operation = {'cancelled': False}  # Flag per verificare annullamento
+
+        def func_save_prj():
+            try: 
+                for item_id in self.tree.get_children():
+                    val = self.tree.item(item_id, "values")
+                    self.dict_exp_changed[val[0]] = val[1:]
+
+                # Controllo se almeno una modality è 'OT'
+                has_ot = any(values[2] == 'OT' for values in self.dict_exp_changed.values())
+
+                if has_ot:
+                    # Mostra un messaggio di avviso all'utente
+                    proceed = messagebox.askyesno(
+                        "Warning",
+                        "There is at least one 'OT' modality. Continue anyway?"
+                    )
+                    if not proceed:
+                        cancel_operation['cancelled'] = True  # Segnala annullamento
+                        return  # Interrompe e torna all'interfaccia
+
+                self.check_dicom()
+            except Exception as e:
+                exception_container.append(e)
+            
+        try:
+            # Start the progress bar
+            progressbar = ProgressBar(self.popup_dicom_prj, bar_title='XNAT-PIC Modality')
+            progressbar.start_indeterminate_bar()
+            
+            # Disable button
+            disable_buttons([self.popup_dicom_prj.button_save, self.popup_dicom_prj.button_quit])
+            # Save the project through separate thread (different from the main thread)
+            tp = threading.Thread(target=func_save_prj, args=())
+            tp.start()
+            while tp.is_alive() == True:
+                # As long as the thread is working, update the progress bar
+                progressbar.update_bar()
+            progressbar.stop_progress_bar()
+            
+            # Controlla se l'operazione è stata annullata
+            if cancel_operation['cancelled']:
+                enable_buttons([self.popup_dicom_prj.button_save, self.popup_dicom_prj.button_quit])
+                return  # Esce senza chiudere la finestra
         
-        messagebox.showinfo("XNAT-PIC", 'The DICOM files have been updated!')
-        #self.popup_dicom_prj.destroy()
+            # Check if exception occurred
+            if exception_container:
+                enable_buttons([self.popup_dicom_prj.button_save, self.popup_dicom_prj.button_quit])
+                raise exception_container[0]
+        
+            messagebox.showinfo("XNAT-PIC", 'Changes saved successfully!')
+            self.popup_dicom_prj.destroy()
+        except Exception as e:
+            messagebox.showerror('XNAT-PIC Uploader', str(e))
+            self.popup_dicom_prj.destroy()
+            raise RuntimeError(f"Unexpected error while reading files: {e}") from e
