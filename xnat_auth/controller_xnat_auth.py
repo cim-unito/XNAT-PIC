@@ -1,0 +1,88 @@
+from xnat_client.xnat_manager import XnatManager
+
+
+class ControllerXnatAuth:
+    def __init__(self, view, model):
+        self._view = view
+        self._model = model
+
+        self._address = None
+        self._username = None
+        self._password = None
+        self._remember = None
+
+        self._on_success = None
+        self._on_cancel = None
+
+    # -------------------------------
+    # CALLBACK
+    # -------------------------------
+    def set_callbacks(self, on_success, on_cancel):
+        self._on_success = on_success
+        self._on_cancel = on_cancel
+
+    # -------------------------------
+    # LOGIN
+    # -------------------------------
+    def auth(self, e):
+        self.update_fields_from_view()
+
+        ok = XnatManager.start_session(
+            self._address,
+            self._username,
+            self._password,
+        )
+
+        if ok:
+            self.handle_persistence()
+            self._view.close_dialog()
+            if self._on_success:
+                self._on_success()
+        else:
+            self._view.show_error("Connection failed.")
+
+    def cancel(self, e):
+        self._view.close_dialog()
+        if self._on_cancel:
+            self._on_cancel()
+
+    def set_remembered_credentials(self):
+        remembered = self._model.load_remembered_credential()
+        if remembered:
+            self._address = remembered.address
+            self._username = remembered.username
+            self._password = remembered.password
+            self._remember = remembered.remember
+
+    def update_fields_from_view(self):
+        self._address = self._view.txt_address.value
+        self._username = self._view.txt_username.value
+        self._password = self._view.txt_password.value
+        self._remember = self._view.ck_remember_user.value
+
+    def handle_persistence(self):
+        if self._remember:
+            self._model.insert_new_credential(
+                self._address,
+                self._username,
+                self._password,
+                self._remember
+            )
+        else:
+            self._model.delete_credential()
+
+    @property
+    def address(self):
+        return self._address
+
+    @property
+    def username(self):
+        return self._username
+
+    @property
+    def password(self):
+        return self._password
+
+    @property
+    def remember(self):
+        return self._remember
