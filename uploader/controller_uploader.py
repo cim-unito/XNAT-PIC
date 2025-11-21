@@ -2,19 +2,26 @@ from pathlib import Path
 import threading
 
 from xnat_client.xnat_repository import XnatRepository
-from xnat_client.xnat_session import XnatSession
-
+from uploader.xnat_new_project.model_xnat_new_project import ModelXnatNewProject
+from uploader.xnat_new_project.view_xnat_new_project import ViewXnatNewProject
+from uploader.xnat_new_project.controller_xnat_new_project import ControllerXnatNewProject
 
 class ControllerUploader:
     def __init__(self, view, model):
         self._view = view
         self._model = model
 
-        self._xnat_auth_view = None
-        self._xnat_auth_controller = None
+        self._view_xnat_auth = None
+        self.__controller_xnat_auth = None
 
-        self._new_project_view = None
-        self._new_project_controller = None
+        self._model_xnat_new_project = ModelXnatNewProject()
+        self._view_xnat_new_project = ViewXnatNewProject(self._view._page,
+                                                         on_submit=self.on_data_project_collected)
+        self._controller_xnat_new_project = ControllerXnatNewProject(
+            self._view_xnat_new_project,
+            self._model_xnat_new_project,
+        )
+        self._view_xnat_new_project.set_controller(self._controller_xnat_new_project)
 
         self._xnat_session = None
         self._xnat_repo = None
@@ -27,14 +34,14 @@ class ControllerUploader:
     # LOGIN / ROUTE
     # ==========================================================
     def set_xnat_auth(self, view_auth, controller_auth):
-        self._xnat_auth_view = view_auth
-        self._xnat_auth_controller = controller_auth
+        self._view_xnat_auth = view_auth
+        self.__controller_xnat_auth = controller_auth
 
     def on_enter_route(self):
         self._mode_selected = None
         self._view.disable_all_for_login()
 
-        dlg = self._xnat_auth_view.build_dialog(
+        dlg = self._view_xnat_auth.build_dialog(
             on_success=self._on_login_success,
             on_cancel=self._on_login_cancel,
         )
@@ -249,35 +256,11 @@ class ControllerUploader:
     # ==========================================================
     # NEW XNAT PROJECT
     # ==========================================================
-    def set_new_project_module(self, view_new_project, controller_new_project):
-        self._new_project_view = view_new_project
-        self._new_project_controller = controller_new_project
+    def create_new_project(self, e):
+        self._view_xnat_new_project.open()
 
-    def create_new_project(self, e=None):
-        """
-        Gestore click su 'New Project' nell'uploader.
-        Apre la dialog 'New XNAT Project'.
-        """
-        if not self._new_project_view or not self._new_project_controller:
-            self._view.create_alert("New project module not configured.")
-            return
-
-        def on_created(project_id: str, label: str):
-            # Dopo creazione, ricarico lista progetti e seleziono il nuovo.
-            try:
-                projects = XnatSession.list_projects()
-                self._view.populate_projects(projects)
-                # seleziona il nuovo progetto
-                self._view.dd_xnat_project.value = project_id
-                self._view.update_page()
-            except Exception as err:
-                self._view.create_alert(
-                    f"Project created, but cannot refresh list: {err}"
-                )
-
-        dlg = self._new_project_view.build_dialog(on_created=on_created)
-        self._view._page.open(dlg)
-        self._view._page.update()
+    def on_data_project_collected(self, data):
+        self._xnat_repo.create_project(data)
 
     # ==========================================================
     # UPLOAD
@@ -287,8 +270,6 @@ class ControllerUploader:
         name = name.replace(" ", "_")
         name = name.replace(".", "_")
         name = name.replace("-", "_")
-        while "__" in name:
-            name = name.replace("__", "_")
         return name.upper()
 
     def dicom_upload(self, e):
@@ -321,7 +302,6 @@ class ControllerUploader:
         if not subjects:
             self._view.create_alert(
                 "No subject folders found in selected path.")
-            self._view._page.update()
             return
 
         total = sum(
@@ -329,7 +309,6 @@ class ControllerUploader:
 
         if total == 0:
             self._view.create_alert("No experiment folders found.")
-            self._view._page.update()
             return
 
         done = 0
@@ -346,7 +325,6 @@ class ControllerUploader:
 
             for exp_folder in experiments:
 
-                # EXPERIMENT ID — dropdown oppure cartella
                 if self._view.dd_xnat_experiment.value:
                     experiment_id = self._view.dd_xnat_experiment.value
                 else:

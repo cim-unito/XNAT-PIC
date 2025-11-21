@@ -7,7 +7,7 @@ class XnatSession:
         self.password = password
         self._session = None
 
-    def connect(self) -> bool:
+    def connect(self):
         try:
             self._session = xnat.connect(self.address, self.username, self.password)
             return True

@@ -9,7 +9,7 @@ class ViewUploader(ft.Control):
         self._controller = None
 
         self._dlg_auth = None
-        self.selected_file: str | None = None
+        self.selected_file = None
         self._main_layout = None
 
         # Top-level buttons
@@ -42,9 +42,6 @@ class ViewUploader(ft.Control):
         self.pb_upload = None
         self.dlg_upload = None
 
-    # ------------------------------------------------------
-    # CONTROLLER BINDING
-    # ------------------------------------------------------
     def set_controller(self, controller):
         self._controller = controller
 
@@ -62,9 +59,6 @@ class ViewUploader(ft.Control):
             self._dlg_auth = None
             self._page.update()
 
-    # ------------------------------------------------------
-    # BUILD UI
-    # ------------------------------------------------------
     def build_interface(self):
         title = ft.Text("XNAT-PIC Uploader", size=26, weight=ft.FontWeight.BOLD)
 

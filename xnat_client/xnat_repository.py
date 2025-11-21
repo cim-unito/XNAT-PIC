@@ -33,8 +33,20 @@ class XnatRepository:
             for e in subj.experiments.values()
         ]
 
-    def create_project(self, project_id, name):
-        pass
+    def create_project(self, data):
+        session = self._session
+
+        project_id = data["project_id"]
+        project_name = data["project_name"]
+        description = data["description"]
+        access = data["accessibility"]
+
+        session.put(f"/data/projects/{project_id}")
+
+        session.put(f"/data/projects/{project_id}?label={project_name}")
+        session.put(f"/data/projects/{project_id}?description={description}")
+
+        session.put(f"/data/projects/{project_id}/accessibility/{access}")
 
     def upload_dicom(self, exp_folder, project_id, subject_id,
                      experiment_id):

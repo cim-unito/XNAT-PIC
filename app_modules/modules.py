@@ -14,10 +14,6 @@ from xnat_auth.model_xnat_auth import ModelXnatAuth
 from xnat_auth.view_xnat_auth import ViewXnatAuth
 from xnat_auth.controller_xnat_auth import ControllerXnatAuth
 
-from uploader.model_xnat_new_project import ModelXnatNewProject
-from uploader.view_xnat_new_project import ViewXnatNewProject
-from uploader.controller_xnat_new_project import ControllerXnatNewProject
-
 
 class AppModules:
     def __init__(self, page):
@@ -59,15 +55,3 @@ class AppModules:
             self.view_xnat_auth, self.controller_xnat_auth
         )
 
-        # New project XNAT
-        self.model_new_project = ModelXnatNewProject()
-        self.view_new_project = ViewXnatNewProject(page)
-        self.controller_new_project = ControllerXnatNewProject(
-            self.view_new_project, self.model_new_project
-        )
-        self.view_new_project.set_controller(self.controller_new_project)
-
-        # link uploader → new project
-        self.controller_uploader.set_new_project_module(
-            self.view_new_project, self.controller_new_project
-        )
