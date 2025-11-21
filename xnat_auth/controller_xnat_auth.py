@@ -1,4 +1,4 @@
-from xnat_client.xnat_manager import XnatManager
+from xnat_client.xnat_session import XnatSession
 
 
 class ControllerXnatAuth:
@@ -27,17 +27,14 @@ class ControllerXnatAuth:
     def auth(self, e):
         self.update_fields_from_view()
 
-        ok = XnatManager.start_session(
-            self._address,
-            self._username,
-            self._password,
-        )
-
-        if ok:
+        xnat_session = XnatSession(self._address,
+                                   self._username,
+                                   self._password)
+        if xnat_session.connect():
             self.handle_persistence()
             self._view.close_dialog()
             if self._on_success:
-                self._on_success()
+                self._on_success(xnat_session)
         else:
             self._view.show_error("Connection failed.")
 

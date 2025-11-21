@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from xnat_client.xnat_manager import XnatManager
+from xnat_client.xnat_session import XnatSession
 
 
 @dataclass

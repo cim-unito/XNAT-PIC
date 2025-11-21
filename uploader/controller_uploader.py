@@ -1,7 +1,8 @@
 from pathlib import Path
 import threading
 
-from xnat_client.xnat_manager import XnatManager
+from xnat_client.xnat_repository import XnatRepository
+from xnat_client.xnat_session import XnatSession
 
 
 class ControllerUploader:
@@ -15,9 +16,12 @@ class ControllerUploader:
         self._new_project_view = None
         self._new_project_controller = None
 
-        self._mode_selected: str | None = None
-        self.file_path: Path | None = None
-        self.preview_cache: dict[str, str] = {}
+        self._xnat_session = None
+        self._xnat_repo = None
+
+        self._mode_selected: None
+        self.file_path: None
+        self.preview_cache = {}
 
     # ==========================================================
     # LOGIN / ROUTE
@@ -27,10 +31,7 @@ class ControllerUploader:
         self._xnat_auth_controller = controller_auth
 
     def on_enter_route(self):
-        # logout XNAT
-        XnatManager.disconnect_global()
         self._mode_selected = None
-
         self._view.disable_all_for_login()
 
         dlg = self._xnat_auth_view.build_dialog(
@@ -40,15 +41,15 @@ class ControllerUploader:
         self._view.open_auth_dialog(dlg)
 
     def on_exit_route(self):
-        XnatManager.disconnect_global()
-        self._view.close_auth_dialog()
+        self._xnat_session.disconnect()
 
-    def _on_login_success(self):
-        self._view.close_auth_dialog()
+    def _on_login_success(self, xnat_session):
+        self._xnat_session = xnat_session
+        self._xnat_repo = XnatRepository(xnat_session)
         self._view.set_initial_state()
 
     def _on_login_cancel(self):
-        self._view.close_auth_dialog()
+        self._xnat_session.disconnect()
         self.go_home()
 
     # ==========================================================
@@ -68,12 +69,6 @@ class ControllerUploader:
     # UTIL PER IMPOSTARE MODALITÀ LIVELLO
     # ==========================================================
     def _set_mode_for_level(self, mode: str):
-        """
-        Centralizza le combinazioni di flag per i vari livelli.
-
-        ATTENZIONE: qui manteniamo ESATTAMENTE la stessa configurazione
-        che avevi nei singoli metodi upload_project/subject/experiment/file.
-        """
         self._mode_selected = mode
 
         if mode == "project":
@@ -113,7 +108,6 @@ class ControllerUploader:
                 new_experiment=True,
             )
         elif mode == "file":
-            # identico a experiment
             self._view.set_mode(
                 level_buttons_enabled=False,
                 select_group_enabled=True,
@@ -128,7 +122,6 @@ class ControllerUploader:
         else:
             raise ValueError(f"Unknown upload mode: {mode}")
 
-        # load projects rimane identico
         self.load_projects()
 
     # ==========================================================
@@ -151,7 +144,7 @@ class ControllerUploader:
     # ==========================================================
     def load_projects(self):
         try:
-            projects = XnatManager.list_projects()
+            projects = self._xnat_repo.list_projects()
             self._view.populate_projects(projects)
         except Exception as e:
             self._view.create_alert(f"Cannot load projects: {e}")
@@ -165,7 +158,7 @@ class ControllerUploader:
             return
 
         try:
-            subjects = XnatManager.list_subjects(project_id)
+            subjects = self._xnat_repo.list_subjects(project_id)
             self._view.populate_subjects(subjects)
         except Exception as e:
             self._view.create_alert(f"Cannot load subjects: {e}")
@@ -179,7 +172,8 @@ class ControllerUploader:
             return
 
         try:
-            experiments = XnatManager.list_experiments(project_id, subject_id)
+            experiments = self._xnat_repo.list_experiments(project_id,
+                                                           subject_id)
             self._view.populate_experiments(experiments)
         except Exception as e:
             self._view.create_alert(f"Cannot load experiments: {e}")
@@ -271,7 +265,7 @@ class ControllerUploader:
         def on_created(project_id: str, label: str):
             # Dopo creazione, ricarico lista progetti e seleziono il nuovo.
             try:
-                projects = XnatManager.list_projects()
+                projects = XnatSession.list_projects()
                 self._view.populate_projects(projects)
                 # seleziona il nuovo progetto
                 self._view.dd_xnat_project.value = project_id
@@ -288,8 +282,17 @@ class ControllerUploader:
     # ==========================================================
     # UPLOAD
     # ==========================================================
+    def _normalize_id(self, name):
+        name = name.strip()
+        name = name.replace(" ", "_")
+        name = name.replace(".", "_")
+        name = name.replace("-", "_")
+        while "__" in name:
+            name = name.replace("__", "_")
+        return name.upper()
+
     def dicom_upload(self, e):
-        if not XnatManager.has_active_session():
+        if not self._xnat_repo:
             self._view.create_alert("You must login to XNAT first.")
             return
 
@@ -303,10 +306,8 @@ class ControllerUploader:
             self._view.create_alert("Select a project in XNAT.")
             return
 
-        # mostra dialog
         self._view.show_progress_dialog()
 
-        # thread per non bloccare la UI
         t = threading.Thread(
             target=self._upload_project_thread,
             args=(base_path, project_id),
@@ -315,49 +316,67 @@ class ControllerUploader:
         t.start()
 
     def _upload_project_thread(self, base_path: Path, project_id: str):
-        # La logica qui sotto è la stessa del tuo codice originale
         subjects = [p for p in base_path.iterdir() if p.is_dir()]
+
         if not subjects:
-            self._view.create_alert("No subject folders found in selected path.")
+            self._view.create_alert(
+                "No subject folders found in selected path.")
+            self._view._page.update()
             return
 
-        total = 0
-        for subj in subjects:
-            exps = [e for e in subj.iterdir() if e.is_dir()]
-            total += len(exps)
+        total = sum(
+            len([e for e in s.iterdir() if e.is_dir()]) for s in subjects)
 
         if total == 0:
             self._view.create_alert("No experiment folders found.")
+            self._view._page.update()
             return
 
         done = 0
 
         for subj in subjects:
-            subject_id = subj.name.replace(".", "_")
+
+            # SUBJECT ID — dropdown oppure cartella
+            if self._view.dd_xnat_subject.value:
+                subject_id = self._view.dd_xnat_subject.value
+            else:
+                subject_id = self._normalize_id(subj.name)
 
             experiments = [e for e in subj.iterdir() if e.is_dir()]
+
             for exp_folder in experiments:
-                # experiment_id: base_project _ subject _ experiment
-                experiment_id = "_".join(
-                    [
-                        base_path.name.replace("_dcm", ""),
-                        subj.name.replace(".", "_"),
-                        exp_folder.name.replace(".", "_"),
-                    ]
-                ).replace(" ", "_")
+
+                # EXPERIMENT ID — dropdown oppure cartella
+                if self._view.dd_xnat_experiment.value:
+                    experiment_id = self._view.dd_xnat_experiment.value
+                else:
+                    experiment_id = self._normalize_id(exp_folder.name)
 
                 try:
-                    self._model.upload_experiment(
+                    # CHIAMATA AL REPOSITORY
+                    self._xnat_repo.upload_dicom(
                         exp_folder,
                         project_id,
                         subject_id,
-                        experiment_id,
+                        experiment_id
                     )
+
                 except Exception as err:
-                    self._view.create_alert(str(err))
+                    self._view.create_alert(f"Upload error: {err}")
+                    self._view._page.update()
                     return
 
+                # UPDATE PROGRESS (TUO METODO ORIGINALE)
                 done += 1
-                self._view.update_progress(done / total)
+                progress = done / total
+                self._view.update_progress(progress)
+                self._view._page.update()
+
+        # ---- COMPLETATO ----
 
         self._view.update_progress(1.0)
+        self._view._page.update()
+
+        # chiudi dialog e mostra messaggio finale
+        self._view.create_alert("Upload completed successfully!")
+        self._view._page.update()

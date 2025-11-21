@@ -8,19 +8,16 @@ import numpy as np
 import pydicom
 from PIL import Image
 
-from xnat_client.xnat_manager import XnatManager
+from xnat_client.xnat_session import XnatSession
 
 
 class ModelUploader:
-    """Handles data and business logic related to DICOM files."""
-
     def __init__(self):
         self._path_to_upload: Path | None = None
         self._level: str | None = None
         self._scan_to_upload: list[Path] = []
 
     def list_directory(self, path: Path) -> list[dict]:
-        """Return list of files and directories, skipping hidden ones."""
         path = Path(path)
         items = []
         try:
@@ -41,7 +38,6 @@ class ModelUploader:
         return items
 
     def dicom_to_base64(self, dicom_path: str) -> str:
-        """Convert a DICOM file to a base64-encoded PNG for preview."""
         try:
             dicom = pydicom.dcmread(dicom_path)
             pixels = dicom.pixel_array.astype(np.float32)
@@ -72,7 +68,6 @@ class ModelUploader:
             raise ValueError(f"DICOM conversion error: {e}")
 
     def read_dicom_tags(self, dicom_path: str) -> list[dict]:
-        """Return list of DICOM tags, skipping PixelData, include private CEST tags."""
         CEST_PRIVATE_TAGS = {
             (0x1061, 0x0010): "Creator of the parameter set",
             (0x1061, 0x1001): "Chemical Exchange Saturation Method",
@@ -121,7 +116,6 @@ class ModelUploader:
             raise ValueError(f"DICOM tag reading error: {e}")
 
     def get_valid_scans(self):
-        """Find valid scans containing DICOM files based on current level."""
         if self._path_to_upload is None:
             raise ValueError("Upload path not set.")
 
@@ -151,42 +145,6 @@ class ModelUploader:
                         f.suffix.lower() in [".dcm", ".dicom"] and f.is_file()
                         for f in scan.iterdir()):
                     self._scan_to_upload.append(scan)
-
-    def upload_experiment(self, exp_folder: Path, project_id: str,
-                          subject_id: str, experiment_id: str):
-
-        session = XnatManager.get_session()
-        if not session:
-            raise RuntimeError("No active XNAT session")
-
-        exp_folder = Path(exp_folder)  # ensure Path
-
-        try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                tmpdir = Path(tmpdir)
-
-                # nome dello zip (senza path)
-                zip_name = exp_folder.name
-
-                zip_dst = shutil.make_archive(
-                    base_name=str(tmpdir / zip_name),
-                    format="zip",
-                    root_dir=str(exp_folder)
-                )
-
-                session.services.import_(
-                    zip_dst,
-                    overwrite="delete",
-                    project=project_id,
-                    subject=subject_id,
-                    experiment=experiment_id,
-                    content_type="application/zip",
-                )
-
-                session.clearcache()
-
-        except Exception as e:
-            raise RuntimeError(f"Upload failed: {e}")
 
     @property
     def path_to_upload(self) -> Path | None:

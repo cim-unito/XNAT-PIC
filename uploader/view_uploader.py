@@ -3,10 +3,6 @@ from pathlib import Path
 
 
 class ViewUploader(ft.Control):
-    """
-    View minimale ma funzionale per l'uploader.
-    """
-
     def __init__(self, page: ft.Page):
         super().__init__()
         self._page = page
@@ -488,3 +484,7 @@ class ViewUploader(ft.Control):
     # ------------------------------------------------------
     def update_page(self):
         self._page.update()
+
+    @property
+    def page(self):
+        return self._page
