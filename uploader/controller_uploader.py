@@ -1,6 +1,7 @@
 from pathlib import Path
 import threading
 
+from uploader.services.dicom_parser import DicomParser
 from xnat_client.xnat_repository import XnatRepository
 from uploader.xnat_new_project.model_xnat_new_project import ModelXnatNewProject
 from uploader.xnat_new_project.view_xnat_new_project import ViewXnatNewProject
@@ -135,15 +136,19 @@ class ControllerUploader:
     # SCELTA LIVELLO (PROJECT / SUBJECT / EXPERIMENT / FILE)
     # ==========================================================
     def upload_project(self, e):
+        self._model.level = "project"
         self._set_mode_for_level("project")
 
     def upload_subject(self, e):
+        self._model.level = "subject"
         self._set_mode_for_level("subject")
 
     def upload_experiment(self, e):
+        self._model.level = "experiment"
         self._set_mode_for_level("experiment")
 
     def upload_file(self, e):
+        self._model.level = "file"
         self._set_mode_for_level("file")
 
     # ==========================================================
@@ -191,6 +196,8 @@ class ControllerUploader:
     def get_directory_to_upload(self, path: str):
         p = Path(path)
         self._model.path_to_upload = p
+        self._model.validate_scan()
+
         self.populate_tree(p)
 
     def populate_tree(self, path: Path):
@@ -230,14 +237,13 @@ class ControllerUploader:
         self.file_path = p
         self._view.highlight_selected_file(filepath)
 
-        # cache
         if filepath in self.preview_cache:
             self._view.set_image_preview(self.preview_cache[filepath])
             return
 
         try:
             if p.suffix.lower() in (".dcm", ".dicom"):
-                b64 = self._model.dicom_to_base64(p)
+                b64 = DicomParser.dicom_to_base64(p)
                 self.preview_cache[filepath] = b64
                 self._view.set_image_preview(b64)
         except Exception as e:
@@ -248,7 +254,7 @@ class ControllerUploader:
             self._view.create_alert("No file selected.")
             return
         try:
-            tags = self._model.read_dicom_tags(self.file_path)
+            tags = DicomParser.read_DICOM_tags(self.file_path)
             self._view.show_dicom_tags_dialog(tags)
         except Exception as e:
             self._view.create_alert(f"Cannot read DICOM tags: {e}")

@@ -7,15 +7,16 @@ from pathlib import Path
 import numpy as np
 import pydicom
 from PIL import Image
-
-from xnat_client.xnat_session import XnatSession
+from pydicom import dcmread
+from pydicom.uid import UID
+from pydicom.datadict import dictionary_VR
 
 
 class ModelUploader:
     def __init__(self):
-        self._path_to_upload: Path | None = None
-        self._level: str | None = None
-        self._scan_to_upload: list[Path] = []
+        self._path_to_upload = None
+        self._level = None
+        self._scan_to_upload = None
 
     def list_directory(self, path: Path) -> list[dict]:
         path = Path(path)
@@ -37,89 +38,11 @@ class ModelUploader:
             })
         return items
 
-    def dicom_to_base64(self, dicom_path: str) -> str:
-        try:
-            dicom = pydicom.dcmread(dicom_path)
-            pixels = dicom.pixel_array.astype(np.float32)
-
-            if dicom.PhotometricInterpretation == "MONOCHROME1":
-                pixels = pixels.max() - pixels
-
-            pixels -= pixels.min()
-            if pixels.max() != 0:
-                pixels /= pixels.max()
-            pixels *= 255
-            pixels = pixels.astype(np.uint8)
-
-            if len(pixels.shape) == 2:
-                img = Image.fromarray(pixels, mode="L")
-            elif len(pixels.shape) == 3:
-                img = Image.fromarray(pixels)
-            else:
-                raise ValueError("Unsupported DICOM format")
-
-            img.thumbnail((512, 512))
-            buffer = io.BytesIO()
-            img.save(buffer, format="PNG")
-            buffer.seek(0)
-
-            return base64.b64encode(buffer.read()).decode()
-        except Exception as e:
-            raise ValueError(f"DICOM conversion error: {e}")
-
-    def read_dicom_tags(self, dicom_path: str) -> list[dict]:
-        CEST_PRIVATE_TAGS = {
-            (0x1061, 0x0010): "Creator of the parameter set",
-            (0x1061, 0x1001): "Chemical Exchange Saturation Method",
-            (0x1061, 0x1002): "Saturation type",
-            (0x1061, 0x1003): "Pulse shape",
-            (0x1061, 0x1004): "B1 saturation",
-            (0x1061, 0x1005): "Pulse length",
-            (0x1061, 0x1006): "Pulse number",
-            (0x1061, 0x1007): "Interpulse delay",
-            (0x1061, 0x1008): "Saturation length (ms)",
-            (0x1061, 0x1009): "Readout time (ms)",
-            (0x1061, 0x1010): "Pulse length 2 (ms)",
-            (0x1061, 0x1011): "Duty cycle",
-            (0x1061, 0x1012): "Recovery time (ms)",
-            (0x1061, 0x1013): "Measurement number",
-            (0x1061, 0x1014): "Saturation offset (Hz)",
-            (0x1061, 0x1015): "Saturation offset (ppm)"
-        }
-        try:
-            ds = pydicom.dcmread(dicom_path, stop_before_pixels=True)
-            elements = []
-
-            for elem in ds:
-                if elem.tag == (0x7FE0, 0x0010):  # Skip PixelData
-                    continue
-
-                tag_tuple = (elem.tag.group, elem.tag.elem)
-
-                if tag_tuple in CEST_PRIVATE_TAGS:
-                    name = CEST_PRIVATE_TAGS[tag_tuple]
-                else:
-                    if elem.name.startswith("Private tag"):
-                        name = f"Unknown private tag {tag_tuple}"
-                    else:
-                        name = elem.name
-
-                elements.append({
-                    "tag": tag_tuple,
-                    "name": name,
-                    "value": str(elem.value)
-                })
-
-            return elements
-
-        except Exception as e:
-            raise ValueError(f"DICOM tag reading error: {e}")
-
     def get_valid_scans(self):
         if self._path_to_upload is None:
             raise ValueError("Upload path not set.")
 
-        experiment: list[Path] = []
+        experiment = []
 
         if self._level == "project":
             for sub in self._path_to_upload.iterdir():
@@ -138,13 +61,55 @@ class ModelUploader:
         if not experiment:
             raise ValueError("No experiments found.")
 
-        self._scan_to_upload.clear()
+        self._scan_to_upload = []
+
         for exp in experiment:
             for scan in exp.iterdir():
                 if scan.is_dir() and any(
                         f.suffix.lower() in [".dcm", ".dicom"] and f.is_file()
                         for f in scan.iterdir()):
                     self._scan_to_upload.append(scan)
+
+    def validate_scan(self):
+        REQUIRED_TAGS = {
+            (0x0008, 0x0016): "SOP Class UID",
+            (0x0008, 0x0018): "SOP Instance UID",
+            (0x0020, 0x000D): "Study Instance UID",
+            (0x0020, 0x000E): "Series Instance UID",
+            (0x0020, 0x0013): "Instance Number",
+            (0x0008, 0x0060): "Modality",
+            (0x0010, 0x0010): "Patient Name",
+            (0x0010, 0x0020): "Patient ID",
+        }
+        MANUFACTURER_EXPECTED = "FUJIFILM VisualSonics"
+
+        self.get_valid_scans()
+        valid_dicom = [file for folder in self._scan_to_upload for file in
+                       Path(folder).iterdir() if
+                       file.is_file() and file.suffix.lower() in [".dcm",
+                                                                  ".dicom"]
+                       ]
+        for dicom_scan in valid_dicom:
+            ds = dcmread(dicom_scan)
+
+            for tag, name in REQUIRED_TAGS.items():
+                if tag not in ds:
+                    print(f"Miss: {name} ({tag})")
+                    return False
+
+            manufacturer = ds.get((0x0008, 0x0070), "")
+
+            for tag in [(0x0008, 0x0016), (0x0008, 0x0018), (0x0020, 0x000D),
+                        (0x0020, 0x000E)]:
+                elem = ds.get(tag)
+                uid = elem.value if elem else ""
+
+                name = REQUIRED_TAGS.get(tag, "UID")
+                if not UID(uid).is_valid:
+                    print(f"UID not valid: {name} = {uid}")
+                    return False
+
+        return True
 
     @property
     def path_to_upload(self) -> Path | None:

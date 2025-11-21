@@ -421,7 +421,6 @@ class ViewUploader(ft.Control):
 
     def highlight_selected_file(self, filepath: str):
         self.selected_file = filepath
-        # for simplicity, ricostruzione grafica demandata a update_tree
         self._page.update()
 
     # ------------------------------------------------------
