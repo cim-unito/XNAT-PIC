@@ -10,6 +10,7 @@ class ViewUploader(ft.Control):
 
         self._dlg_auth = None
         self.selected_file = None
+        self.selected_folders = set()
         self._main_layout = None
 
         # Top-level buttons
@@ -24,6 +25,10 @@ class ViewUploader(ft.Control):
         self.tree_view_dcm = None
         self.img_preview = None
         self.btn_show_tags = None
+
+        self.cnt_modify_modality = None
+        self.btn_modify_modality = None
+        self.dd_modify_modality = None
 
         # XNAT dropdowns + new
         self.dd_xnat_project = None
@@ -123,8 +128,27 @@ class ViewUploader(ft.Control):
             on_click=self._controller.on_show_tags_clicked,
         )
 
+        self.cnt_modify_modality = ft.Column()
+        self.btn_modify_modality = ft.ElevatedButton(
+            "Modify DICOM modality",
+            disabled=False,
+            on_click=self._controller.modify_modality,
+        )
+        self.dd_modify_modality = ft.Dropdown(
+            options=[
+                ft.dropdown.Option("MR"),
+                ft.dropdown.Option("US"),
+                ft.dropdown.Option("OI"),
+                ft.dropdown.Option("OA")
+            ],
+            on_change=self._controller.on_select_modality,
+            width=200
+        )
+
+        self.cnt_modify_modality.controls.append(self.btn_modify_modality)
+
         col_preview = ft.Column(
-            [self.img_preview, self.btn_show_tags],
+            [self.img_preview, self.btn_show_tags, self.cnt_modify_modality],
             spacing=5,
             alignment=ft.MainAxisAlignment.START,
         )
@@ -222,7 +246,6 @@ class ViewUploader(ft.Control):
     # STATO INIZIALE / DISABLE
     # ------------------------------------------------------
     def disable_all_for_login(self):
-        # tutto disabilitato durante il login
         all_ctrls = [
             self.btn_project, self.btn_subject, self.btn_experiment, self.btn_file,
             self.btn_select_folder,
@@ -241,12 +264,6 @@ class ViewUploader(ft.Control):
         self._page.update()
 
     def set_initial_state(self):
-        """
-        Stato iniziale dopo login:
-        - abilitati solo i 4 pulsanti Project/Subject/Experiment/File
-        - il resto disabilitato
-        - Home attivo
-        """
         if self.btn_project:
             self.btn_project.disabled = False
         if self.btn_subject:
@@ -395,16 +412,22 @@ class ViewUploader(ft.Control):
         return ft.ListView(tiles, expand=True, spacing=2)
 
     def make_lazy_folder(self, item, expand_callback):
+        bgcolor = (
+            ft.Colors.YELLOW_200
+            if item["path"] in self.selected_folders
+            else ft.Colors.WHITE
+        )
         return ft.ExpansionTile(
             title=ft.Text(item["name"]),
             leading=ft.Icon(ft.Icons.FOLDER),
             controls=[ft.Text("Loading...")],
-            on_change=lambda e, p=item["path"]: expand_callback(e, p, e.control),
+            on_change=lambda e, p=item["path"]: expand_callback(e, p,
+                                                                e.control),
         )
 
     def make_file_tile(self, item, file_selected_callback):
         bgcolor = (
-            ft.Colors.BLUE_100
+            ft.Colors.YELLOW_200
             if self.selected_file == item["path"]
             else ft.Colors.WHITE
         )
@@ -421,6 +444,13 @@ class ViewUploader(ft.Control):
 
     def highlight_selected_file(self, filepath: str):
         self.selected_file = filepath
+        self._page.update()
+
+    def highlight_folder(self, path: str):
+        if path in self.selected_folders:
+            self.selected_folders.remove(path)
+        else:
+            self.selected_folders.add(path)
         self._page.update()
 
     # ------------------------------------------------------
@@ -456,6 +486,24 @@ class ViewUploader(ft.Control):
         self._page.open(dlg)
         self._page.update()
 
+    # ------------------------------------------------------
+    # OT Modality
+    # ------------------------------------------------------
+    def show_upload_ot_modality(self):
+        dlg_modality = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Please confirm"),
+            content=ft.Text(
+                "In your dataset there are DICOMs with Modality OT. Upload to XNAT anyway?"),
+            actions=[
+                ft.TextButton("Yes", on_click=lambda e: self._controller.upload()),
+                ft.TextButton("No", on_click=lambda e: self._controller.modify_modality()),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+            on_dismiss=lambda e: print("Modal dialog dismissed!"),
+        )
+        self._page.open(dlg_modality)
+        self._page.update()
     # ------------------------------------------------------
     # PROGRESS / ALERT
     # ------------------------------------------------------

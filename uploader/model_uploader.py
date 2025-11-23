@@ -116,12 +116,7 @@ class ModelUploader:
             upload_path_xnat.mkdir(parents=True, exist_ok=True)
 
     def create_new_scan(self, upload_path_xnat):
-        scan_for_xnat = [
-            upload_path_xnat / p.relative_to(self._path_to_upload)
-            for p in self._scan_to_upload
-        ]
         for dicom_scan in self._scan_to_upload:
-
             ds = dcmread(dicom_scan)
             manufacturer = getattr(ds, "Manufacturer", "")
 
@@ -156,14 +151,14 @@ class ModelUploader:
                         1.0]  # [dx, dy, dz]
 
                     # tag to remove
-                    tag_da_rimuovere = [
+                    tag_to_remove = [
                         (0x0028, 0x0008),
                         (0x0018, 0x1063),
                         (0x0008, 0x2144),
                         (0x0028, 0x0009),
                     ]
 
-                    for tag in tag_da_rimuovere:
+                    for tag in tag_to_remove:
                         if tag in new_ds:
                             del new_ds[tag]
 
@@ -216,6 +211,7 @@ class ModelUploader:
                 # Modality
                 ds.Modality = "OT"
                 ds.PatientID = str(dicom_scan.parents[3].name)
+                ds.PlanarConfiguration = 0
 
                 ds.StudyInstanceUID = generate_uid()
                 ds.SeriesInstanceUID = generate_uid()
@@ -225,8 +221,20 @@ class ModelUploader:
                 # -----------------------
                 output_dicom = upload_path_xnat / dicom_scan.relative_to(
                     self._path_to_upload)
+                output_dicom.parent.mkdir(parents=True, exist_ok=True)
                 ds.save_as(output_dicom, write_like_original=False)
                 print("DICOM saved in:", output_dicom)
+
+    def exist_ot_modality(self):
+        self.get_valid_scans()
+
+        for dicom_scan in self._scan_to_upload:
+            ds = dcmread(dicom_scan)
+            modality = getattr(ds, "Modality", "")
+
+            if modality == "OT":
+                return True
+        return False
 
     @property
     def path_to_upload(self) -> Path | None:
