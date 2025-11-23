@@ -1,7 +1,7 @@
 from pathlib import Path
 import threading
 
-from uploader.services.dicom_parser import DicomParser
+from uploader.utils.dicom_parser import DicomParser
 from xnat_client.xnat_repository import XnatRepository
 from uploader.xnat_new_project.model_xnat_new_project import ModelXnatNewProject
 from uploader.xnat_new_project.view_xnat_new_project import ViewXnatNewProject
@@ -196,7 +196,10 @@ class ControllerUploader:
     def get_directory_to_upload(self, path: str):
         p = Path(path)
         self._model.path_to_upload = p
-        self._model.validate_scan()
+        if not self._model.validate_scan():
+            upload_path_xnat = p.parent / (p.name + "_xnat")
+            self._model.create_xnat_folder(upload_path_xnat)
+            self._model.create_new_scan(upload_path_xnat)
 
         self.populate_tree(p)
 
