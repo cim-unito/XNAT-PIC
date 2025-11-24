@@ -6,7 +6,6 @@ from route.route_manager import RouteManager
 def main(page: ft.Page):
     page.title = "XNAT-PIC ~ XNAT for Preclinical Imaging Centres"
     page.theme_mode = ft.ThemeMode.LIGHT
-    page.scroll = ft.ScrollMode.AUTO
     page.horizontal_alignment = "CENTER"
     page.vertical_alignment = "START"
 

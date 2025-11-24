@@ -34,6 +34,10 @@ class ControllerConverter:
         self.toggle_folder_selection(e)
         self._model.level = "experiment"
 
+    def conversion_type(self, e):
+        self._model.conversion_type = e.control.value
+        print(self._model.conversion_type)
+
     def get_directory_to_convert(self, path):
         self._model.path_to_convert = path
         self.populate_tree(Path(path))
@@ -82,7 +86,11 @@ class ControllerConverter:
         for idx, (src, dst) in enumerate(
                 zip(self._model.scan_to_convert, self._model.scan_converted)
         ):
-            Bruker2DicomConverter.convert(self._model, [str(src), str(dst)])
+            if self._model.conversion_type == "Bruker2DICOM":
+                Bruker2DicomConverter.convert(self._model, [str(src), str(dst)])
+            elif self._model.conversion_type == "IVIS2DICOM":
+                self._model.ivis2dicom_converter([str(src), str(dst)])
+
             self._view.update_progress((idx + 1) / total_scans)
 
         self.populate_tree(self._model.path_converted, type_tree='dcm')

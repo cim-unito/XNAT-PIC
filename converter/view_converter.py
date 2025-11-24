@@ -10,6 +10,7 @@ class ViewConverter(ft.Control):
         self._controller = None
         # graphical elements
         self._title = None
+        self.dd_conversion_type = None
         self.btn_project = None
         self.btn_subject = None
         self.btn_experiment = None
@@ -29,6 +30,15 @@ class ViewConverter(ft.Control):
         # title
         self._title = ft.Text("XNAT-PIC Converter", color="blue", size=24)
 
+        self.dd_conversion_type = ft.Dropdown(
+            label="Conversion type",
+            on_change=self._controller.conversion_type,
+            options=[
+                ft.dropdown.Option("Bruker2DICOM"),
+                ft.dropdown.Option("IVIS2DICOM"),
+            ],
+            width=200
+        )
         # buttons project, subject, experiment
         self.btn_project = ft.ElevatedButton(
             text="Convert Project",
@@ -101,6 +111,7 @@ class ViewConverter(ft.Control):
         row1 = ft.Row(
             alignment=ft.MainAxisAlignment.CENTER,
             controls=[
+                self.dd_conversion_type,
                 self.btn_project,
                 self.btn_subject,
                 self.btn_experiment,
