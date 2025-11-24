@@ -129,7 +129,8 @@ class ModelUploader:
                 ds.SOPClassUID = ds.file_meta.MediaStorageSOPClassUID
 
                 # Tag
-                ds.PatientID = str(dicom_scan.parents[3].name)
+                parents = list(dicom_scan.parents)
+                ds.PatientID = str(parents[2].name) + "_" + str(parents[1].name)
                 ds.StudyInstanceUID = generate_uid()
                 ds.SeriesInstanceUID = generate_uid()
 
@@ -209,7 +210,9 @@ class ModelUploader:
 
                 # Modality
                 ds.Modality = "OT"
-                ds.PatientID = str(dicom_scan.parents[3].name)
+                parents = list(dicom_scan.parents)
+                ds.PatientID = str(parents[2].name) + "_" + str(
+                    parents[1].name)
                 ds.PlanarConfiguration = 0
 
                 ds.StudyInstanceUID = generate_uid()

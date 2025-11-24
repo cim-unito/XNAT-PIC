@@ -1,6 +1,6 @@
 from pathlib import Path
 import threading
-
+import flet as ft
 from uploader.utils.dicom_parser import DicomParser
 from xnat_client.xnat_repository import XnatRepository
 from uploader.xnat_new_project.model_xnat_new_project import ModelXnatNewProject
@@ -272,6 +272,22 @@ class ControllerUploader:
 
     def on_data_project_collected(self, data):
         self._xnat_repo.create_project(data)
+        project_id = data["project_id"]
+        exists = False
+
+        for opt in self._view.dd_xnat_project.options:
+            if opt.key == project_id:
+                exists = True
+                break
+
+        if not exists:
+            print("Add new project:", project_id)
+            self._view.dd_xnat_project.options.append(
+                ft.dropdown.Option(key=project_id, text=project_id)
+            )
+
+        self._view.dd_xnat_project.value = project_id
+        self._view.dd_xnat_project.update()
 
     # ==========================================================
     # UPLOAD
@@ -338,6 +354,7 @@ class ControllerUploader:
         p = Path(self._model.path_to_upload)
         self.populate_tree(p)
         self._view.selected_folders = set()
+        self._view.dd_modify_modality.value = None
         self._view.cnt_modify_modality.controls.clear()
         self._view.cnt_modify_modality.controls.append(
             self._view.btn_modify_modality)

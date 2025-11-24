@@ -38,7 +38,7 @@ class ViewUploader(ft.Control):
         self.btn_new_subject = None
         self.btn_new_experiment = None
 
-        # bottom
+        # button home/back upload
         self.btn_home_back = None
         self.btn_upload = None
 
@@ -63,164 +63,255 @@ class ViewUploader(ft.Control):
             self._dlg_auth = None
             self._page.update()
 
+    # ------------------------------------------------------
+    # UPLOADER INTERFACE
+    # ------------------------------------------------------
     def build_interface(self):
-        title = ft.Text("XNAT-PIC Uploader", size=26,
-                        weight=ft.FontWeight.BOLD)
+        # title
+        title = ft.Row(
+            [
+                ft.Icon(
+                    ft.Icons.CLOUD_UPLOAD,
+                    size=36,
+                    color=ft.Colors.BLUE_700
+                ),
+                ft.Text(
+                    "XNAT-PIC Uploader",
+                    size=30,
+                    weight=ft.FontWeight.BOLD,
+                    color=ft.Colors.BLUE_700,
+                ),
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=12,
+        )
 
-        # File picker
-        self.file_picker = ft.FilePicker(on_result=self.file_picker_result)
+        self.file_picker = ft.FilePicker(
+            on_result=self.file_picker_result
+        )
         self._page.overlay.append(self.file_picker)
 
-        # Row 1: level buttons
+        # Button style
+        btn_style = ft.ButtonStyle(
+            bgcolor=ft.Colors.BLUE_200,
+            color=ft.Colors.BLUE_900,
+            shape=ft.RoundedRectangleBorder(radius=10),
+            padding=15,
+        )
+
+        # Level buttons: project, subject, experiment, file
         self.btn_project = ft.ElevatedButton(
             "Project",
             on_click=self._controller.upload_project,
             expand=True,
+            style=btn_style
         )
         self.btn_subject = ft.ElevatedButton(
             "Subject",
             on_click=self._controller.upload_subject,
             expand=True,
+            style=btn_style
         )
         self.btn_experiment = ft.ElevatedButton(
             "Experiment",
             on_click=self._controller.upload_experiment,
             expand=True,
+            style=btn_style
         )
         self.btn_file = ft.ElevatedButton(
             "File",
             on_click=self._controller.upload_file,
             expand=True,
+            style=btn_style
         )
 
         row_levels = ft.Row(
-            [self.btn_project, self.btn_subject, self.btn_experiment,
-             self.btn_file],
-            alignment=ft.MainAxisAlignment.SPACE_EVENLY,
-            spacing=5,
+            [
+                self.btn_project,
+                self.btn_subject,
+                self.btn_experiment,
+                self.btn_file,
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=12,
         )
 
-        # Row 2: select folder + tree + preview + show tags + modify modality
+        # Select folder, tree
         self.btn_select_folder = ft.ElevatedButton(
             "Select folder",
+            icon=ft.Icons.FOLDER_OPEN,
             disabled=True,
             on_click=lambda e: self.file_picker.get_directory_path(),
+            style=btn_style,
         )
 
         self.tree_view_dcm = ft.Container(
-            width=220,
-            height=260,
-            content=ft.ListView([], expand=True, spacing=2),
-            border=ft.border.all(1, ft.Colors.YELLOW_200),
-            border_radius=5,
-            padding=5,
+            width=250,
+            height=320,
+            content=ft.ListView([], expand=True, spacing=4),
+            border_radius=10,
+            padding=10,
+            bgcolor=ft.Colors.BLUE_50,
+            shadow=ft.BoxShadow(
+                blur_radius=10,
+                spread_radius=1,
+                color=ft.Colors.BLUE_100,
+            ),
         )
 
+        # Image preview
         self.img_preview = ft.Image(
-            src="",
-            width=220,
-            height=220,
+            src="assets/images/ImagePreview.png",
+            width=260,
+            height=260,
             fit=ft.ImageFit.CONTAIN,
+            border_radius=12,
         )
 
+        # Buttons beside image (show dicom tags and modify modality)
         self.btn_show_tags = ft.ElevatedButton(
             "Show DICOM tags",
+            icon=ft.Icons.LIST_ALT,
             disabled=True,
             on_click=self._controller.on_show_tags_clicked,
+            style=btn_style,
         )
 
         self.cnt_modify_modality = ft.Column()
         self.btn_modify_modality = ft.ElevatedButton(
             "Modify DICOM modality",
+            icon=ft.Icons.BUILD,
             disabled=True,
             on_click=self._controller.modify_modality,
+            style=btn_style,
         )
+
         self.dd_modify_modality = ft.Dropdown(
             options=[
                 ft.dropdown.Option("MR"),
                 ft.dropdown.Option("US"),
                 ft.dropdown.Option("OI"),
-                ft.dropdown.Option("OA")
+                ft.dropdown.Option("OA"),
             ],
             hint_text="New Modality",
             width=200,
-            disabled=False,
             on_change=self._controller.on_select_modality,
         )
-
         self.cnt_modify_modality.controls.append(self.btn_modify_modality)
 
-        col_preview = ft.Column(
-            [self.img_preview, self.btn_show_tags, self.cnt_modify_modality],
-            spacing=5,
-            alignment=ft.MainAxisAlignment.START,
+        col_tools = ft.Column(
+            [
+                self.btn_show_tags,
+                self.cnt_modify_modality,
+            ],
+            spacing=12,
+            alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        )
+
+        col_preview = ft.Row(
+            [
+                self.img_preview,
+                col_tools,
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=20,
         )
 
         row_file = ft.Row(
             [
                 self.btn_select_folder,
                 self.tree_view_dcm,
-                col_preview,
+                ft.Container(col_preview, expand=True),
             ],
-            alignment=ft.MainAxisAlignment.START,
-            spacing=10,
+            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=20,
         )
 
-        # Row 3: dropdowns (project, subject, experiment in xnat)
+        # xnat dropdowns project. subject, experiment
         self.dd_xnat_project = ft.Dropdown(
             hint_text="Project",
             width=200,
             disabled=True,
+            prefix_icon=ft.Icons.DASHBOARD,
             on_change=self._controller.on_project_selected,
         )
+
         self.dd_xnat_subject = ft.Dropdown(
             hint_text="Subject",
             width=200,
             disabled=True,
+            prefix_icon=ft.Icons.PERSON,
             on_change=self._controller.on_subject_selected,
         )
+
         self.dd_xnat_experiment = ft.Dropdown(
             hint_text="Experiment",
             width=200,
             disabled=True,
+            prefix_icon=ft.Icons.SCIENCE,
         )
 
         row_dd = ft.Row(
-            [self.dd_xnat_project, self.dd_xnat_subject,
-             self.dd_xnat_experiment],
-            alignment=ft.MainAxisAlignment.START,
-            spacing=10,
+            [
+                self.dd_xnat_project,
+                self.dd_xnat_subject,
+                self.dd_xnat_experiment,
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=20,
         )
 
-        # Row 4: new project, subject, experiment in xnat
+        # xnat new project, subject, experiment
         self.btn_new_project = ft.ElevatedButton(
             "New Project",
+            icon=ft.Icons.ADD_BOX,
             disabled=True,
-            on_click=self._controller.create_new_project
+            on_click=self._controller.create_new_project,
+            style=btn_style,
         )
-        self.btn_new_subject = ft.ElevatedButton("New Subject", disabled=True)
-        self.btn_new_experiment = ft.ElevatedButton("New Experiment",
-                                                    disabled=True)
+
+        self.btn_new_subject = ft.ElevatedButton(
+            "New Subject",
+            icon=ft.Icons.PERSON_ADD,
+            disabled=True,
+            style=btn_style,
+        )
+
+        self.btn_new_experiment = ft.ElevatedButton(
+            "New Experiment",
+            icon=ft.Icons.ADD_CHART,
+            disabled=True,
+            style=btn_style,
+        )
 
         row_new = ft.Row(
-            [self.btn_new_project, self.btn_new_subject,
-             self.btn_new_experiment],
-            alignment=ft.MainAxisAlignment.START,
-            spacing=10,
+            [
+                self.btn_new_project,
+                self.btn_new_subject,
+                self.btn_new_experiment,
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=20,
         )
 
-        # Row 5: home/back + upload
+        # Buttons home/back and upload
         self.btn_home_back = ft.ElevatedButton(
             "Home",
+            icon=ft.Icons.ARROW_BACK,
             on_click=self._controller.on_home_back_clicked,
-        )
-        self.btn_upload = ft.ElevatedButton(
-            "Upload",
-            disabled=True,
-            on_click=self._controller.dicom_upload,
+            style=btn_style,
         )
 
-        row_bottom = ft.Row(
+        self.btn_upload = ft.ElevatedButton(
+            "Upload",
+            icon=ft.Icons.CLOUD_UPLOAD,
+            disabled=True,
+            on_click=self._controller.dicom_upload,
+            style=btn_style,
+        )
+
+        row_home_upload = ft.Row(
             [self.btn_home_back, self.btn_upload],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         )
@@ -233,16 +324,84 @@ class ViewUploader(ft.Control):
             content=self.pb_upload,
         )
 
+        # ----- Local Section -----
+        local_section = ft.Column(
+            [
+                ft.Row(
+                    [
+                        ft.Container(
+                            ft.Divider(thickness=1, color=ft.Colors.BLUE_300),
+                            expand=True),
+                        ft.Icon(ft.Icons.COMPUTER, size=22,
+                                color=ft.Colors.BLUE_800),
+                        ft.Text(
+                            "Upload from your PC...",
+                            size=20,
+                            weight=ft.FontWeight.BOLD,
+                            color=ft.Colors.BLUE_900,
+                        ),
+                        ft.Container(
+                            ft.Divider(thickness=1, color=ft.Colors.BLUE_300),
+                            expand=True),
+                    ],
+                    alignment=ft.MainAxisAlignment.CENTER,
+                ),
+                row_file,
+            ],
+            spacing=20,
+        )
+
+        # ----- XNAT Section -----
+        xnat_section = ft.Column(
+            [
+                ft.Row(
+                    [
+                        ft.Container(
+                            ft.Divider(thickness=1, color=ft.Colors.BLUE_300),
+                            expand=True),
+                        ft.Icon(ft.Icons.CLOUD, size=22,
+                                color=ft.Colors.BLUE_800),
+                        ft.Text(
+                            "...to XNAT",
+                            size=20,
+                            weight=ft.FontWeight.BOLD,
+                            color=ft.Colors.BLUE_900,
+                        ),
+                        ft.Container(
+                            ft.Divider(thickness=1, color=ft.Colors.BLUE_300),
+                            expand=True),
+                    ],
+                    alignment=ft.MainAxisAlignment.CENTER,
+                ),
+                row_dd,
+                row_new,
+            ],
+            spacing=20,
+        )
+
+        # ---- SCROLLABLE CONTENT ----
+        scrollable_content = ft.Container(
+            content=ft.Column(
+                [
+                    row_levels,
+                    local_section,
+                    xnat_section,
+                ],
+                spacing=32,
+                expand=True,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            ),
+            expand=True,
+        )
+
+        # ---- MAIN LAYOUT ----
         self._main_layout = ft.Column(
             [
                 title,
-                row_levels,
-                row_file,
-                row_dd,
-                row_new,
-                row_bottom,
+                ft.Container(scrollable_content, expand=True),
+                row_home_upload,
             ],
-            spacing=15,
+            spacing=20,
             expand=True,
         )
 
@@ -293,9 +452,15 @@ class ViewUploader(ft.Control):
 
         # Reset preview & tree
         self.tree_view_dcm.content.controls.clear()
-        self.img_preview.src = ""
+        self._controller.preview_cache.clear()
+        self.img_preview.src_base64 = None
+        self.img_preview.src_bytes = None
+        self.img_preview.src = None
+        self.img_preview.src = "assets/images/ImagePreview.png"
 
         # Modality dropdown reset
+        self.cnt_modify_modality.controls.clear()
+        self.cnt_modify_modality.controls.append(self.btn_modify_modality)
         self.dd_modify_modality.value = None
 
         self._page.update()
