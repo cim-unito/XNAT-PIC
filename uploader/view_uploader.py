@@ -46,6 +46,9 @@ class ViewUploader(ft.Control):
         self.pb_upload = None
         self.dlg_upload = None
 
+        # dialog
+        self.dlg_modality = None
+
     # ------------------------------------------------------
     # AUTH DIALOG
     # ------------------------------------------------------
@@ -61,7 +64,8 @@ class ViewUploader(ft.Control):
             self._page.update()
 
     def build_interface(self):
-        title = ft.Text("XNAT-PIC Uploader", size=26, weight=ft.FontWeight.BOLD)
+        title = ft.Text("XNAT-PIC Uploader", size=26,
+                        weight=ft.FontWeight.BOLD)
 
         # File picker
         self.file_picker = ft.FilePicker(on_result=self.file_picker_result)
@@ -107,7 +111,7 @@ class ViewUploader(ft.Control):
             width=220,
             height=260,
             content=ft.ListView([], expand=True, spacing=2),
-            border=ft.border.all(1, ft.Colors.GREY_400),
+            border=ft.border.all(1, ft.Colors.YELLOW_200),
             border_radius=5,
             padding=5,
         )
@@ -140,7 +144,7 @@ class ViewUploader(ft.Control):
             ],
             hint_text="New Modality",
             width=200,
-            disabled=True,
+            disabled=False,
             on_change=self._controller.on_select_modality,
         )
 
@@ -182,7 +186,8 @@ class ViewUploader(ft.Control):
         )
 
         row_dd = ft.Row(
-            [self.dd_xnat_project, self.dd_xnat_subject, self.dd_xnat_experiment],
+            [self.dd_xnat_project, self.dd_xnat_subject,
+             self.dd_xnat_experiment],
             alignment=ft.MainAxisAlignment.START,
             spacing=10,
         )
@@ -194,10 +199,12 @@ class ViewUploader(ft.Control):
             on_click=self._controller.create_new_project
         )
         self.btn_new_subject = ft.ElevatedButton("New Subject", disabled=True)
-        self.btn_new_experiment = ft.ElevatedButton("New Experiment", disabled=True)
+        self.btn_new_experiment = ft.ElevatedButton("New Experiment",
+                                                    disabled=True)
 
         row_new = ft.Row(
-            [self.btn_new_project, self.btn_new_subject, self.btn_new_experiment],
+            [self.btn_new_project, self.btn_new_subject,
+             self.btn_new_experiment],
             alignment=ft.MainAxisAlignment.START,
             spacing=10,
         )
@@ -290,7 +297,6 @@ class ViewUploader(ft.Control):
 
         # Modality dropdown reset
         self.dd_modify_modality.value = None
-        self.dd_modify_modality.disabled = True
 
         self._page.update()
 
@@ -367,22 +373,41 @@ class ViewUploader(ft.Control):
         return ft.ListView(tiles, expand=True, spacing=2)
 
     def make_lazy_folder(self, item, expand_callback):
-        bgcolor = (
-            ft.Colors.YELLOW_200
-            if item["path"] in self.selected_folders
-            else ft.Colors.WHITE
+        path = item["path"]
+
+        def toggle_folder_select(e):
+            if path in self.selected_folders:
+                self.selected_folders.remove(path)
+            else:
+                self.selected_folders.add(path)
+            self._page.update()
+
+        change_color = (
+            ft.Colors.BLUE_200 if path in self.selected_folders else ft.Colors.GREY_200
         )
+
         return ft.ExpansionTile(
-            title=ft.Text(item["name"]),
-            leading=ft.Icon(ft.Icons.FOLDER),
-            bgcolor=bgcolor,
+            # 👇 Il titolo ora è un container cliccabile
+            title=ft.Container(
+                content=ft.Text(item["name"]),
+                on_click=toggle_folder_select,
+                padding=5
+            ),
+
+            leading=ft.Container(
+                content=ft.Icon(ft.Icons.FOLDER),
+                on_click=toggle_folder_select
+            ),
+
+            bgcolor=change_color,
             controls=[ft.Text("Loading...")],
-            on_change=lambda e, p=item["path"]: expand_callback(e, p,
-                                                                e.control),
+
+            # 🔵 Manteniamo la tua callback originale
+            on_change=lambda e, p=path: expand_callback(e, p, e.control),
         )
 
     def make_file_tile(self, item, file_selected_callback):
-        bgcolor = (
+        change_color = (
             ft.Colors.YELLOW_200
             if self.selected_file == item["path"]
             else ft.Colors.WHITE
@@ -390,7 +415,7 @@ class ViewUploader(ft.Control):
         return ft.ListTile(
             title=ft.Text(item["name"]),
             leading=ft.Icon(ft.Icons.DESCRIPTION),
-            bgcolor=bgcolor,
+            bgcolor=change_color,
             on_click=lambda e, p=item["path"]: file_selected_callback(p),
         )
 
@@ -403,11 +428,7 @@ class ViewUploader(ft.Control):
         self._page.update()
 
     def highlight_folder(self, path: str):
-        if path in self.selected_folders:
-            self.selected_folders.remove(path)
-        else:
-            self.selected_folders.add(path)
-        self._page.update()
+        pass
 
     # ------------------------------------------------------
     # PREVIEW IMAGE
@@ -439,7 +460,8 @@ class ViewUploader(ft.Control):
                 width=700,
                 height=450,
             ),
-            actions=[ft.TextButton("Close", on_click=lambda e: self._page.close(dlg))],
+            actions=[ft.TextButton("Close",
+                                   on_click=lambda e: self._page.close(dlg))],
             modal=True,
         )
         self._page.open(dlg)
@@ -449,20 +471,22 @@ class ViewUploader(ft.Control):
     # OT Modality
     # ------------------------------------------------------
     def show_upload_ot_modality(self):
-        dlg_modality = ft.AlertDialog(
+        self.dlg_modality = ft.AlertDialog(
             modal=True,
             title=ft.Text("Please confirm"),
             content=ft.Text(
-                "In your dataset there are DICOMs with Modality OT. Upload to XNAT anyway?"),
+                "In your dataset there are DICOMs with Modality OT."
+                "Upload to XNAT anyway?"),
             actions=[
-                ft.TextButton("Yes", on_click=lambda e: self._controller.upload()),
+                ft.TextButton("Yes",
+                              on_click=lambda
+                                  e: self._controller.upload_ot_modality()),
                 ft.TextButton("No", on_click=lambda
-                    e: self._controller.modify_modality()),
+                    e: self._page.close(self.dlg_modality)),
             ],
             actions_alignment=ft.MainAxisAlignment.END,
-            on_dismiss=lambda e: print("Modal dialog dismissed!"),
         )
-        self._page.open(dlg_modality)
+        self._page.open(self.dlg_modality)
         self._page.update()
 
     # ------------------------------------------------------

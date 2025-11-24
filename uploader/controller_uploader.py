@@ -27,8 +27,8 @@ class ControllerUploader:
         self._xnat_session = None
         self._xnat_repo = None
 
-        self._mode_selected: None
-        self.file_path: None
+        self._mode_selected = None
+        self.file_path = None
         self.preview_cache = {}
 
     # ==========================================================
@@ -39,8 +39,6 @@ class ControllerUploader:
         self.__controller_xnat_auth = controller_auth
 
     def on_enter_route(self):
-        self._mode_selected = None
-
         dlg = self._view_xnat_auth.build_dialog(
             on_success=self._on_login_success,
             on_cancel=self._on_login_cancel,
@@ -48,7 +46,8 @@ class ControllerUploader:
         self._view.open_auth_dialog(dlg)
 
     def on_exit_route(self):
-        self._xnat_session.disconnect()
+        if self._xnat_session:
+            self._xnat_session.disconnect()
 
     def _on_login_success(self, xnat_session):
         self._xnat_session = xnat_session
@@ -56,11 +55,12 @@ class ControllerUploader:
         self._view.set_initial_state()
 
     def _on_login_cancel(self):
-        self._xnat_session.disconnect()
+        if self._xnat_session:
+            self._xnat_session.disconnect()
         self.go_home()
 
     # ==========================================================
-    # NAVIGAZIONE
+    # HOME / BACK
     # ==========================================================
     def go_home(self):
         self._view._page.go("/")
@@ -73,9 +73,9 @@ class ControllerUploader:
             self._view.set_initial_state()
 
     # ==========================================================
-    # UTIL PER IMPOSTARE MODALITÀ LIVELLO
+    # SET MODE
     # ==========================================================
-    def _set_mode_for_level(self, mode: str):
+    def _set_mode_for_level(self, mode):
         self._mode_selected = mode
 
         if mode == "project":
@@ -132,7 +132,7 @@ class ControllerUploader:
         self.load_projects()
 
     # ==========================================================
-    # SCELTA LIVELLO (PROJECT / SUBJECT / EXPERIMENT / FILE)
+    # CHOOSE LEVEL (PROJECT / SUBJECT / EXPERIMENT / FILE)
     # ==========================================================
     def upload_project(self, e):
         self._model.level = "project"
@@ -151,7 +151,7 @@ class ControllerUploader:
         self._set_mode_for_level("file")
 
     # ==========================================================
-    # DROPDOWN XNAT
+    # DROPDOWN PROJECT / SUBJECT / EXPERIMENT XNAT
     # ==========================================================
     def load_projects(self):
         try:
@@ -195,7 +195,7 @@ class ControllerUploader:
     def get_directory_to_upload(self, path: str):
         p = Path(path)
         self._model.path_to_upload = p
-        if not self._model.validate_scan():
+        if not self._model.is_valid_dicom_files(self._mode_selected):
             upload_path_xnat = p.parent / (p.name + "_xnat")
             self._model.create_xnat_folder(upload_path_xnat)
             self._model.create_new_scan(upload_path_xnat)
@@ -292,7 +292,7 @@ class ControllerUploader:
         if not base_path or not base_path.exists():
             self._view.create_alert("Select a folder to upload.")
             return
-        if not self._model.exist_ot_modality():
+        if not self._model.exist_ot_modality(self._mode_selected):
             project_id = self._view.dd_xnat_project.value
             if not project_id:
                 self._view.create_alert("Select a project in XNAT.")
@@ -309,7 +309,8 @@ class ControllerUploader:
         else:
             self._view.show_upload_ot_modality()
 
-    def upload(self):
+    def upload_ot_modality(self):
+        self._view._page.close(self._view.dlg_modality)
         base_path = self._model.path_to_upload
         project_id = self._view.dd_xnat_project.value
         if not project_id:
@@ -330,18 +331,16 @@ class ControllerUploader:
         self._view.cnt_modify_modality.controls.append(
             self._view.dd_modify_modality)
         self._view._page.update()
-        print(self._view.selected_folders)
 
     def on_select_modality(self, e):
-        print("Hai selezionato:", e.control.value)
-        print(self._view.selected_folders)
-
-        self._model.modify_modality(self._view.selected_folders, e.control.value)
+        self._model.modify_modality(self._view.selected_folders,
+                                    e.control.value)
         p = Path(self._model.path_to_upload)
         self.populate_tree(p)
-
+        self._view.selected_folders = set()
         self._view.cnt_modify_modality.controls.clear()
-        self._view.cnt_modify_modality.controls.append(self._view.btn_modify_modality)
+        self._view.cnt_modify_modality.controls.append(
+            self._view.btn_modify_modality)
         self._view._page.update()
 
     def _upload_project_thread(self, base_path: Path, project_id: str):

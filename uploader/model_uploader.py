@@ -15,8 +15,7 @@ from pydicom.uid import UID, generate_uid, ExplicitVRLittleEndian
 class ModelUploader:
     def __init__(self):
         self._path_to_upload = None
-        self._level = None
-        self._scan_to_upload = None
+        self._list_dicom_files = []
 
     def list_directory(self, path: Path) -> list[dict]:
         path = Path(path)
@@ -38,30 +37,30 @@ class ModelUploader:
             })
         return items
 
-    def get_valid_scans(self):
+    def get_list_dicom_files(self, mode_selected):
         if self._path_to_upload is None:
             raise ValueError("Upload path not set.")
 
         experiment = []
 
-        if self._level == "project":
+        if mode_selected == "project":
             experiment = [
                 exp
                 for sub in self._path_to_upload.iterdir() if sub.is_dir()
                 for exp in sub.iterdir() if exp.is_dir()
             ]
-        elif self._level == "subject":
+        elif mode_selected == "subject":
             experiment = [exp for exp in self._path_to_upload.iterdir() if exp.is_dir()]
 
-        elif self._level == "experiment":
+        elif mode_selected == "experiment":
             experiment = [self._path_to_upload]
 
         if not experiment:
             raise ValueError("No experiments found.")
 
-        self._scan_to_upload = []
+        self._list_dicom_files = []
 
-        self._scan_to_upload = [
+        self._list_dicom_files = [
             file
             for exp in experiment
             for scan in exp.iterdir() if scan.is_dir()
@@ -69,7 +68,7 @@ class ModelUploader:
             if file.is_file() and file.suffix.lower() in [".dcm", ".dicom"]
         ]
 
-    def validate_scan(self):
+    def is_valid_dicom_files(self, mode_selected):
         REQUIRED_TAGS = {
             (0x0008, 0x0016): "SOP Class UID",
             (0x0008, 0x0018): "SOP Instance UID",
@@ -81,9 +80,9 @@ class ModelUploader:
             (0x0010, 0x0020): "Patient ID",
         }
 
-        self.get_valid_scans()
+        self.get_list_dicom_files(mode_selected)
 
-        for dicom_scan in self._scan_to_upload:
+        for dicom_scan in self._list_dicom_files:
             ds = dcmread(dicom_scan)
 
             for tag, name in REQUIRED_TAGS.items():
@@ -116,7 +115,7 @@ class ModelUploader:
             upload_path_xnat.mkdir(parents=True, exist_ok=True)
 
     def create_new_scan(self, upload_path_xnat):
-        for dicom_scan in self._scan_to_upload:
+        for dicom_scan in self._list_dicom_files:
             ds = dcmread(dicom_scan)
             manufacturer = getattr(ds, "Manufacturer", "")
 
@@ -225,10 +224,10 @@ class ModelUploader:
                 ds.save_as(output_dicom, write_like_original=False)
                 print("DICOM saved in:", output_dicom)
 
-    def exist_ot_modality(self):
-        self.get_valid_scans()
+    def exist_ot_modality(self, mode_selected):
+        self.get_list_dicom_files(mode_selected)
 
-        for dicom_scan in self._scan_to_upload:
+        for dicom_scan in self._list_dicom_files:
             ds = dcmread(dicom_scan)
             modality = getattr(ds, "Modality", "")
 
@@ -237,11 +236,8 @@ class ModelUploader:
         return False
 
     def modify_modality(self, dicom_files, new_modality):
-        print(dicom_files)
-        print(new_modality)
         dirs = [Path(p) for p in dicom_files if Path(p).is_dir()]
 
-        # 2) Tieni solo i leaf (percorsi non prefisso di altri)
         unique = []
         for p in dirs:
             if not any(
@@ -254,7 +250,6 @@ class ModelUploader:
             for ext in ("*.dcm", "*.dicom")
             for f in folder.rglob(ext)
         ]
-        print(dicom_files_to_modify)
         for dicom_scan in dicom_files_to_modify:
             ds = dcmread(dicom_scan)
             ds.Modality = new_modality
