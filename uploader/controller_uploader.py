@@ -40,7 +40,6 @@ class ControllerUploader:
 
     def on_enter_route(self):
         self._mode_selected = None
-        self._view.disable_all_for_login()
 
         dlg = self._view_xnat_auth.build_dialog(
             on_success=self._on_login_success,

@@ -1,5 +1,4 @@
 import flet as ft
-from pathlib import Path
 
 
 class ViewUploader(ft.Control):
@@ -8,10 +7,11 @@ class ViewUploader(ft.Control):
         self._page = page
         self._controller = None
 
+        self._main_layout = None
         self._dlg_auth = None
+
         self.selected_file = None
         self.selected_folders = set()
-        self._main_layout = None
 
         # Top-level buttons
         self.btn_project = None
@@ -25,7 +25,6 @@ class ViewUploader(ft.Control):
         self.tree_view_dcm = None
         self.img_preview = None
         self.btn_show_tags = None
-
         self.cnt_modify_modality = None
         self.btn_modify_modality = None
         self.dd_modify_modality = None
@@ -43,12 +42,9 @@ class ViewUploader(ft.Control):
         self.btn_home_back = None
         self.btn_upload = None
 
-        # progress
+        # progressbar
         self.pb_upload = None
         self.dlg_upload = None
-
-    def set_controller(self, controller):
-        self._controller = controller
 
     # ------------------------------------------------------
     # AUTH DIALOG
@@ -94,12 +90,13 @@ class ViewUploader(ft.Control):
         )
 
         row_levels = ft.Row(
-            [self.btn_project, self.btn_subject, self.btn_experiment, self.btn_file],
+            [self.btn_project, self.btn_subject, self.btn_experiment,
+             self.btn_file],
             alignment=ft.MainAxisAlignment.SPACE_EVENLY,
             spacing=5,
         )
 
-        # Row 2: select folder + tree + preview + show tags
+        # Row 2: select folder + tree + preview + show tags + modify modality
         self.btn_select_folder = ft.ElevatedButton(
             "Select folder",
             disabled=True,
@@ -131,7 +128,7 @@ class ViewUploader(ft.Control):
         self.cnt_modify_modality = ft.Column()
         self.btn_modify_modality = ft.ElevatedButton(
             "Modify DICOM modality",
-            disabled=False,
+            disabled=True,
             on_click=self._controller.modify_modality,
         )
         self.dd_modify_modality = ft.Dropdown(
@@ -141,8 +138,10 @@ class ViewUploader(ft.Control):
                 ft.dropdown.Option("OI"),
                 ft.dropdown.Option("OA")
             ],
+            hint_text="New Modality",
+            width=200,
+            disabled=True,
             on_change=self._controller.on_select_modality,
-            width=200
         )
 
         self.cnt_modify_modality.controls.append(self.btn_modify_modality)
@@ -163,7 +162,7 @@ class ViewUploader(ft.Control):
             spacing=10,
         )
 
-        # Row 3: dropdowns
+        # Row 3: dropdowns (project, subject, experiment in xnat)
         self.dd_xnat_project = ft.Dropdown(
             hint_text="Project",
             width=200,
@@ -188,7 +187,7 @@ class ViewUploader(ft.Control):
             spacing=10,
         )
 
-        # Row 4: new buttons
+        # Row 4: new project, subject, experiment in xnat
         self.btn_new_project = ft.ElevatedButton(
             "New Project",
             disabled=True,
@@ -223,7 +222,7 @@ class ViewUploader(ft.Control):
         self.pb_upload = ft.ProgressBar(width=250)
         self.dlg_upload = ft.AlertDialog(
             modal=True,
-            title=ft.Text("Uploading..."),
+            title=ft.Text("Loading..."),
             content=self.pb_upload,
         )
 
@@ -243,39 +242,20 @@ class ViewUploader(ft.Control):
         return self._main_layout
 
     # ------------------------------------------------------
-    # STATO INIZIALE / DISABLE
+    # INITIAL STATE
     # ------------------------------------------------------
-    def disable_all_for_login(self):
-        all_ctrls = [
-            self.btn_project, self.btn_subject, self.btn_experiment, self.btn_file,
-            self.btn_select_folder,
-            self.btn_show_tags,
-            self.dd_xnat_project, self.dd_xnat_subject, self.dd_xnat_experiment,
-            self.btn_new_project, self.btn_new_subject, self.btn_new_experiment,
-            self.btn_upload,
-        ]
-        for c in all_ctrls:
-            if c:
-                c.disabled = True
-
-        if self.btn_home_back:
-            self.btn_home_back.disabled = True
-
-        self._page.update()
-
     def set_initial_state(self):
-        if self.btn_project:
-            self.btn_project.disabled = False
-        if self.btn_subject:
-            self.btn_subject.disabled = False
-        if self.btn_experiment:
-            self.btn_experiment.disabled = False
-        if self.btn_file:
-            self.btn_file.disabled = False
+        # Enable top-level
+        self.btn_project.disabled = False
+        self.btn_subject.disabled = False
+        self.btn_experiment.disabled = False
+        self.btn_file.disabled = False
 
+        # Disable the other controls
         for c in [
             self.btn_select_folder,
             self.btn_show_tags,
+            self.btn_modify_modality,
             self.dd_xnat_project,
             self.dd_xnat_subject,
             self.dd_xnat_experiment,
@@ -284,78 +264,80 @@ class ViewUploader(ft.Control):
             self.btn_new_experiment,
             self.btn_upload,
         ]:
-            if c:
-                c.disabled = True
+            c.disabled = True
 
-        if self.btn_home_back:
-            self.btn_home_back.text = "Home"
-            self.btn_home_back.disabled = False
+        # Reset home/back
+        self.btn_home_back.text = "Home"
+        self.btn_home_back.disabled = False
 
-        # reset dropdown
-        if self.dd_xnat_project:
-            self.dd_xnat_project.value = None
-            self.dd_xnat_project.options = []
-        if self.dd_xnat_subject:
-            self.dd_xnat_subject.value = None
-            self.dd_xnat_subject.options = []
-        if self.dd_xnat_experiment:
-            self.dd_xnat_experiment.value = None
-            self.dd_xnat_experiment.options = []
+        # Reset internal state
+        self.selected_file = None
+        self.selected_folders = set()
+
+        # Reset dropdowns
+        self.dd_xnat_project.value = None
+        self.dd_xnat_project.options = []
+
+        self.dd_xnat_subject.value = None
+        self.dd_xnat_subject.options = []
+
+        self.dd_xnat_experiment.value = None
+        self.dd_xnat_experiment.options = []
+
+        # Reset preview & tree
+        self.tree_view_dcm.content.controls.clear()
+        self.img_preview.src = ""
+
+        # Modality dropdown reset
+        self.dd_modify_modality.value = None
+        self.dd_modify_modality.disabled = True
 
         self._page.update()
 
     # ------------------------------------------------------
-    # MODALITÀ LIVELLO
+    # LEVEL MODE
     # ------------------------------------------------------
     def set_mode(
-        self,
-        level_buttons_enabled: bool,
-        select_group_enabled: bool,
-        upload_enabled: bool,
-        dd_project: bool,
-        dd_subject: bool,
-        dd_experiment: bool,
-        new_project: bool,
-        new_subject: bool,
-        new_experiment: bool,
+            self,
+            level_buttons_enabled,
+            select_group_enabled,
+            upload_enabled,
+            dd_project,
+            dd_subject,
+            dd_experiment,
+            new_project,
+            new_subject,
+            new_experiment,
     ):
-        # abilita/disabilita pulsanti di livello
+        # enable/disable top-level
         for c in [
             self.btn_project,
             self.btn_subject,
             self.btn_experiment,
             self.btn_file,
         ]:
-            if c:
-                c.disabled = not level_buttons_enabled
+            c.disabled = not level_buttons_enabled
 
         # select folder / tree / preview / show tags viaggiano insieme
         for c in [
             self.btn_select_folder,
             self.btn_show_tags,
+            self.btn_modify_modality,
         ]:
-            if c:
-                c.disabled = not select_group_enabled
+            c.disabled = not select_group_enabled
 
-        # dropdown
-        if self.dd_xnat_project:
-            self.dd_xnat_project.disabled = not dd_project
-        if self.dd_xnat_subject:
-            self.dd_xnat_subject.disabled = not dd_subject
-        if self.dd_xnat_experiment:
-            self.dd_xnat_experiment.disabled = not dd_experiment
+        # dropdown project, subject, experiment in xnat
+        self.dd_xnat_project.disabled = not dd_project
+        self.dd_xnat_subject.disabled = not dd_subject
+        self.dd_xnat_experiment.disabled = not dd_experiment
 
-        # new buttons
-        if self.btn_new_project:
-            self.btn_new_project.disabled = not new_project
-        if self.btn_new_subject:
-            self.btn_new_subject.disabled = not new_subject
-        if self.btn_new_experiment:
-            self.btn_new_experiment.disabled = not new_experiment
+        # new project, subject, experiment buttons
+        self.btn_new_project.disabled = not new_project
+        self.btn_new_subject.disabled = not new_subject
+        self.btn_new_experiment.disabled = not new_experiment
 
         # upload
-        if self.btn_upload:
-            self.btn_upload.disabled = not upload_enabled
+        self.btn_upload.disabled = not upload_enabled
 
         # home/back
         if self.btn_home_back:
@@ -364,37 +346,7 @@ class ViewUploader(ft.Control):
         self._page.update()
 
     # ------------------------------------------------------
-    # POPOLAMENTO DROPDOWN
-    # ------------------------------------------------------
-    def populate_projects(self, projects):
-        self.dd_xnat_project.options = [
-            ft.dropdown.Option(key=p["id"], text=p["label"]) for p in projects
-        ]
-        self.dd_xnat_project.value = None
-        self.dd_xnat_subject.options = []
-        self.dd_xnat_subject.value = None
-        self.dd_xnat_experiment.options = []
-        self.dd_xnat_experiment.value = None
-        self._page.update()
-
-    def populate_subjects(self, subjects):
-        self.dd_xnat_subject.options = [
-            ft.dropdown.Option(key=s["id"], text=s["label"]) for s in subjects
-        ]
-        self.dd_xnat_subject.value = None
-        self.dd_xnat_experiment.options = []
-        self.dd_xnat_experiment.value = None
-        self._page.update()
-
-    def populate_experiments(self, experiments):
-        self.dd_xnat_experiment.options = [
-            ft.dropdown.Option(key=e["id"], text=e["label"]) for e in experiments
-        ]
-        self.dd_xnat_experiment.value = None
-        self._page.update()
-
-    # ------------------------------------------------------
-    # FILE PICKER & TREE
+    # FILE PICKER
     # ------------------------------------------------------
     def file_picker_result(self, e: ft.FilePickerResultEvent):
         if e.path:
@@ -402,6 +354,9 @@ class ViewUploader(ft.Control):
         else:
             self.create_alert("No folder selected.")
 
+    # ------------------------------------------------------
+    # TREEVIEW
+    # ------------------------------------------------------
     def build_lazy_tree(self, items, expand_callback, file_selected_callback):
         tiles = []
         for it in items:
@@ -420,6 +375,7 @@ class ViewUploader(ft.Control):
         return ft.ExpansionTile(
             title=ft.Text(item["name"]),
             leading=ft.Icon(ft.Icons.FOLDER),
+            bgcolor=bgcolor,
             controls=[ft.Text("Loading...")],
             on_change=lambda e, p=item["path"]: expand_callback(e, p,
                                                                 e.control),
@@ -454,12 +410,15 @@ class ViewUploader(ft.Control):
         self._page.update()
 
     # ------------------------------------------------------
-    # IMMAGINE & DICOM TAGS
+    # PREVIEW IMAGE
     # ------------------------------------------------------
     def set_image_preview(self, b64: str):
         self.img_preview.src_base64 = b64
         self.img_preview.update()
 
+    # ------------------------------------------------------
+    # SHOW DICOM TAGS
+    # ------------------------------------------------------
     def show_dicom_tags_dialog(self, tags):
         rows = []
         for elem in tags:
@@ -497,25 +456,63 @@ class ViewUploader(ft.Control):
                 "In your dataset there are DICOMs with Modality OT. Upload to XNAT anyway?"),
             actions=[
                 ft.TextButton("Yes", on_click=lambda e: self._controller.upload()),
-                ft.TextButton("No", on_click=lambda e: self._controller.modify_modality()),
+                ft.TextButton("No", on_click=lambda
+                    e: self._controller.modify_modality()),
             ],
             actions_alignment=ft.MainAxisAlignment.END,
             on_dismiss=lambda e: print("Modal dialog dismissed!"),
         )
         self._page.open(dlg_modality)
         self._page.update()
+
     # ------------------------------------------------------
-    # PROGRESS / ALERT
+    # FILL DROPDOWN WITH VALUES READ IN XNAT
+    # ------------------------------------------------------
+    def reset_dropdown(self, dd):
+        dd.options = []
+        dd.value = None
+
+    def populate_projects(self, projects):
+        self.dd_xnat_project.options = [
+            ft.dropdown.Option(key=p["id"], text=p["label"]) for p in projects
+        ]
+        self.dd_xnat_project.value = None
+
+        self.reset_dropdown(self.dd_xnat_subject)
+        self.reset_dropdown(self.dd_xnat_experiment)
+
+        self._page.update()
+
+    def populate_subjects(self, subjects):
+        self.dd_xnat_subject.options = [
+            ft.dropdown.Option(key=s["id"], text=s["label"]) for s in subjects
+        ]
+        self.dd_xnat_subject.value = None
+
+        self.reset_dropdown(self.dd_xnat_experiment)
+
+        self._page.update()
+
+    def populate_experiments(self, experiments):
+        self.dd_xnat_experiment.options = [
+            ft.dropdown.Option(key=e["id"], text=e["label"]) for e in
+            experiments
+        ]
+        self.dd_xnat_experiment.value = None
+        self._page.update()
+
+    # ------------------------------------------------------
+    # PROGRESSBAR / ALERT
     # ------------------------------------------------------
     def show_progress_dialog(self):
         self._page.open(self.dlg_upload)
         self._page.update()
 
-    def update_progress(self, value: float):
+    def update_progress(self, value):
         self.pb_upload.value = value
         self._page.update()
 
-    def create_alert(self, message: str):
+    def create_alert(self, message):
         dlg = ft.AlertDialog(title=ft.Text(message))
         self._page.open(dlg)
         self._page.update()
@@ -529,3 +526,14 @@ class ViewUploader(ft.Control):
     @property
     def page(self):
         return self._page
+
+    @property
+    def controller(self):
+        return self._controller
+
+    @controller.setter
+    def controller(self, controller):
+        self._controller = controller
+
+    def set_controller(self, controller):
+        self._controller = controller
