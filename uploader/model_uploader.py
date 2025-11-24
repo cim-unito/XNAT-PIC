@@ -236,6 +236,31 @@ class ModelUploader:
                 return True
         return False
 
+    def modify_modality(self, dicom_files, new_modality):
+        print(dicom_files)
+        print(new_modality)
+        dirs = [Path(p) for p in dicom_files if Path(p).is_dir()]
+
+        # 2) Tieni solo i leaf (percorsi non prefisso di altri)
+        unique = []
+        for p in dirs:
+            if not any(
+                    other != p and other.is_relative_to(p) for other in dirs):
+                unique.append(Path(p))
+
+        dicom_files_to_modify = [
+            f
+            for folder in unique
+            for ext in ("*.dcm", "*.dicom")
+            for f in folder.rglob(ext)
+        ]
+        print(dicom_files_to_modify)
+        for dicom_scan in dicom_files_to_modify:
+            ds = dcmread(dicom_scan)
+            ds.Modality = new_modality
+            dicom_scan.parent.mkdir(parents=True, exist_ok=True)
+            ds.save_as(dicom_scan, write_like_original=False)
+
     @property
     def path_to_upload(self) -> Path | None:
         return self._path_to_upload

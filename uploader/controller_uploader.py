@@ -328,16 +328,19 @@ class ControllerUploader:
 
     def modify_modality(self, e):
         self._view.cnt_modify_modality.controls.clear()
-        self._view.cnt_modify_modality.controls.append(self._view.dd_modify_modality)
+        self._view.cnt_modify_modality.controls.append(
+            self._view.dd_modify_modality)
         self._view._page.update()
         print(self._view.selected_folders)
 
     def on_select_modality(self, e):
         print("Hai selezionato:", e.control.value)
+        print(self._view.selected_folders)
 
-        # Qui fai le tue operazioni...
+        self._model.modify_modality(self._view.selected_folders, e.control.value)
+        p = Path(self._model.path_to_upload)
+        self.populate_tree(p)
 
-        # torno al bottone
         self._view.cnt_modify_modality.controls.clear()
         self._view.cnt_modify_modality.controls.append(self._view.btn_modify_modality)
         self._view._page.update()
