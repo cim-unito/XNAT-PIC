@@ -373,38 +373,12 @@ class ViewUploader(ft.Control):
         return ft.ListView(tiles, expand=True, spacing=2)
 
     def make_lazy_folder(self, item, expand_callback):
-        path = item["path"]
-
-        def toggle_folder_select(e):
-            if path in self.selected_folders:
-                self.selected_folders.remove(path)
-            else:
-                self.selected_folders.add(path)
-            self._page.update()
-
-        change_color = (
-            ft.Colors.BLUE_200 if path in self.selected_folders else ft.Colors.GREY_200
-        )
-
-        return ft.ExpansionTile(
-            # 👇 Il titolo ora è un container cliccabile
-            title=ft.Container(
-                content=ft.Text(item["name"]),
-                on_click=toggle_folder_select,
-                padding=5
-            ),
-
-            leading=ft.Container(
-                content=ft.Icon(ft.Icons.FOLDER),
-                on_click=toggle_folder_select
-            ),
-
-            bgcolor=change_color,
-            controls=[ft.Text("Loading...")],
-
-            # 🔵 Manteniamo la tua callback originale
-            on_change=lambda e, p=path: expand_callback(e, p, e.control),
-        )
+        return ft.ExpansionTile(title=ft.Text(item["name"]),
+                                leading=ft.Icon(ft.Icons.FOLDER),
+                                controls=[ft.Text("Loading...")],
+                                on_change=lambda e, p=item[
+                                    "path"]: expand_callback(e, p,
+                                                             e.control), )
 
     def make_file_tile(self, item, file_selected_callback):
         change_color = (
@@ -428,7 +402,11 @@ class ViewUploader(ft.Control):
         self._page.update()
 
     def highlight_folder(self, path: str):
-        pass
+        if path in self.selected_folders:
+            self.selected_folders.remove(path)
+        else:
+            self.selected_folders.add(path)
+        self._page.update()
 
     # ------------------------------------------------------
     # PREVIEW IMAGE
