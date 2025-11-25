@@ -28,8 +28,31 @@ class ViewConverter(ft.Control):
     def build_interface(self):
         # Define controls
         # title
-        self._title = ft.Text("XNAT-PIC Converter", color="blue", size=24)
+        self._title = ft.Row(
+            [
+                ft.Icon(
+                    ft.Icons.CHANGE_CIRCLE,
+                    size=36,
+                    color=ft.Colors.BLUE_700
+                ),
+                ft.Text(
+                    "XNAT-PIC Converter",
+                    size=30,
+                    weight=ft.FontWeight.BOLD,
+                    color=ft.Colors.BLUE_700,
+                ),
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=12,
+        )
 
+        # Button style
+        btn_style = ft.ButtonStyle(
+            bgcolor=ft.Colors.BLUE_200,
+            color=ft.Colors.BLUE_900,
+            shape=ft.RoundedRectangleBorder(radius=10),
+            padding=15,
+        )
         self.dd_conversion_type = ft.Dropdown(
             label="Conversion type",
             on_change=self._controller.conversion_type,
@@ -45,18 +68,21 @@ class ViewConverter(ft.Control):
             width=200,
             tooltip="Select the project to convert",
             on_click=self._controller.convert_project,
+            style=btn_style
         )
         self.btn_subject = ft.ElevatedButton(
             text="Convert Subject",
             width=200,
             tooltip="Select the subject to convert",
             on_click=self._controller.convert_subject,
+            style=btn_style
         )
         self.btn_experiment = ft.ElevatedButton(
             text="Convert Experiment",
             width=200,
             tooltip="Select the experiment to convert",
             on_click=self._controller.convert_experiment,
+            style=btn_style
         )
 
         # switch
@@ -71,33 +97,52 @@ class ViewConverter(ft.Control):
         self._page.overlay.append(self.file_picker)
         self.btn_select_folder = ft.ElevatedButton(
             "Select folder",
+            icon=ft.Icons.FOLDER_OPEN,
             disabled=True,
             on_click=lambda e: self.file_picker.get_directory_path(),
+            style=btn_style,
         )
 
         # treeview
         self.tree_view = ft.Container(
-            content=ft.ListView([], expand=True),
-            width=200,
-            height=200,
-            border=ft.border.all(1, ft.Colors.BLACK),
-            padding=5,
+            width=250,
+            height=320,
+            content=ft.ListView([], expand=True, spacing=4),
+            border_radius=10,
+            padding=10,
+            bgcolor=ft.Colors.BLUE_50,
+            shadow=ft.BoxShadow(
+                blur_radius=10,
+                spread_radius=1,
+                color=ft.Colors.BLUE_100,
+            ),
         )
 
-        self.tree_view_dcm = ft.Container(
-            content=ft.ListView([], expand=True),
-            width=200,
-            height=200,
-            border=ft.border.all(1, ft.Colors.BLACK),
-            padding=5,
+        self.tree_view_dcm = f= ft.Container(
+            width=250,
+            height=320,
+            content=ft.ListView([], expand=True, spacing=4),
+            border_radius=10,
+            padding=10,
+            bgcolor=ft.Colors.BLUE_50,
+            shadow=ft.BoxShadow(
+                blur_radius=10,
+                spread_radius=1,
+                color=ft.Colors.BLUE_100,
+            ),
         )
 
         # button go home and convert
         self.btn_go_home = ft.ElevatedButton(
-            text="Go home", on_click=lambda _: self._controller.go_home()
+            text="Go home",
+            icon=ft.Icons.ARROW_BACK,
+            on_click=lambda _: self._controller.go_home(),
+            style=btn_style,
         )
         self.btn_convert = ft.ElevatedButton(text="Convert",
-                                             on_click=self._controller.dicom_converter)
+                                             icon=ft.Icons.CHANGE_CIRCLE,
+                                             on_click=self._controller.dicom_converter,
+                                             style=btn_style,)
 
         # progressbar
         self.pb_conversion = ft.ProgressBar(width=300)
