@@ -20,13 +20,16 @@ class RouteManager:
             "/": modules.controls_main,
             "/converter": modules.controls_converter,
             "/uploader": modules.controls_uploader,
+            "/custom_form": modules.controls_custom_form,
         }
 
         self.enter_hooks = {
             "/uploader": modules.controller_uploader.on_enter_route,
+            "/custom_form": modules.controller_custom_form.on_enter_route,
         }
         self.exit_hooks = {
             "/uploader": modules.controller_uploader.on_exit_route,
+            "/custom_form": modules.controller_custom_form.on_exit_route,
         }
 
     def go(self, route: str):

@@ -93,10 +93,10 @@ class ViewMainInterface(ft.Control):
                 spacing=10,
                 controls=[
                     ft.Icon(ft.Icons.DATASET, size=26),
-                    ft.Text("Custom Forms", size=20),
+                    ft.Text("Custom Form", size=20),
                 ],
             ),
-            on_click=lambda _: self._controller.go_to_custom_forms(),
+            on_click=lambda _: self._controller.go_to_custom_form(),
             style=btn_style,
             height=60,
         )

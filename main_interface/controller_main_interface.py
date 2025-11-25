@@ -14,5 +14,5 @@ class ControllerMainInterface:
     def go_to_uploader(self):
         self._view.page.go("/uploader")
 
-    def go_to_custom_forms(self):
-        self._view.page.go("/custom_forms")
+    def go_to_custom_form(self):
+        self._view.page.go("/custom_form")
