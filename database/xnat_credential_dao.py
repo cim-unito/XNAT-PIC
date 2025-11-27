@@ -19,7 +19,7 @@ class XnatCredentialDao:
         for row in cursor:
             result.append(
                 XnatCredentialDto(row["address"], row["username"],
-                               row["password"], bool(row["remember"]))
+                                  row["password"], bool(row["remember"]))
             )
 
         cursor.close()

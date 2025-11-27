@@ -1,4 +1,6 @@
 import shutil
+from typing import List, Dict
+
 from PIL import Image
 import numpy as np
 import pydicom
@@ -15,24 +17,39 @@ class ModelConverter:
         self._scan_to_convert: list[Path] = []
         self._scan_converted: list[Path] = []
 
-    def list_directory(self, path):
-        path = Path(path)
-        items = []
+    def get_list_directory(self, path: Path) -> List[Dict]:
+        """
+        Returns a list of dict with name, path, is_dir.
+        """
         try:
-            for child in sorted(path.iterdir()):
-                if child.name.startswith("."):
-                    continue
-                items.append({
-                    "name": child.name,
-                    "path": str(child),
-                    "is_dir": child.is_dir()
-                })
+            # Sorting criterion:
+            # - All directories before files
+            # - Within groups (directories and files), case-insensitive alphabetical sorting
+            children = sorted(
+                path.iterdir(),
+                key=lambda p: (not p.is_dir(), p.name.lower())
+            )
         except PermissionError:
-            items.append({
+            return [{
                 "name": "[access denied]",
-                "path": "",
+                "path": str(path),
                 "is_dir": False
+            }]
+        except Exception as err:
+            print(f"Unexpected {err=}, {type(err)=}")
+            raise
+
+        items = []
+        for child in children:
+            if child.name.startswith("."):
+                continue
+
+            items.append({
+                "name": child.name,
+                "path": str(child),
+                "is_dir": child.is_dir(),
             })
+
         return items
 
     def create_dicom_folder(self, overwrite: bool):

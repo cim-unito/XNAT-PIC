@@ -132,7 +132,7 @@ class ControllerUploader:
         self.load_projects()
 
     # ==========================================================
-    # CHOOSE LEVEL (PROJECT / SUBJECT / EXPERIMENT / FILE)
+    # SET LEVEL (PROJECT / SUBJECT / EXPERIMENT / FILE)
     # ==========================================================
     def upload_project(self, e):
         self._model.level = "project"
