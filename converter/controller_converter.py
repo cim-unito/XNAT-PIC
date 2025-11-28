@@ -17,9 +17,9 @@ class ControllerConverter:
 
         self._mode_selected = None
 
-    # ==========================================================
+    # -------------------------------------------------------
     # HOME / BACK
-    # ==========================================================
+    # -------------------------------------------------------
     def go_home(self):
         self._view._page.go("/")
 
@@ -29,9 +29,10 @@ class ControllerConverter:
             self.go_home()
         else:
             self._mode_selected = None
-    # ==========================================================
+
+    # -------------------------------------------------------
     # SET MODE
-    # ==========================================================
+    # -------------------------------------------------------
     def _set_mode_for_level(self, mode):
         self._mode_selected = mode
 
@@ -42,9 +43,9 @@ class ControllerConverter:
             convert_enabled=True,
         )
 
-    # ==========================================================
+    # -------------------------------------------------------
     # SET LEVEL (PROJECT / SUBJECT / EXPERIMENT)
-    # ==========================================================
+    # -------------------------------------------------------
     def set_level(self, level):
         self._model.level = level
         self._set_mode_for_level(level.value)
@@ -64,13 +65,14 @@ class ControllerConverter:
         pass
 
     # -------------------------------------------------------
-    # Caricamento albero iniziale
+    # TREEVIEW RAW DATA/DICOM FILES
     # -------------------------------------------------------
     def get_directory_to_convert(self, path: str):
         self._model.path_to_convert = path
         self.populate_tree(Path(path), TreeType.RAW)
 
     def populate_tree(self, path: Path, tree_type: TreeType):
+        """Initial tree loading"""
         try:
             items = self._model.get_list_directory(path)
         except Exception as err:
@@ -85,10 +87,8 @@ class ControllerConverter:
 
         self._view.update_tree(widget, tree_type)
 
-    # -------------------------------------------------------
-    # Espansione cartella
-    # -------------------------------------------------------
-    def on_expand(self, e, node_path: str, tile):
+    def on_expand(self, e, node_path: Path, tile):
+        """Folder expansion"""
         if e.data != "true":  # collapse → ignora
             return
 
@@ -98,7 +98,6 @@ class ControllerConverter:
             self._view.create_alert(str(err))
             return
 
-        # aggiorna UI via view (MVC!)
         self._view.update_expansion_tile(
             tile,
             children,
@@ -117,15 +116,16 @@ class ControllerConverter:
 
         self._view.update_page()
 
-    # -------------------------------------------------------
-    # Click file
-    # -------------------------------------------------------
     def on_file_selected(self, e, file_path: str):
+        """File selected"""
         self._model.selected_path = file_path
         self._view.set_selected_control(e.control)
         print(f"[SELECTED FILE] {file_path}")
         self._view.update_page()
 
+    # -------------------------------------------------------
+    # DICOM CONVERTER
+    # -------------------------------------------------------
     def dicom_converter(self, e):
         self._view.show_progress_dialog()
         # threading.Thread(target=self.run_conversion, daemon=True).start()
