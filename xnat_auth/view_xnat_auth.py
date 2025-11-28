@@ -1,19 +1,32 @@
 import flet as ft
 
-
 class ViewXnatAuth(ft.Control):
     def __init__(self, page: ft.Page):
         super().__init__()
         self._page = page
         self._controller = None
 
+        # ----- Graphical elements -----
         self.txt_address = None
         self.txt_username = None
         self.txt_password = None
         self.ck_remember_user = None
-        self.dlg = None
+        self.btn_login = None
+        self.btn_cancel = None
+        self.dlg_auth = None
 
+    # ------------------------------------------------------
+    # BUILD AUTH INTERFACE TO XNAT
+    # -----------------------------------------------------
     def build_dialog(self, on_success, on_cancel):
+        self._build_controls(on_success, on_cancel)
+        self._bind_events()
+        self._define_layout()
+        self.set_initial_state()
+        return self.dlg_auth
+
+    def _build_controls(self, on_success, on_cancel):
+        """Graphical elements"""
         self._controller.set_remembered_credentials()
 
         self.txt_address = ft.TextField(
@@ -34,17 +47,23 @@ class ViewXnatAuth(ft.Control):
             label="Remember me",
             value=self._controller.remember or False,
         )
-
-        btn_login = ft.ElevatedButton(
-            "Login", on_click=self._controller.auth
+        self.btn_login = ft.ElevatedButton(
+            "Login",
         )
-        btn_cancel = ft.TextButton(
-            "Cancel", on_click=self._controller.cancel
+        self.btn_cancel = ft.TextButton(
+            "Cancel",
         )
 
         self._controller.set_callbacks(on_success, on_cancel)
 
-        self.dlg = ft.AlertDialog(
+    def _bind_events(self):
+        """Bind events"""
+        self.btn_login.on_click = self._controller.auth
+        self.btn_cancel.on_click = self._controller.cancel
+
+    def _define_layout(self):
+        """Define layout"""
+        self.dlg_auth = ft.AlertDialog(
             modal=True,
             title=ft.Text("XNAT Login"),
             content=ft.Column(
@@ -57,10 +76,24 @@ class ViewXnatAuth(ft.Control):
                 tight=True,
                 spacing=10,
             ),
-            actions=[btn_cancel, btn_login],
+            actions=[self.btn_cancel, self.btn_login],
         )
 
-        return self.dlg
+    # ------------------------------------------------------
+    # INITIAL STATE
+    # ------------------------------------------------------
+    def set_initial_state(self):
+        """Set initial state"""
+        # ----- Graphical elements -----
+        for ctrl in [
+            self.txt_address,
+            self.txt_username,
+            self.txt_password,
+            self.ck_remember_user,
+            self.btn_login,
+            self.btn_cancel,
+        ]:
+            ctrl.disabled = False
 
     def close_dialog(self):
         if self.dlg:

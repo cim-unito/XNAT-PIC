@@ -24,12 +24,11 @@ class ControllerConverter:
         self._view._page.go("/")
 
     def on_home_back_clicked(self, e):
+        self._view.set_initial_state()
         if self._mode_selected is None:
             self.go_home()
         else:
             self._mode_selected = None
-            self._view.set_initial_state()
-
     # ==========================================================
     # SET MODE
     # ==========================================================
@@ -52,6 +51,7 @@ class ControllerConverter:
 
     def convert_project(self, e):
         self.set_level(ConverterLevel.project)
+        print(self._view.dd_conversion_type.value)
 
     def convert_subject(self, e):
         self.set_level(ConverterLevel.subject)
@@ -73,7 +73,7 @@ class ControllerConverter:
     def populate_tree(self, path: Path, tree_type: TreeType):
         try:
             items = self._model.get_list_directory(path)
-        except ValueError as err:
+        except Exception as err:
             self._view.create_alert(str(err))
             return
 
@@ -89,12 +89,12 @@ class ControllerConverter:
     # Espansione cartella
     # -------------------------------------------------------
     def on_expand(self, e, node_path: str, tile):
-        if e.data != "true":   # collapse → ignora
+        if e.data != "true":  # collapse → ignora
             return
 
         try:
-            children = self._model.list_directory(node_path)
-        except ValueError as err:
+            children = self._model.get_list_directory(node_path)
+        except Exception as err:
             self._view.create_alert(str(err))
             return
 
@@ -106,9 +106,15 @@ class ControllerConverter:
             file_selected_callback=self.on_file_selected
         )
 
-        # highlight
+        # salvataggio selezione data
         self._model.selected_path = node_path
+
+        # highlight nel tree
         self._view.set_selected_control(tile)
+
+        # stampa della selezione
+        print(f"[SELECTED DIR] {node_path}")
+
         self._view.update_page()
 
     # -------------------------------------------------------
@@ -117,6 +123,7 @@ class ControllerConverter:
     def on_file_selected(self, e, file_path: str):
         self._model.selected_path = file_path
         self._view.set_selected_control(e.control)
+        print(f"[SELECTED FILE] {file_path}")
         self._view.update_page()
 
     def dicom_converter(self, e):

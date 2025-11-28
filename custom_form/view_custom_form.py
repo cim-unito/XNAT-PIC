@@ -1,6 +1,5 @@
 import flet as ft
 
-
 class ViewCustomForm(ft.Control):
     def __init__(self, page: ft.Page):
         super().__init__()

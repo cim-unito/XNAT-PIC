@@ -4,7 +4,6 @@ import flet as ft
 
 from enums.tree_type import TreeType
 
-
 class ViewConverter(ft.Control):
     def __init__(self, page: ft.Page):
         super().__init__()
@@ -13,7 +12,7 @@ class ViewConverter(ft.Control):
         # after the controller is created)
         self._controller = None
 
-        # ----- graphical elements -----
+        # ----- Graphical elements -----
         self.title = None
         # top level
         self.dd_conversion_type = None
@@ -21,7 +20,7 @@ class ViewConverter(ft.Control):
         self.btn_subject = None
         self.btn_experiment = None
         # mid level
-        self.sw_existing_folder = None
+        self.sw_overwrite = None
         self.sw_copy_files = None
         self.btn_select_folder = None
         self.file_picker = None
@@ -39,13 +38,20 @@ class ViewConverter(ft.Control):
 
         # map enum → container
         self._tree_map: dict[TreeType, ft.Container] = {}
-        self._selected_control: ft.Control | None = None
+        self._selected_control = None
 
     # ------------------------------------------------------
     # BUILD CONVERTER INTERFACE
     # -----------------------------------------------------
     def build_interface(self):
-        # ----- define style -----
+        self._build_controls()
+        self._bind_events()
+        self._define_layout()
+        self.set_initial_state()
+        return self._main_layout
+
+    def _build_controls(self):
+        """Graphical elements"""
         # button style
         btn_style = ft.ButtonStyle(
             bgcolor=ft.Colors.BLUE_200,
@@ -54,7 +60,6 @@ class ViewConverter(ft.Control):
             padding=15,
         )
 
-        # ----- graphical elements -----
         # title
         self.title = ft.Row(
             [
@@ -82,45 +87,40 @@ class ViewConverter(ft.Control):
             ],
             hint_text="Conversion type",
             width=200,
-            on_change=self._controller.conversion_type,
+
         )
-        # buttons project, subject, experiment
+        # level buttons: project, subject, experiment
         self.btn_project = ft.ElevatedButton(
             text="Convert Project",
             width=200,
             tooltip="Select the project to convert",
-            on_click=self._controller.convert_project,
             style=btn_style
         )
         self.btn_subject = ft.ElevatedButton(
             text="Convert Subject",
             width=200,
             tooltip="Select the subject to convert",
-            on_click=self._controller.convert_subject,
             style=btn_style
         )
         self.btn_experiment = ft.ElevatedButton(
             text="Convert Experiment",
             width=200,
             tooltip="Select the experiment to convert",
-            on_click=self._controller.convert_experiment,
             style=btn_style
         )
 
         # switch
-        self.sw_existing_folder = ft.Switch(
-            label="Overwrite existing folders", value=False
+        self.sw_overwrite = ft.Switch(
+            label="Overwrite existing folders",
         )
-        self.sw_copy_files = ft.Switch(label="Copy additional files",
-                                       value=False)
+        self.sw_copy_files = ft.Switch(label="Copy additional files",)
 
         # button select folder
-        self.file_picker = ft.FilePicker(on_result=self.file_picker_result)
+        self.file_picker = ft.FilePicker()
         self._page.overlay.append(self.file_picker)
         self.btn_select_folder = ft.ElevatedButton(
-            "Select folder",
+            text="Select folder",
             icon=ft.Icons.FOLDER_OPEN,
-            on_click=lambda e: self.file_picker.get_directory_path(),
             style=btn_style,
         )
 
@@ -128,27 +128,27 @@ class ViewConverter(ft.Control):
         self.tree_view_raw = ft.Container(
             width=250,
             height=320,
-            content=ft.ListView([], expand=True, spacing=4),
+            content=ft.ListView(controls=[], expand=True, spacing=4),
         )
+        self.register_tree_container(TreeType.RAW, self.tree_view_raw)
         self.tree_view_dcm = ft.Container(
             width=250,
             height=320,
-            content=ft.ListView([], expand=True, spacing=4),
+            content=ft.ListView(controls=[], expand=True, spacing=4),
         )
+        self.register_tree_container(TreeType.DICOM, self.tree_view_dcm)
 
         # button home/back and convert
         self.btn_home_back = ft.ElevatedButton(
             text="Go home",
             icon=ft.Icons.ARROW_BACK,
-            on_click=self._controller.on_home_back_clicked,
             style=btn_style,
         )
         self.btn_convert = ft.ElevatedButton(text="Convert",
                                              icon=ft.Icons.CHANGE_CIRCLE,
-                                             on_click=self._controller.dicom_converter,
-                                             style=btn_style,)
+                                             style=btn_style)
 
-        # progressbar
+        # progressbar dialog
         self.pb_conversion = ft.ProgressBar(width=300)
         self.dlg_conversion = ft.AlertDialog(
             modal=True,
@@ -156,7 +156,20 @@ class ViewConverter(ft.Control):
             content=self.pb_conversion,
         )
 
-        # ----- define layout -----
+    def _bind_events(self):
+        """Bind events"""
+        self.dd_conversion_type.on_change = self._controller.conversion_type
+        self.btn_project.on_click = self._controller.convert_project
+        self.btn_subject.on_click = self._controller.convert_subject
+        self.btn_experiment.on_click = self._controller.convert_experiment
+        self.file_picker.on_result = self.file_picker_result
+        self.btn_select_folder.on_click = lambda \
+                e: self.file_picker.get_directory_path()
+        self.btn_home_back.on_click = self._controller.on_home_back_clicked
+        self.btn_convert.on_click = self._controller.dicom_converter
+
+    def _define_layout(self):
+        """Define layout"""
         row_top = ft.Row(
             alignment=ft.MainAxisAlignment.CENTER,
             controls=[
@@ -188,22 +201,19 @@ class ViewConverter(ft.Control):
             controls=[
                 self.title,
                 row_top,
-                self.sw_existing_folder,
+                self.sw_overwrite,
                 self.sw_copy_files,
                 self.btn_select_folder,
                 row_mid,
                 row_bottom,
             ],
         )
-        # ----- set initial state -----
-        self.set_initial_state()
-
-        return self._main_layout
 
     # ------------------------------------------------------
     # INITIAL STATE
     # ------------------------------------------------------
     def set_initial_state(self):
+        """Set initial state"""
         # enable top-level
         self.dd_conversion_type.disabled = False
         self.btn_project.disabled = False
@@ -212,7 +222,7 @@ class ViewConverter(ft.Control):
 
         # disable the other controls
         for c in [
-            self.sw_existing_folder,
+            self.sw_overwrite,
             self.sw_copy_files,
             self.btn_select_folder,
             self.btn_convert,
@@ -224,10 +234,10 @@ class ViewConverter(ft.Control):
         self.btn_home_back.disabled = False
 
         # reset dropdown
-        self.dd_conversion_type.value = None
+        self.dd_conversion_type.value = ""
 
         # reset switch
-        self.sw_existing_folder.value = False
+        self.sw_overwrite.value = False
         self.sw_copy_files.value = False
 
         # reset treeview
@@ -257,7 +267,7 @@ class ViewConverter(ft.Control):
 
         # enable/disable sw
         for c in [
-            self.sw_existing_folder,
+            self.sw_overwrite,
             self.sw_copy_files,
         ]:
             c.disabled = not sw_enabled
@@ -280,47 +290,58 @@ class ViewConverter(ft.Control):
     # ------------------------------------------------------
     # FILE PICKER
     # ------------------------------------------------------
-    def file_picker_result(self, e: ft.FilePickerResultEvent):
+    def file_picker_result(self, e):
         if e.path:
             self._controller.get_directory_to_convert(e.path)
         else:
             self.create_alert("No folder selected!")
 
     # -------------------------------------------------------
-    # Costruzione tree iniziale
+    # Registrazione container alberi
     # -------------------------------------------------------
-    def build_lazy_tree(
-            self,
-            items: List[Dict],
-            expand_callback: Callable,
-            file_selected_callback: Callable
-    ) -> ft.ListView:
+    def register_tree_container(self, tree_type: TreeType,
+                                container: ft.Container):
+        """Il container viene messo nella mappa e contiene al suo interno la ListView."""
+        self._tree_map[tree_type] = container
 
-        tiles = [self.build_node(item, expand_callback, file_selected_callback)
-                 for item in items]
+    # -------------------------------------------------------
+    # Aggiornamento del contenuto del tree (fix)
+    # -------------------------------------------------------
+    def update_tree(self, new_widget: ft.Control, tree_type: TreeType):
+        """
+        CORRETTO: aggiorna la content del container esistente,
+        non sostituisce l'intero container nella mappa.
+        """
+        container = self._tree_map.get(tree_type)
+        container.content = new_widget
+        self._page.update()
 
+    # -------------------------------------------------------
+    # Lazy tree builder
+    # -------------------------------------------------------
+    def build_lazy_tree(self, items, expand_callback, file_selected_callback):
+        tiles = [
+            self.build_node(item, expand_callback, file_selected_callback)
+            for item in items
+        ]
         return ft.ListView(controls=tiles, expand=True)
 
-    def build_node(
-            self,
-            item: Dict,
-            expand_callback: Callable,
-            file_selected_callback: Callable
-    ) -> ft.Control:
-
+    def build_node(self, item, expand_callback, file_selected_callback):
         if item["is_dir"]:
             return self.make_lazy_folder(item, expand_callback)
         return self.make_file_tile(item, file_selected_callback)
 
-    def make_lazy_folder(self, item: Dict, expand_callback: Callable) -> ft.ExpansionTile:
+    def make_lazy_folder(self, item, expand_callback):
         return ft.ExpansionTile(
             leading=ft.Icon(ft.Icons.FOLDER),
             title=ft.Text(item["name"]),
             controls=[ft.Text("Loading...")],
-            on_change=lambda e, path=item["path"]: expand_callback(e, path, e.control)
+            on_change=lambda e, path=item["path"]: expand_callback(
+                e, path, e.control
+            ),
         )
 
-    def make_file_tile(self, item: Dict, file_selected_callback: Callable) -> ft.ListTile:
+    def make_file_tile(self, item, file_selected_callback):
         return ft.ListTile(
             leading=ft.Icon(ft.Icons.DESCRIPTION),
             title=ft.Text(item["name"]),
@@ -328,15 +349,9 @@ class ViewConverter(ft.Control):
         )
 
     # -------------------------------------------------------
-    # Aggiornamento ExpansionTile già esistente (lazy load)
+    # Aggiornamento ExpansionTile già aperto
     # -------------------------------------------------------
-    def update_expansion_tile(
-            self,
-            tile: ft.ExpansionTile,
-            children: List[Dict],
-            expand_callback: Callable,
-            file_selected_callback: Callable
-    ):
+    def update_expansion_tile(self, tile, children, expand_callback, file_selected_callback):
         tile.controls.clear()
 
         if not children:
@@ -347,7 +362,7 @@ class ViewConverter(ft.Control):
                 tile.controls.append(node)
 
     # -------------------------------------------------------
-    # Gestione selezione (highlight)
+    # Evidenziare elemento selezionato
     # -------------------------------------------------------
     def set_selected_control(self, control: ft.Control):
         if self._selected_control:
@@ -367,18 +382,8 @@ class ViewConverter(ft.Control):
         control.bgcolor = None
 
     # -------------------------------------------------------
-    # Gestione UI
+    # Progressbar
     # -------------------------------------------------------
-    def register_tree_container(self, tree_type: TreeType, container: ft.Container):
-        self._tree_map[tree_type] = container
-
-    def update_tree(self, new_widget: ft.Control, tree_type: TreeType):
-        self._tree_map[tree_type] = new_widget
-        self._page.update()
-
-
-
-
     def show_progress_dialog(self):
         self._page.open(self.dlg_conversion)
         self._page.update()

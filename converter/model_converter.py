@@ -32,12 +32,11 @@ class ModelConverter:
         except PermissionError:
             return [{
                 "name": "[access denied]",
-                "path": str(path),
+                "path": path,
                 "is_dir": False
             }]
-        except Exception as err:
-            print(f"Unexpected {err=}, {type(err)=}")
-            raise
+        except FileNotFoundError as err:
+            raise ValueError(f"Path not found: {path}")
 
         items = []
         for child in children:
@@ -46,7 +45,7 @@ class ModelConverter:
 
             items.append({
                 "name": child.name,
-                "path": str(child),
+                "path": child,
                 "is_dir": child.is_dir(),
             })
 

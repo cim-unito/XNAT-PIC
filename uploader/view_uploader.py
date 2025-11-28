@@ -5,21 +5,18 @@ class ViewUploader(ft.Control):
     def __init__(self, page: ft.Page):
         super().__init__()
         self._page = page
+        # controller (it is not initialized. Must be initialized in the main,
+        # after the controller is created)
         self._controller = None
 
-        self._main_layout = None
-        self._dlg_auth = None
-
-        self.selected_file = None
-        self.selected_folders = set()
-
-        # Top-level buttons
+        # ----- Graphical elements -----
+        self.title = None
+        # top level
         self.btn_project = None
         self.btn_subject = None
         self.btn_experiment = None
         self.btn_file = None
-
-        # File selection group
+        # file selection group
         self.file_picker = None
         self.btn_select_folder = None
         self.tree_view_dcm = None
@@ -28,26 +25,28 @@ class ViewUploader(ft.Control):
         self.cnt_modify_modality = None
         self.btn_modify_modality = None
         self.dd_modify_modality = None
-
-        # XNAT dropdowns + new
+        # xnat dropdowns + new buttons
         self.dd_xnat_project = None
         self.dd_xnat_subject = None
         self.dd_xnat_experiment = None
-
         self.btn_new_project = None
         self.btn_new_subject = None
         self.btn_new_experiment = None
-
         # button home/back upload
         self.btn_home_back = None
         self.btn_upload = None
-
         # progressbar
         self.pb_upload = None
         self.dlg_upload = None
-
         # dialog
+        self._dlg_auth = None
         self.dlg_modality = None
+
+        # layout
+        self._main_layout = None
+
+        self.selected_file = None
+        self.selected_folders = set()
 
     # ------------------------------------------------------
     # AUTH DIALOG
@@ -64,11 +63,27 @@ class ViewUploader(ft.Control):
             self._page.update()
 
     # ------------------------------------------------------
-    # UPLOADER INTERFACE
-    # ------------------------------------------------------
+    # BUILD UPLOADER INTERFACE
+    # -----------------------------------------------------
     def build_interface(self):
+        self._build_controls()
+        self._bind_events()
+        self._define_layout()
+        self.set_initial_state()
+        return self._main_layout
+
+    def _build_controls(self):
+        """Graphical elements"""
+        # button style
+        btn_style = ft.ButtonStyle(
+            bgcolor=ft.Colors.BLUE_200,
+            color=ft.Colors.BLUE_900,
+            shape=ft.RoundedRectangleBorder(radius=10),
+            padding=15,
+        )
+
         # title
-        title = ft.Row(
+        self.title = ft.Row(
             [
                 ft.Icon(
                     ft.Icons.CLOUD_UPLOAD,
@@ -86,65 +101,42 @@ class ViewUploader(ft.Control):
             spacing=12,
         )
 
-        self.file_picker = ft.FilePicker(
-            on_result=self.file_picker_result
-        )
-        self._page.overlay.append(self.file_picker)
-
-        # Button style
-        btn_style = ft.ButtonStyle(
-            bgcolor=ft.Colors.BLUE_200,
-            color=ft.Colors.BLUE_900,
-            shape=ft.RoundedRectangleBorder(radius=10),
-            padding=15,
-        )
-
-        # Level buttons: project, subject, experiment, file
+        # level buttons: project, subject, experiment, file
         self.btn_project = ft.ElevatedButton(
-            "Project",
-            on_click=self._controller.upload_project,
-            expand=True,
+            text="Project",
+            width=200,
+            tooltip="Select the project to upload",
             style=btn_style
         )
         self.btn_subject = ft.ElevatedButton(
-            "Subject",
-            on_click=self._controller.upload_subject,
-            expand=True,
+            text="Subject",
+            width=200,
+            tooltip="Select the subject to upload",
             style=btn_style
         )
         self.btn_experiment = ft.ElevatedButton(
-            "Experiment",
-            on_click=self._controller.upload_experiment,
-            expand=True,
+            text="Experiment",
+            width=200,
+            tooltip="Select the experiment to upload",
             style=btn_style
         )
         self.btn_file = ft.ElevatedButton(
-            "File",
-            on_click=self._controller.upload_file,
-            expand=True,
+            text="File",
+            width=200,
+            tooltip="Select the file to upload",
             style=btn_style
         )
 
-        row_levels = ft.Row(
-            [
-                self.btn_project,
-                self.btn_subject,
-                self.btn_experiment,
-                self.btn_file,
-            ],
-            alignment=ft.MainAxisAlignment.CENTER,
-            spacing=12,
-        )
-
-        # Select folder, tree
+        # button select folder
+        self.file_picker = ft.FilePicker()
+        self._page.overlay.append(self.file_picker)
         self.btn_select_folder = ft.ElevatedButton(
-            "Select folder",
+            text="Select folder",
             icon=ft.Icons.FOLDER_OPEN,
-            disabled=True,
-            on_click=lambda e: self.file_picker.get_directory_path(),
             style=btn_style,
         )
 
+        # treeview
         self.tree_view_dcm = ft.Container(
             width=250,
             height=320,
@@ -159,7 +151,7 @@ class ViewUploader(ft.Control):
             ),
         )
 
-        # Image preview
+        # image preview
         self.img_preview = ft.Image(
             src="assets/images/ImagePreview.png",
             width=260,
@@ -168,24 +160,20 @@ class ViewUploader(ft.Control):
             border_radius=12,
         )
 
-        # Buttons beside image (show dicom tags and modify modality)
+        # button show dicom tags and modify modality
         self.btn_show_tags = ft.ElevatedButton(
             "Show DICOM tags",
             icon=ft.Icons.LIST_ALT,
-            disabled=True,
-            on_click=self._controller.on_show_tags_clicked,
             style=btn_style,
         )
 
+        # button and dropdown modify modality
         self.cnt_modify_modality = ft.Column()
         self.btn_modify_modality = ft.ElevatedButton(
             "Modify DICOM modality",
             icon=ft.Icons.BUILD,
-            disabled=True,
-            on_click=self._controller.modify_modality,
             style=btn_style,
         )
-
         self.dd_modify_modality = ft.Dropdown(
             options=[
                 ft.dropdown.Option("MR"),
@@ -195,9 +183,90 @@ class ViewUploader(ft.Control):
             ],
             hint_text="New Modality",
             width=200,
-            on_change=self._controller.on_select_modality,
         )
         self.cnt_modify_modality.controls.append(self.btn_modify_modality)
+
+        # xnat dropdowns project, subject, experiment
+        self.dd_xnat_project = ft.Dropdown(
+            hint_text="Project",
+            width=200,
+        )
+        self.dd_xnat_subject = ft.Dropdown(
+            hint_text="Subject",
+            width=200,
+        )
+        self.dd_xnat_experiment = ft.Dropdown(
+            hint_text="Experiment",
+            width=200,
+        )
+
+        # xnat new project, subject, experiment
+        self.btn_new_project = ft.ElevatedButton(
+            "New Project",
+            icon=ft.Icons.ADD_BOX,
+            style=btn_style,
+        )
+        self.btn_new_subject = ft.ElevatedButton(
+            "New Subject",
+            icon=ft.Icons.PERSON_ADD,
+            style=btn_style,
+        )
+        self.btn_new_experiment = ft.ElevatedButton(
+            "New Experiment",
+            icon=ft.Icons.ADD_CHART,
+            style=btn_style,
+        )
+
+        # button home/back and upload
+        self.btn_home_back = ft.ElevatedButton(
+            "Home",
+            icon=ft.Icons.ARROW_BACK,
+            style=btn_style,
+        )
+        self.btn_upload = ft.ElevatedButton(
+            "Upload",
+            icon=ft.Icons.CLOUD_UPLOAD,
+            style=btn_style,
+        )
+
+        # progressbar dialog
+        self.pb_upload = ft.ProgressBar(width=250)
+        self.dlg_upload = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Loading..."),
+            content=self.pb_upload,
+        )
+
+    def _bind_events(self):
+        """Bind events"""
+        self.btn_project.on_click = self._controller.upload_project
+        self.btn_subject.on_click = self._controller.upload_subject
+        self.btn_experiment.on_click = self._controller.upload_experiment
+        self.btn_file.on_click = self._controller.upload_file
+        self.file_picker.on_result = self.file_picker_result
+        self.btn_select_folder.on_click = lambda \
+                e: self.file_picker.get_directory_path()
+        self.btn_show_tags.on_click = self._controller.on_show_tags_clicked
+        self.btn_modify_modality.on_click = self._controller.modify_modality
+        self.dd_modify_modality.on_change = self._controller.on_select_modality
+        self.dd_xnat_project.on_change = self._controller.on_project_selected
+        self.dd_xnat_subject.on_change = self._controller.on_subject_selected
+        self.btn_new_project.on_click = self._controller.create_new_project
+        self.btn_home_back.on_click = self._controller.on_home_back_clicked
+        self.btn_upload.on_click = self._controller.dicom_upload
+
+    def _define_layout(self):
+        """Define layout"""
+        row_top = ft.Row(
+            [
+                self.btn_project,
+                self.btn_subject,
+                self.btn_experiment,
+                self.btn_file,
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=12,
+        )
 
         col_tools = ft.Column(
             [
@@ -228,30 +297,6 @@ class ViewUploader(ft.Control):
             spacing=20,
         )
 
-        # xnat dropdowns project. subject, experiment
-        self.dd_xnat_project = ft.Dropdown(
-            hint_text="Project",
-            width=200,
-            disabled=True,
-            prefix_icon=ft.Icons.DASHBOARD,
-            on_change=self._controller.on_project_selected,
-        )
-
-        self.dd_xnat_subject = ft.Dropdown(
-            hint_text="Subject",
-            width=200,
-            disabled=True,
-            prefix_icon=ft.Icons.PERSON,
-            on_change=self._controller.on_subject_selected,
-        )
-
-        self.dd_xnat_experiment = ft.Dropdown(
-            hint_text="Experiment",
-            width=200,
-            disabled=True,
-            prefix_icon=ft.Icons.SCIENCE,
-        )
-
         row_dd = ft.Row(
             [
                 self.dd_xnat_project,
@@ -260,29 +305,6 @@ class ViewUploader(ft.Control):
             ],
             alignment=ft.MainAxisAlignment.CENTER,
             spacing=20,
-        )
-
-        # xnat new project, subject, experiment
-        self.btn_new_project = ft.ElevatedButton(
-            "New Project",
-            icon=ft.Icons.ADD_BOX,
-            disabled=True,
-            on_click=self._controller.create_new_project,
-            style=btn_style,
-        )
-
-        self.btn_new_subject = ft.ElevatedButton(
-            "New Subject",
-            icon=ft.Icons.PERSON_ADD,
-            disabled=True,
-            style=btn_style,
-        )
-
-        self.btn_new_experiment = ft.ElevatedButton(
-            "New Experiment",
-            icon=ft.Icons.ADD_CHART,
-            disabled=True,
-            style=btn_style,
         )
 
         row_new = ft.Row(
@@ -295,33 +317,9 @@ class ViewUploader(ft.Control):
             spacing=20,
         )
 
-        # Buttons home/back and upload
-        self.btn_home_back = ft.ElevatedButton(
-            "Home",
-            icon=ft.Icons.ARROW_BACK,
-            on_click=self._controller.on_home_back_clicked,
-            style=btn_style,
-        )
-
-        self.btn_upload = ft.ElevatedButton(
-            "Upload",
-            icon=ft.Icons.CLOUD_UPLOAD,
-            disabled=True,
-            on_click=self._controller.dicom_upload,
-            style=btn_style,
-        )
-
         row_home_upload = ft.Row(
             [self.btn_home_back, self.btn_upload],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        )
-
-        # Progress dialog
-        self.pb_upload = ft.ProgressBar(width=250)
-        self.dlg_upload = ft.AlertDialog(
-            modal=True,
-            title=ft.Text("Loading..."),
-            content=self.pb_upload,
         )
 
         # ----- Local Section -----
@@ -383,7 +381,7 @@ class ViewUploader(ft.Control):
         scrollable_content = ft.Container(
             content=ft.Column(
                 [
-                    row_levels,
+                    row_top,
                     local_section,
                     xnat_section,
                 ],
@@ -397,15 +395,13 @@ class ViewUploader(ft.Control):
         # ---- MAIN LAYOUT ----
         self._main_layout = ft.Column(
             [
-                title,
+                self.title,
                 ft.Container(scrollable_content, expand=True),
                 row_home_upload,
             ],
             spacing=20,
             expand=True,
         )
-
-        return self._main_layout
 
     # ------------------------------------------------------
     # INITIAL STATE
@@ -519,11 +515,12 @@ class ViewUploader(ft.Control):
     # ------------------------------------------------------
     # FILE PICKER
     # ------------------------------------------------------
-    def file_picker_result(self, e: ft.FilePickerResultEvent):
-        if e.path:
-            self._controller.get_directory_to_upload(e.path)
-        else:
-            self.create_alert("No folder selected.")
+    def file_picker_result(self, e):
+        # if e.path:
+        #     self._controller.get_directory_to_upload(e.path)
+        # else:
+        #     self.create_alert("No folder selected.")
+        pass
 
     # ------------------------------------------------------
     # TREEVIEW
