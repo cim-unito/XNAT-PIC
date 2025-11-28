@@ -4,6 +4,7 @@ import flet as ft
 from pathlib import Path
 
 from converter.bruker_2_dicom_converter import Bruker2DicomConverter
+from converter.services.filesystem_service import FilesystemService
 from enums.converter_level import ConverterLevel
 from enums.tree_type import TreeType
 
@@ -74,7 +75,7 @@ class ControllerConverter:
     def populate_tree(self, path: Path, tree_type: TreeType):
         """Initial tree loading"""
         try:
-            items = self._model.get_list_directory(path)
+            items = FilesystemService.get_list_directory(path)
         except Exception as err:
             self._view.create_alert(str(err))
             return
@@ -87,13 +88,13 @@ class ControllerConverter:
 
         self._view.update_tree(widget, tree_type)
 
-    def on_expand(self, e, node_path: Path, tile):
+    def on_expand(self, e, node_path, tile):
         """Folder expansion"""
-        if e.data != "true":  # collapse → ignora
+        if e.data != "true":
             return
 
         try:
-            children = self._model.get_list_directory(node_path)
+            children = FilesystemService.get_list_directory(node_path)
         except Exception as err:
             self._view.create_alert(str(err))
             return
@@ -105,20 +106,12 @@ class ControllerConverter:
             file_selected_callback=self.on_file_selected
         )
 
-        # salvataggio selezione data
-        self._model.selected_path = node_path
-
-        # highlight nel tree
         self._view.set_selected_control(tile)
-
-        # stampa della selezione
         print(f"[SELECTED DIR] {node_path}")
-
         self._view.update_page()
 
-    def on_file_selected(self, e, file_path: str):
+    def on_file_selected(self, e, file_path):
         """File selected"""
-        self._model.selected_path = file_path
         self._view.set_selected_control(e.control)
         print(f"[SELECTED FILE] {file_path}")
         self._view.update_page()
@@ -132,10 +125,11 @@ class ControllerConverter:
         self.run_conversion()
 
     def run_conversion(self):
-        flag_overwrite = self._view.sw_existing_folder.value
-        p = self._model.path_to_convert
-        self._model.path_converted = p.parent / (p.name + "_dcm")
-        self._model.create_dicom_folder(flag_overwrite)
+        flag_overwrite = self._view.sw_overwrite.value
+        path_converted = self._model.path_converted(
+            self._model.path_to_convert)
+        FilesystemService.create_dicom_folder(path_converted, flag_overwrite)
+
         self._model.get_valid_scans()
         self._model.get_destination_scans()
 

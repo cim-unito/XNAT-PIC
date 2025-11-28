@@ -17,113 +17,51 @@ class ModelConverter:
         self._scan_to_convert: list[Path] = []
         self._scan_converted: list[Path] = []
 
-    def get_list_directory(self, path: Path) -> List[Dict]:
-        """
-        Returns a list of dict with name, path, is_dir.
-        """
-        try:
-            # Sorting criterion:
-            # - All directories before files
-            # - Within groups (directories and files), case-insensitive alphabetical sorting
-            children = sorted(
-                path.iterdir(),
-                key=lambda p: (not p.is_dir(), p.name.lower())
-            )
-        except PermissionError:
-            return [{
-                "name": "[access denied]",
-                "path": path,
-                "is_dir": False
-            }]
-        except FileNotFoundError as err:
-            raise ValueError(f"Path not found: {path}")
+    @property
+    def path_to_convert(self):
+        return self._path_to_convert
 
-        items = []
-        for child in children:
-            if child.name.startswith("."):
-                continue
+    @path_to_convert.setter
+    def path_to_convert(self, path_to_convert):
+        p = Path(path_to_convert)
+        if not p.is_dir():
+            raise ValueError(f"'{p}' is not a valid folder.")
+        self._path_to_convert = p
 
-            items.append({
-                "name": child.name,
-                "path": child,
-                "is_dir": child.is_dir(),
-            })
+    @property
+    def level(self):
+        return self._level
 
-        return items
+    @level.setter
+    def level(self, level):
+        self._level = level
 
-    def create_dicom_folder(self, overwrite: bool):
-        if self._path_converted.exists():
-            if self._path_converted.is_dir():
-                if overwrite:
-                    print(
-                        f"The folder '{self._path_converted}' already exists."
-                        f" Overwrite..."
-                    )
-                    shutil.rmtree(self._path_converted)
-                    self._path_converted.mkdir(parents=True, exist_ok=True)
-                else:
-                    print(
-                        f"The folder '{self._path_converted}' "
-                        f"already exists and 'overwrite' is False."
-                    )
-            else:
-                raise NotADirectoryError(
-                    f"'{self._path_converted}' exists but is not a directory."
-                )
-        else:
-            print(f"Create the folder '{self._path_converted}'.")
-            self._path_converted.mkdir(parents=True, exist_ok=True)
+    @property
+    def conversion_type(self):
+        return self._conversion_type
 
-    def get_valid_scans(self):
-        if self._path_to_convert is None:
-            raise ValueError("Input path not set.")
+    @conversion_type.setter
+    def conversion_type(self, conversion_type):
+        self._conversion_type = conversion_type
 
-        experiment: list[Path] = []
-        if self._level == "project":
-            prj = self._path_to_convert
-            for sub in prj.iterdir():
-                if not sub.is_dir():
-                    continue
-                for exp in sub.iterdir():
-                    if exp.is_dir():
-                        experiment.append(exp)
+    @property
+    def path_converted(self):
+        return self._path_converted
 
-        elif self._level == "subject":
-            sub = self._path_to_convert
-            for exp in sub.iterdir():
-                if exp.is_dir():
-                    experiment.append(exp)
+    @path_converted.setter
+    def path_converted(self, path_to_convert: Path):
+        p = path_to_convert
+        self._path_converted = p.parent / (p.name + "_dcm")
 
-        elif self._level == "experiment":
-            experiment = [self._path_to_convert]
+    @property
+    def scan_to_convert(self):
+        return self._scan_to_convert
 
-        if not experiment:
-            raise ValueError("There are no experiments to iterate")
+    @property
+    def scan_converted(self):
+        return self._scan_converted
 
-        if self._conversion_type == "Bruker2DICOM":
-            for exp in experiment:
-                for scan in exp.iterdir():
-                    if not scan.is_dir():
-                        continue
-                    for subscan in scan.iterdir():
-                        if not subscan.is_dir():
-                            continue
-                        for inner in subscan.iterdir():
-                            if not inner.is_dir():
-                                continue
-                            if any(f.name == "2dseq" and f.is_file() for f in
-                                   inner.iterdir()):
-                                self._scan_to_convert.append(scan)
 
-        elif self._conversion_type == "IVIS2DICOM":
-            for exp in experiment:
-                for scan in exp.iterdir():
-                    if not scan.is_dir():
-                        continue
-                    if any(
-                            f.is_file() and f.suffix.lower() == ".png" and "_SEQ" in f.name
-                            for f in scan.iterdir()):
-                        self._scan_to_convert.append(scan)
 
     def get_destination_scans(self):
         if self._path_converted is None or self._path_to_convert is None:
@@ -178,45 +116,5 @@ class ModelConverter:
         filename.parent.mkdir(parents=True, exist_ok=True)
         ds.save_as(filename)
 
-    @property
-    def path_to_convert(self):
-        return self._path_to_convert
 
-    @path_to_convert.setter
-    def path_to_convert(self, path_to_convert):
-        p = Path(path_to_convert)
-        if not p.is_dir():
-            raise ValueError(f"'{p}' is not a valid folder.")
-        self._path_to_convert = p
 
-    @property
-    def level(self):
-        return self._level
-
-    @level.setter
-    def level(self, level):
-        self._level = level
-
-    @property
-    def conversion_type(self):
-        return self._conversion_type
-
-    @conversion_type.setter
-    def conversion_type(self, conversion_type):
-        self._conversion_type = conversion_type
-
-    @property
-    def path_converted(self):
-        return self._path_converted
-
-    @path_converted.setter
-    def path_converted(self, path_converted):
-        self._path_converted = path_converted
-
-    @property
-    def scan_to_convert(self):
-        return self._scan_to_convert
-
-    @property
-    def scan_converted(self):
-        return self._scan_converted

@@ -300,7 +300,7 @@ class ViewConverter(ft.Control):
     # -------------------------------------------------------
     def map_tree_container(self, tree_type: TreeType,
                            container: ft.Container):
-        """The container is placed in the map and contains the ListView inside."""
+        """The container is placed in the tree map and contains the ListView inside."""
         self._tree_map[tree_type] = container
 
     def update_tree(self, new_widget: ft.ListView, tree_type: TreeType):
