@@ -31,7 +31,12 @@ class ControllerXnatAuth:
                                    self._username,
                                    self._password)
         if xnat_session.connect():
-            self.handle_persistence()
+            self._model.persist_credentials(
+                self._address,
+                self._username,
+                self._password,
+                self._remember,
+            )
             self._view.close_dialog()
             if self._on_success:
                 self._on_success(xnat_session)
@@ -50,23 +55,17 @@ class ControllerXnatAuth:
             self._username = remembered.username
             self._password = remembered.password
             self._remember = remembered.remember
+        else:
+            self._address = None
+            self._username = None
+            self._password = None
+            self._remember = None
 
     def update_fields_from_view(self):
         self._address = self._view.txt_address.value
         self._username = self._view.txt_username.value
         self._password = self._view.txt_password.value
         self._remember = self._view.ck_remember_user.value
-
-    def handle_persistence(self):
-        if self._remember:
-            self._model.insert_new_credential(
-                self._address,
-                self._username,
-                self._password,
-                self._remember
-            )
-        else:
-            self._model.delete_credential()
 
     @property
     def address(self):
