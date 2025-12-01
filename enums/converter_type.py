@@ -1,6 +1,6 @@
 from enum import Enum
 
 class ConverterType(Enum):
-    Bruker2Dicom = "Bruker2DICOM"
-    Ivis2Dicom = "Ivis2Dicom"
+    BRUKER2DICOM = "Bruker2Dicom"
+    IVIS2DICOM = "Ivis2Dicom"
 

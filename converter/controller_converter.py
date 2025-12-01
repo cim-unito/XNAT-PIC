@@ -1,11 +1,7 @@
-import threading
-
-import flet as ft
 from pathlib import Path
 
-from converter.bruker_2_dicom_converter import Bruker2DicomConverter
-from converter.services.filesystem_service import FilesystemService
 from enums.converter_level import ConverterLevel
+from enums.converter_type import ConverterType
 from enums.tree_type import TreeType
 
 
@@ -16,27 +12,24 @@ class ControllerConverter:
         # the model, which implements the logic of the program and holds the data
         self._model = model
 
-        self._mode_selected = None
-
     # -------------------------------------------------------
     # HOME / BACK
     # -------------------------------------------------------
     def go_home(self):
-        self._view._page.go("/")
+        self._view.page.go("/")
 
     def on_home_back_clicked(self, e):
-        self._view.set_initial_state()
-        if self._mode_selected is None:
+        if self._model.level is None:
+            self._view.set_initial_state()
             self.go_home()
         else:
-            self._mode_selected = None
+            self._model.reset_level()
+            self._view.set_initial_state()
 
     # -------------------------------------------------------
     # SET MODE
     # -------------------------------------------------------
-    def _set_mode_for_level(self, mode):
-        self._mode_selected = mode
-
+    def _set_mode_for_level(self):
         self._view.set_mode(
             top_level_buttons_enabled=False,
             sw_enabled=True,
@@ -49,33 +42,32 @@ class ControllerConverter:
     # -------------------------------------------------------
     def set_level(self, level):
         self._model.level = level
-        self._set_mode_for_level(level.value)
+        self._set_mode_for_level()
 
     def convert_project(self, e):
-        self.set_level(ConverterLevel.project)
-        print(self._view.dd_conversion_type.value)
+        self.set_level(ConverterLevel.PROJECT)
 
     def convert_subject(self, e):
-        self.set_level(ConverterLevel.subject)
+        self.set_level(ConverterLevel.SUBJECT)
 
     def convert_experiment(self, e):
-        self.set_level(ConverterLevel.experiment)
+        self.set_level(ConverterLevel.EXPERIMENT)
 
     def conversion_type(self, e):
-        # print(e.control.value)
-        pass
+        self._model.conversion_type = ConverterType(e.control.value)
+        print(e.control.value)
 
     # -------------------------------------------------------
     # TREEVIEW RAW DATA/DICOM FILES
     # -------------------------------------------------------
     def get_directory_to_convert(self, path: str):
-        self._model.path_to_convert = path
+        self._model.input_root = path
         self.populate_tree(Path(path), TreeType.RAW)
 
     def populate_tree(self, path: Path, tree_type: TreeType):
         """Initial tree loading"""
         try:
-            items = FilesystemService.get_list_directory(path)
+            items = self._model.get_list_directory(path)
         except Exception as err:
             self._view.create_alert(str(err))
             return
@@ -94,7 +86,7 @@ class ControllerConverter:
             return
 
         try:
-            children = FilesystemService.get_list_directory(node_path)
+            children = self._model.get_list_directory(node_path)
         except Exception as err:
             self._view.create_alert(str(err))
             return
@@ -119,32 +111,37 @@ class ControllerConverter:
     # -------------------------------------------------------
     # DICOM CONVERTER
     # -------------------------------------------------------
-    def dicom_converter(self, e):
+    def on_convert_clicked(self, e):
         self._view.show_progress_dialog()
         # threading.Thread(target=self.run_conversion, daemon=True).start()
-        self.run_conversion()
+        self._run_conversion()
 
-    def run_conversion(self):
-        flag_overwrite = self._view.sw_overwrite.value
-        path_converted = self._model.path_converted(
-            self._model.path_to_convert)
-        FilesystemService.create_dicom_folder(path_converted, flag_overwrite)
+    def _run_conversion(self):
+        try:
+            self._prepare_conversion()
+            self._perform_conversion()
+            self._finalize_conversion()
+        except Exception as e:
+            print(str(e))
 
-        self._model.get_valid_scans()
-        self._model.get_destination_scans()
+    def _prepare_conversion(self):
+        overwrite = self._view.sw_overwrite.value
+        self._model.output_root = self._model.input_root
+        self._model.create_dicom_output_folder(overwrite)
+        self._model.get_input_scans()
+        self._model.get_output_scans()
 
-        total_scans = len(self._model.scan_to_convert)
+    def _perform_conversion(self):
+        total_scans = len(self._model.input_scans)
 
         for idx, (src, dst) in enumerate(
-                zip(self._model.scan_to_convert, self._model.scan_converted)
+                zip(self._model.input_scans, self._model.output_scans)
         ):
-            if self._model.conversion_type == "Bruker2DICOM":
-                Bruker2DicomConverter.convert(self._model, [str(src), str(dst)])
-            elif self._model.conversion_type == "IVIS2DICOM":
-                self._model.ivis2dicom_converter([str(src), str(dst)])
+            self._model.bruker_converter([str(src), str(dst)])
 
             self._view.update_progress((idx + 1) / total_scans)
 
-        self.populate_tree(self._model.path_converted, type_tree='dcm')
+    def _finalize_conversion(self):
+        self.populate_tree(self._model.output_root, TreeType.DICOM)
         self._view.dlg_conversion.open = False
         self._view.update_page()

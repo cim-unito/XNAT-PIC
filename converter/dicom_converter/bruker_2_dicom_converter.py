@@ -16,17 +16,15 @@ import numpy as np
 import pydicom.uid
 from pydicom.dataset import Dataset, FileDataset
 
-from converter.model_converter import ModelConverter
 from converter.utils.read_method import read_method_parameters
 from converter.utils.read_visupars import read_visupars_parameters
 from converter.utils.cest_dict import add_cest_dict
 
 
-class Bruker2DicomConverter(ModelConverter):
-    def __init__(self):
-        super().__init__()
+class Bruker2DicomConverter:
 
-    def convert(self, dirs):
+    @staticmethod
+    def convert(dirs):
 
         try:
             print("Starting with " + str(dirs[0].split("/")[-1]))

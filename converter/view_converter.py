@@ -81,8 +81,8 @@ class ViewConverter(ft.Control):
         # dropdown conversion type
         self.dd_conversion_type = ft.Dropdown(
             options=[
-                ft.dropdown.Option("Bruker2DICOM"),
-                ft.dropdown.Option("IVIS2DICOM"),
+                ft.dropdown.Option("Bruker2Dicom"),
+                ft.dropdown.Option("Ivis2Dicom"),
             ],
             hint_text="Conversion type",
             width=200,
@@ -165,7 +165,7 @@ class ViewConverter(ft.Control):
         self.btn_select_folder.on_click = lambda \
                 e: self.file_picker.get_directory_path()
         self.btn_home_back.on_click = self._controller.on_home_back_clicked
-        self.btn_convert.on_click = self._controller.dicom_converter
+        self.btn_convert.on_click = self._controller.on_convert_clicked
 
     def _define_layout(self):
         """Define layout"""
@@ -388,6 +388,14 @@ class ViewConverter(ft.Control):
 
     def set_controller(self, controller):
         self._controller = controller
+
+    @property
+    def page(self):
+        return self._page
+
+    @page.setter
+    def page(self, page):
+        self.page = page
 
     def create_alert(self, message):
         dlg = ft.AlertDialog(title=ft.Text(message))
