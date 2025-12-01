@@ -96,14 +96,33 @@ class ViewXnatAuth(ft.Control):
             ctrl.disabled = False
 
     def close_dialog(self):
-        if self.dlg:
-            self._page.close(self.dlg)
+        if self.dlg_auth:
+            self._page.close(self.dlg_auth)
             self._page.update()
 
-    def show_error(self, msg: str):
-        dlg = ft.AlertDialog(title=ft.Text(msg))
-        self._page.open(dlg)
-        self._page.update()
+    @property
+    def controller(self):
+        return self._controller
+
+    @controller.setter
+    def controller(self, controller):
+        self._controller = controller
 
     def set_controller(self, controller):
         self._controller = controller
+
+    @property
+    def page(self):
+        return self._page
+
+    @page.setter
+    def page(self, page):
+        self._page = page
+
+    def create_alert(self, message):
+        dlg = ft.AlertDialog(title=ft.Text(message))
+        self._page.open(dlg)
+        self._page.update()
+
+    def update_page(self):
+        self._page.update()
