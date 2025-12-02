@@ -25,7 +25,7 @@ class ControllerXnatAuth:
     # LOGIN
     # -------------------------------
     def auth(self, e):
-        self.update_fields_from_view()
+        self._update_fields_from_view()
 
         xnat_session = XnatSession(self._address,
                                    self._username,
@@ -41,7 +41,10 @@ class ControllerXnatAuth:
             if self._on_success:
                 self._on_success(xnat_session)
         else:
-            self._view.show_error("Connection failed.")
+            self._view.create_alert("Connection failed.")
+            self._view.close_dialog()
+            if self._on_cancel:
+                self._on_cancel()
 
     def cancel(self, e):
         self._view.close_dialog()
@@ -61,7 +64,7 @@ class ControllerXnatAuth:
             self._password = None
             self._remember = None
 
-    def update_fields_from_view(self):
+    def _update_fields_from_view(self):
         self._address = self._view.txt_address.value
         self._username = self._view.txt_username.value
         self._password = self._view.txt_password.value

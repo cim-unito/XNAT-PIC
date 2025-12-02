@@ -12,7 +12,7 @@ class XnatCredentialDao:
         else:
             result = []
             cursor = cnx.cursor()
-            query = """SELECT address, username, password, remember*
+            query = """SELECT address, username, password, remember
                     FROM xnat_credentials"""
 
             cursor.execute(query)

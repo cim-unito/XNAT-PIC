@@ -1,8 +1,10 @@
+from pathlib import Path
 import sqlite3
 
 
 class DBConnect:
-    DB_PATH = "database/xnatpic.db"
+    BASE_DIR = Path(__file__).resolve().parent
+    DB_PATH = BASE_DIR / "xnatpic.db"
 
     @staticmethod
     def get_connection():
