@@ -238,14 +238,14 @@ class ViewCustomForm(ft.Control):
         self.btn_home_back.disabled = False
 
         # Reset dropdowns
-        self.dd_xnat_project.value = None
-        self.dd_xnat_project.options = []
-
-        self.dd_xnat_subject.value = None
-        self.dd_xnat_subject.options = []
-
-        self.dd_xnat_experiment.value = None
-        self.dd_xnat_experiment.options = []
+        for dd in [
+            self.dd_xnat_project,
+            self.dd_xnat_subject,
+            self.dd_xnat_experiment
+        ]:
+            dd.options = []
+            dd.key = "Select"
+            dd.value = None
 
         # Reset custom forms
         self.txt_group.value = ""
@@ -299,18 +299,10 @@ class ViewCustomForm(ft.Control):
     # ------------------------------------------------------
     # FILL DROPDOWN WITH VALUES READ IN XNAT
     # ------------------------------------------------------
-    def reset_dropdown(self, dd):
-        dd.options = []
-        dd.value = None
-
     def populate_projects(self, projects):
         self.dd_xnat_project.options = [
             ft.dropdown.Option(key=p["id"], text=p["label"]) for p in projects
         ]
-        self.dd_xnat_project.value = None
-
-        self.reset_dropdown(self.dd_xnat_subject)
-        self.reset_dropdown(self.dd_xnat_experiment)
 
         self._page.update()
 
@@ -318,9 +310,6 @@ class ViewCustomForm(ft.Control):
         self.dd_xnat_subject.options = [
             ft.dropdown.Option(key=s["id"], text=s["label"]) for s in subjects
         ]
-        self.dd_xnat_subject.value = None
-
-        self.reset_dropdown(self.dd_xnat_experiment)
 
         self._page.update()
 
@@ -329,7 +318,6 @@ class ViewCustomForm(ft.Control):
             ft.dropdown.Option(key=e["id"], text=e["label"]) for e in
             experiments
         ]
-        self.dd_xnat_experiment.value = None
         self._page.update()
 
     # ------------------------------------------------------

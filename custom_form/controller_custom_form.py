@@ -120,6 +120,8 @@ class ControllerCustomForm:
 
     def on_project_selected(self, e):
         project_id = self._view.dd_xnat_project.value
+        print(self._view.dd_xnat_project.value)
+        print(self._view.dd_xnat_project.key)
         self._view.populate_subjects([])
         self._view.populate_experiments([])
 

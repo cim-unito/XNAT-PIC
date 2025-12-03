@@ -233,7 +233,8 @@ class ViewConverter(ft.Control):
         self.btn_home_back.disabled = False
 
         # reset dropdown
-        self.dd_conversion_type.value = ""
+        self.dd_conversion_type.key = "Select"
+        self.dd_conversion_type.value = None
 
         # reset switch
         self.sw_overwrite.value = False
