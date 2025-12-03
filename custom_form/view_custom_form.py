@@ -162,6 +162,8 @@ class ViewCustomForm(ft.Control):
         self.btn_experiment.on_click = self._controller.custom_forms_experiment
         self.dd_xnat_project.on_change = self._controller.on_project_selected
         self.dd_xnat_subject.on_change = self._controller.on_subject_selected
+        self.dd_xnat_experiment.on_change = \
+            self._controller.on_experiment_selected
         self.btn_home_back.on_click = self._controller.on_home_back_clicked
 
     def _define_layout(self):
@@ -244,7 +246,7 @@ class ViewCustomForm(ft.Control):
             self.dd_xnat_experiment
         ]:
             dd.options = []
-            dd.key = "Select"
+            dd.hint_text = "Select"
             dd.value = None
 
         # Reset custom forms
@@ -299,10 +301,18 @@ class ViewCustomForm(ft.Control):
     # ------------------------------------------------------
     # FILL DROPDOWN WITH VALUES READ IN XNAT
     # ------------------------------------------------------
+    def reset_dropdown(self, dd):
+        dd.options = []
+        dd.value = None
+
     def populate_projects(self, projects):
         self.dd_xnat_project.options = [
             ft.dropdown.Option(key=p["id"], text=p["label"]) for p in projects
         ]
+        self.dd_xnat_project.value = None
+
+        self.reset_dropdown(self.dd_xnat_subject)
+        self.reset_dropdown(self.dd_xnat_experiment)
 
         self._page.update()
 
@@ -310,6 +320,9 @@ class ViewCustomForm(ft.Control):
         self.dd_xnat_subject.options = [
             ft.dropdown.Option(key=s["id"], text=s["label"]) for s in subjects
         ]
+        self.dd_xnat_subject.value = None
+
+        self.reset_dropdown(self.dd_xnat_experiment)
 
         self._page.update()
 
@@ -318,6 +331,16 @@ class ViewCustomForm(ft.Control):
             ft.dropdown.Option(key=e["id"], text=e["label"]) for e in
             experiments
         ]
+        self.dd_xnat_experiment.value = None
+        self._page.update()
+
+    # ------------------------------------------------------
+    # SET CUSTOM FIELDS
+    # ------------------------------------------------------
+    def set_custom_fields(self, group="", timepoint="", dose=""):
+        self.txt_group.value = group or ""
+        self.txt_timepoint.value = timepoint or ""
+        self.txt_dose.value = dose or ""
         self._page.update()
 
     # ------------------------------------------------------

@@ -3,6 +3,7 @@ import threading
 import flet as ft
 
 from enums.custom_form_level import CustomFormLevel
+from xnat_client.xnat_custom_form import XnatCustomForm
 from xnat_client.xnat_repository import XnatRepository
 
 
@@ -16,6 +17,7 @@ class ControllerCustomForm:
 
         self._xnat_session = None
         self._xnat_repo = None
+        self._xnat_custom_form = None
 
     # ==========================================================
     # LOGIN / ROUTE
@@ -38,6 +40,7 @@ class ControllerCustomForm:
     def _on_login_success(self, xnat_session):
         self._xnat_session = xnat_session
         self._xnat_repo = XnatRepository(xnat_session)
+        self._xnat_custom_form = XnatCustomForm(xnat_session)
 
     def _on_login_cancel(self):
         if self._xnat_session:
@@ -120,8 +123,6 @@ class ControllerCustomForm:
 
     def on_project_selected(self, e):
         project_id = self._view.dd_xnat_project.value
-        print(self._view.dd_xnat_project.value)
-        print(self._view.dd_xnat_project.key)
         self._view.populate_subjects([])
         self._view.populate_experiments([])
 
@@ -131,6 +132,7 @@ class ControllerCustomForm:
         try:
             subjects = self._xnat_repo.list_subjects(project_id)
             self._view.populate_subjects(subjects)
+            self._load_custom_fields()
         except Exception as e:
             self._view.create_alert(f"Cannot load subjects: {e}")
 
@@ -146,11 +148,41 @@ class ControllerCustomForm:
             experiments = self._xnat_repo.list_experiments(project_id,
                                                            subject_id)
             self._view.populate_experiments(experiments)
+            self._load_custom_fields()
         except Exception as e:
-            self._view.create_alert(f"Cannot load experiments:z {e}")
+            self._view.create_alert(f"Cannot load experiments: {e}")
 
+    def on_experiment_selected(self, e):
+        self._load_custom_fields()
 
+    # ==========================================================
+    # LOAD CUSTOM FIELD
+    # ==========================================================
+    def _load_custom_fields(self):
+        project_id = self._view.dd_xnat_project.value
+        subject_id = self._view.dd_xnat_subject.value
+        experiment_id = self._view.dd_xnat_experiment.value
 
+        try:
+            if self._model.level == CustomFormLevel.PROJECT:
+                if not project_id:
+                    return
+                fields = self._xnat_custom_form.get_custom_fields(project_id)
+            elif self._model.level == CustomFormLevel.SUBJECT:
+                if not project_id or not subject_id:
+                    return
+                fields = self._xnat_custom_form.get_custom_fields(project_id,
+                                                                  subject_id)
+            elif self._model.level == CustomFormLevel.EXPERIMENT:
+                if not project_id or not subject_id or not experiment_id:
+                    return
+                fields = self._xnat_custom_form.get_custom_fields(project_id,
+                                                                  subject_id,
+                                                                  experiment_id)
+            else:
+                return
 
-
+            self._view.set_custom_fields(**fields)
+        except Exception as e:
+            self._view.create_alert(f"Cannot load custom fields: {e}")
 
