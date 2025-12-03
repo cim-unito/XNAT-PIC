@@ -4,29 +4,35 @@ class ViewCustomForm(ft.Control):
     def __init__(self, page: ft.Page):
         super().__init__()
         self._page = page
+        # controller (it is not initialized. Must be initialized in the main,
+        # after the controller is created)
         self._controller = None
 
-        self._main_layout = None
-        self._dlg_auth = None
-
-        # Top-level buttons
+        # ----- Graphical elements -----
+        self.title = None
+        # top level
         self.btn_project = None
         self.btn_subject = None
         self.btn_experiment = None
-
-        # XNAT dropdowns + new
+        # xnat dropdowns
         self.dd_xnat_project = None
         self.dd_xnat_subject = None
         self.dd_xnat_experiment = None
-
-        # Custom form
+        # custom forms
         self.txt_group = None
         self.txt_timepoint = None
         self.txt_dose = None
-
-        # button home/back upload
+        # button home/back save
         self.btn_home_back = None
         self.btn_save = None
+        # progressbar
+        self.pb_custom_form = None
+        self.dlg_custom_form = None
+        # dialog
+        self._dlg_auth = None
+
+        # layout
+        self._main_layout = None
 
     # ------------------------------------------------------
     # AUTH DIALOG
@@ -43,11 +49,27 @@ class ViewCustomForm(ft.Control):
             self._page.update()
 
     # ------------------------------------------------------
-    # UPLOADER INTERFACE
-    # ------------------------------------------------------
+    # BUILD CUSTOM FORM
+    # -----------------------------------------------------
     def build_interface(self):
+        self._build_controls()
+        self._bind_events()
+        self._define_layout()
+        self.set_initial_state()
+        return self._main_layout
+
+    def _build_controls(self):
+        """Graphical elements"""
+        # button style
+        btn_style = ft.ButtonStyle(
+            bgcolor=ft.Colors.BLUE_200,
+            color=ft.Colors.BLUE_900,
+            shape=ft.RoundedRectangleBorder(radius=10),
+            padding=15,
+        )
+
         # title
-        title = ft.Row(
+        self.title = ft.Row(
             [
                 ft.Icon(
                     ft.Icons.DATASET,
@@ -65,35 +87,86 @@ class ViewCustomForm(ft.Control):
             spacing=12,
         )
 
-        # Button style
-        btn_style = ft.ButtonStyle(
-            bgcolor=ft.Colors.BLUE_200,
-            color=ft.Colors.BLUE_900,
-            shape=ft.RoundedRectangleBorder(radius=10),
-            padding=15,
-        )
-
-        # Level buttons: project, subject, experiment
+        # level buttons: project, subject, experiment
         self.btn_project = ft.ElevatedButton(
-            "Project",
-            on_click=self._controller.upload_project,
-            expand=True,
+            text="Project",
+            width=200,
+            tooltip="Select the project where to save the custom forms",
             style=btn_style
         )
         self.btn_subject = ft.ElevatedButton(
-            "Subject",
-            on_click=self._controller.upload_subject,
-            expand=True,
+            text="Subject",
+            width=200,
+            tooltip="Select the subject where to save the custom forms",
             style=btn_style
         )
         self.btn_experiment = ft.ElevatedButton(
-            "Experiment",
-            on_click=self._controller.upload_experiment,
-            expand=True,
+            text="Experiment",
+            width=200,
+            tooltip="Select the experiment where to save the custom forms",
             style=btn_style
         )
 
-        row_levels = ft.Row(
+        # xnat dropdowns project, subject, experiment
+        self.dd_xnat_project = ft.Dropdown(
+            hint_text="Project",
+            width=200,
+            prefix_icon=ft.Icons.DASHBOARD,
+        )
+        self.dd_xnat_subject = ft.Dropdown(
+            hint_text="Subject",
+            width=200,
+            prefix_icon=ft.Icons.PERSON,
+        )
+        self.dd_xnat_experiment = ft.Dropdown(
+            hint_text="Experiment",
+            width=200,
+            prefix_icon=ft.Icons.SCIENCE,
+        )
+
+        # custom_forms
+        self.txt_group = ft.TextField(label="Group",
+                                      hint_text="Please enter group here",
+                                      width=200, )
+        self.txt_timepoint = ft.TextField(label="Timepoint",
+                                          hint_text="Please enter timepoint here",
+                                          width=200, )
+        self.txt_dose = ft.TextField(label="Dose",
+                                     hint_text="Please enter dose here",
+                                     width=200, )
+
+        # buttons home/back and upload
+        self.btn_home_back = ft.ElevatedButton(
+            "Home",
+            icon=ft.Icons.ARROW_BACK,
+            style=btn_style,
+        )
+        self.btn_save = ft.ElevatedButton(
+            "Save",
+            icon=ft.Icons.DATASET,
+            style=btn_style,
+        )
+
+        # progressbar dialog
+        self.pb_custom_form = ft.ProgressBar(width=250)
+        self.dlg_custom_form = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Loading..."),
+            content=self.pb_custom_form,
+        )
+
+    def _bind_events(self):
+        """Bind events"""
+        self.btn_project.on_click = self._controller.custom_forms_project
+        self.btn_subject.on_click = self._controller.custom_forms_subject
+        self.btn_experiment.on_click = self._controller.custom_forms_experiment
+        self.dd_xnat_project.on_change = self._controller.on_project_selected
+        self.dd_xnat_subject.on_change = self._controller.on_subject_selected
+        self.btn_home_back.on_click = self._controller.on_home_back_clicked
+
+    def _define_layout(self):
+        """Define layout"""
+        row_top = ft.Row(
             [
                 self.btn_project,
                 self.btn_subject,
@@ -101,30 +174,6 @@ class ViewCustomForm(ft.Control):
             ],
             alignment=ft.MainAxisAlignment.CENTER,
             spacing=12,
-        )
-
-        # xnat dropdowns project, subject, experiment
-        self.dd_xnat_project = ft.Dropdown(
-            hint_text="Project",
-            width=200,
-            disabled=True,
-            prefix_icon=ft.Icons.DASHBOARD,
-            on_change=self._controller.on_project_selected,
-        )
-
-        self.dd_xnat_subject = ft.Dropdown(
-            hint_text="Subject",
-            width=200,
-            disabled=True,
-            prefix_icon=ft.Icons.PERSON,
-            on_change=self._controller.on_subject_selected,
-        )
-
-        self.dd_xnat_experiment = ft.Dropdown(
-            hint_text="Experiment",
-            width=200,
-            disabled=True,
-            prefix_icon=ft.Icons.SCIENCE,
         )
 
         row_dd = ft.Row(
@@ -137,15 +186,6 @@ class ViewCustomForm(ft.Control):
             spacing=20,
         )
 
-        self.txt_group = ft.TextField(label="Group",
-                                      hint_text="Please enter text here",
-                                      width=200,)
-        self.txt_timepoint = ft.TextField(label="Timepoint",
-                                          hint_text="Please enter text here",
-                                          width=200,)
-        self.txt_dose = ft.TextField(label="Dose",
-                                     hint_text="Please enter text here",
-                                     width=200,)
         row_custom_form = ft.Row(
             [
                 self.txt_group,
@@ -155,30 +195,17 @@ class ViewCustomForm(ft.Control):
             alignment=ft.MainAxisAlignment.CENTER,
             spacing=20,
         )
-        # Buttons home/back and upload
-        self.btn_home_back = ft.ElevatedButton(
-            "Home",
-            icon=ft.Icons.ARROW_BACK,
-            on_click=self._controller.on_home_back_clicked,
-            style=btn_style,
-        )
-
-        self.btn_save = ft.ElevatedButton(
-            "Save",
-            icon=ft.Icons.DATASET,
-            disabled=True,
-            style=btn_style,
-        )
 
         row_home_upload = ft.Row(
             [self.btn_home_back, self.btn_save],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         )
 
-        return ft.Column(
+        self._main_layout = ft.Column(
+            alignment=ft.MainAxisAlignment.CENTER,
             controls=[
-                title,
-                row_levels,
+                self.title,
+                row_top,
                 row_dd,
                 row_custom_form,
                 row_home_upload,
@@ -199,6 +226,9 @@ class ViewCustomForm(ft.Control):
             self.dd_xnat_project,
             self.dd_xnat_subject,
             self.dd_xnat_experiment,
+            self.txt_group,
+            self.txt_timepoint,
+            self.txt_dose,
             self.btn_save,
         ]:
             c.disabled = True
@@ -217,6 +247,11 @@ class ViewCustomForm(ft.Control):
         self.dd_xnat_experiment.value = None
         self.dd_xnat_experiment.options = []
 
+        # Reset custom forms
+        self.txt_group.value = ""
+        self.txt_timepoint.value = ""
+        self.txt_dose.value = ""
+
         self._page.update()
 
     # ------------------------------------------------------
@@ -229,6 +264,7 @@ class ViewCustomForm(ft.Control):
             dd_project,
             dd_subject,
             dd_experiment,
+            custom_field_text,
     ):
         # enable/disable top-level
         for c in [
@@ -242,6 +278,14 @@ class ViewCustomForm(ft.Control):
         self.dd_xnat_project.disabled = not dd_project
         self.dd_xnat_subject.disabled = not dd_subject
         self.dd_xnat_experiment.disabled = not dd_experiment
+
+        # enable/disable custom form text
+        for c in [
+            self.txt_group,
+            self.txt_timepoint,
+            self.txt_dose,
+        ]:
+            c.disabled = not custom_field_text
 
         # save
         self.btn_save.disabled = not save_enabled
@@ -288,14 +332,14 @@ class ViewCustomForm(ft.Control):
         self.dd_xnat_experiment.value = None
         self._page.update()
 
+    # ------------------------------------------------------
+    # UTILITY
+    # ------------------------------------------------------
     def create_alert(self, message):
         dlg = ft.AlertDialog(title=ft.Text(message))
         self._page.open(dlg)
         self._page.update()
 
-    # ------------------------------------------------------
-    # UTILITY
-    # ------------------------------------------------------
     def update_page(self):
         self._page.update()
 

@@ -14,7 +14,7 @@ class ViewMainInterface(ft.Control):
         self.subtitle = None
         self.btn_converter = None
         self.btn_uploader = None
-        self.btn_custom_forms = None
+        self.btn_custom_form = None
         self.img_cnr = None
         self.img_ibb = None
         self.img_unito = None
@@ -98,7 +98,7 @@ class ViewMainInterface(ft.Control):
             height=60,
         )
 
-        self.btn_custom_forms = ft.ElevatedButton(
+        self.btn_custom_form = ft.ElevatedButton(
             content=ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
                 spacing=10,
@@ -124,7 +124,7 @@ class ViewMainInterface(ft.Control):
                 _: self._controller.go_to_converter()
         self.btn_uploader.on_click = lambda \
                 _: self._controller.go_to_uploader()
-        self.btn_custom_forms.on_click = lambda \
+        self.btn_custom_form.on_click = lambda \
                 _: self._controller.go_to_custom_form()
 
     def _define_layout(self):
@@ -135,7 +135,7 @@ class ViewMainInterface(ft.Control):
             controls=[
                 self.btn_converter,
                 self.btn_uploader,
-                self.btn_custom_forms,
+                self.btn_custom_form,
             ],
         )
 
@@ -177,7 +177,7 @@ class ViewMainInterface(ft.Control):
         """Set initial state"""
         self.btn_converter.disabled = False
         self.btn_uploader.disabled = False
-        self.btn_custom_forms.disabled = False
+        self.btn_custom_form.disabled = False
 
     @property
     def controller(self):

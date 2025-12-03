@@ -1,6 +1,8 @@
 from pathlib import Path
 import threading
 import flet as ft
+
+from enums.custom_form_level import CustomFormLevel
 from xnat_client.xnat_repository import XnatRepository
 
 
@@ -14,8 +16,6 @@ class ControllerCustomForm:
 
         self._xnat_session = None
         self._xnat_repo = None
-
-        self._mode_selected = None
 
     # ==========================================================
     # LOGIN / ROUTE
@@ -51,66 +51,62 @@ class ControllerCustomForm:
         self._view._page.go("/")
 
     def on_home_back_clicked(self, e):
-        if self._mode_selected is None:
+        if self._model.level is None:
+            self._view.set_initial_state()
             self.go_home()
         else:
-            self._mode_selected = None
+            self._model.reset_level()
             self._view.set_initial_state()
 
     # ==========================================================
     # SET MODE
     # ==========================================================
     def _set_mode_for_level(self, mode):
-        self._mode_selected = mode
-
-        if mode == "project":
+        if mode == CustomFormLevel.PROJECT:
             self._view.set_mode(
                 level_buttons_enabled=False,
                 save_enabled=True,
                 dd_project=True,
                 dd_subject=False,
                 dd_experiment=False,
+                custom_field_text=True,
             )
-        elif mode == "subject":
+        elif mode == CustomFormLevel.SUBJECT:
             self._view.set_mode(
                 level_buttons_enabled=False,
                 save_enabled=True,
                 dd_project=True,
                 dd_subject=True,
                 dd_experiment=False,
-
+                custom_field_text=True,
             )
-        elif mode == "experiment":
+        elif mode == CustomFormLevel.EXPERIMENT:
             self._view.set_mode(
                 level_buttons_enabled=False,
                 save_enabled=True,
                 dd_project=True,
                 dd_subject=True,
                 dd_experiment=True,
+                custom_field_text=True,
             )
-        else:
-            raise ValueError(f"Unknown upload mode: {mode}")
 
         self.load_projects()
 
-    # ==========================================================
-    # CHOOSE LEVEL (PROJECT / SUBJECT / EXPERIMENT / FILE)
-    # ==========================================================
-    def upload_project(self, e):
-        self._model.level = "project"
-        self._set_mode_for_level("project")
+    # -------------------------------------------------------
+    # SET LEVEL (PROJECT / SUBJECT / EXPERIMENT)
+    # -------------------------------------------------------
+    def set_level(self, level):
+        self._model.level = level
+        self._set_mode_for_level(level)
 
-    def upload_subject(self, e):
-        self._model.level = "subject"
-        self._set_mode_for_level("subject")
+    def custom_forms_project(self, e):
+        self.set_level(CustomFormLevel.PROJECT)
 
-    def upload_experiment(self, e):
-        self._model.level = "experiment"
-        self._set_mode_for_level("experiment")
+    def custom_forms_subject(self, e):
+        self.set_level(CustomFormLevel.SUBJECT)
 
-    def upload_file(self, e):
-        self._model.level = "file"
-        self._set_mode_for_level("file")
+    def custom_forms_experiment(self, e):
+        self.set_level(CustomFormLevel.EXPERIMENT)
 
     # ==========================================================
     # DROPDOWN PROJECT / SUBJECT / EXPERIMENT XNAT
@@ -149,8 +145,7 @@ class ControllerCustomForm:
                                                            subject_id)
             self._view.populate_experiments(experiments)
         except Exception as e:
-            self._view.create_alert(f"Cannot load experiments: {e}")
-
+            self._view.create_alert(f"Cannot load experiments:z {e}")
 
 
 

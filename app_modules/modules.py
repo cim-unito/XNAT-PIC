@@ -24,7 +24,8 @@ class AppModules:
         # MAIN
         self.model_main = ModelMainInterface()
         self.view_main = ViewMainInterface(page)
-        self.controller_main = ControllerMainInterface(self.view_main, self.model_main)
+        self.controller_main = ControllerMainInterface(self.view_main,
+                                                       self.model_main)
         self.view_main.set_controller(self.controller_main)
         self.controls_main = self.view_main.build_interface()
 

@@ -26,7 +26,7 @@ class RouteManager:
 
         self.route_history: list[str] = []
 
-        # ROUTING (declarative setup)
+        # ROUTING
         self.routes: dict[str, RouteConfig] = {
             "/": RouteConfig(control=modules.controls_main),
             "/converter": RouteConfig(control=modules.controls_converter),
