@@ -186,3 +186,45 @@ class ControllerCustomForm:
         except Exception as e:
             self._view.create_alert(f"Cannot load custom fields: {e}")
 
+    # -------------------------------------------------------
+    # SAVE CUSTOM FIELDS
+    # -------------------------------------------------------
+    def on_save_clicked(self, e):
+        project_id = self._view.dd_xnat_project.value
+        subject_id = self._view.dd_xnat_subject.value
+        experiment_id = self._view.dd_xnat_experiment.value
+
+        payload = {
+            "group": self._view.txt_group.value,
+            "timepoint": self._view.txt_timepoint.value,
+            "dose": self._view.txt_dose.value,
+        }
+
+        try:
+            if self._model.level == CustomFormLevel.PROJECT:
+                if not project_id:
+                    raise ValueError("Please select a project before saving.")
+                self._xnat_custom_form.update_custom_fields(project_id, **payload)
+            elif self._model.level == CustomFormLevel.SUBJECT:
+                if not project_id or not subject_id:
+                    raise ValueError(
+                        "Please select a project and subject before saving."
+                    )
+                self._xnat_custom_form.update_custom_fields(
+                    project_id, subject_id, **payload
+                )
+            elif self._model.level == CustomFormLevel.EXPERIMENT:
+                if not project_id or not subject_id or not experiment_id:
+                    raise ValueError(
+                        "Please select project, subject, and experiment before "
+                        "saving."
+                    )
+                self._xnat_custom_form.update_custom_fields(
+                    project_id, subject_id, experiment_id, **payload
+                )
+            else:
+                return
+
+            self._view.create_alert("Custom fields saved successfully.")
+        except Exception as exc:
+            self._view.create_alert(f"Cannot save custom fields: {exc}")

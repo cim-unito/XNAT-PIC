@@ -164,6 +164,7 @@ class ViewCustomForm(ft.Control):
         self.dd_xnat_subject.on_change = self._controller.on_subject_selected
         self.dd_xnat_experiment.on_change = \
             self._controller.on_experiment_selected
+        self.btn_save.on_click = self._controller.on_save_clicked
         self.btn_home_back.on_click = self._controller.on_home_back_clicked
 
     def _define_layout(self):
