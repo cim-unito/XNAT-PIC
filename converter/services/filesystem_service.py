@@ -9,7 +9,7 @@ from enums.converter_type import ConverterType
 class FilesystemService:
 
     @staticmethod
-    def get_list_directory(path: Path) -> List[Dict]:
+    def get_list_directory_treeview(path: Path) -> List[Dict]:
         """
         Returns a list of dict with name, path, is_dir.
         """
@@ -51,8 +51,8 @@ class FilesystemService:
             # project → subject → experiment
             experiment_list = [
                 exp
-                for subject in path.iterdir() if subject.is_dir()
-                for exp in subject.iterdir() if exp.is_dir()
+                for sub in path.iterdir() if sub.is_dir()
+                for exp in sub.iterdir() if exp.is_dir()
             ]
 
         elif level == ConverterLevel.SUBJECT:

@@ -4,7 +4,7 @@ import flet as ft
 
 from enums.tree_type import TreeType
 from enums.uploader_level import UploaderLevel
-from uploader.services.dicom_parser import DicomParser
+from uploader.services.dicom_service import DicomService
 from xnat_client.xnat_repository import XnatRepository
 from uploader.xnat_new_project.model_xnat_new_project import \
     ModelXnatNewProject
@@ -41,7 +41,7 @@ class ControllerUploader:
     # ==========================================================
     def set_xnat_auth(self, view_auth, controller_auth):
         self._view_xnat_auth = view_auth
-        self.__controller_xnat_auth = controller_auth
+        self._controller_xnat_auth = controller_auth
 
     def on_enter_route(self):
         dlg = self._view_xnat_auth.build_dialog(
@@ -81,10 +81,8 @@ class ControllerUploader:
     # ==========================================================
     # SET MODE
     # ==========================================================
-    def _set_mode_for_level(self, mode):
-        self._mode_selected = mode
-
-        if mode == UploaderLevel.PROJECT:
+    def _set_mode_for_level(self, level):
+        if level == UploaderLevel.PROJECT:
             self._view.set_mode(
                 level_buttons_enabled=False,
                 select_group_enabled=True,
@@ -96,7 +94,7 @@ class ControllerUploader:
                 new_subject=False,
                 new_experiment=False,
             )
-        elif mode == UploaderLevel.SUBJECT:
+        elif level == UploaderLevel.SUBJECT:
             self._view.set_mode(
                 level_buttons_enabled=False,
                 select_group_enabled=True,
@@ -108,7 +106,7 @@ class ControllerUploader:
                 new_subject=True,
                 new_experiment=False,
             )
-        elif mode == UploaderLevel.EXPERIMENT:
+        elif level == UploaderLevel.EXPERIMENT:
             self._view.set_mode(
                 level_buttons_enabled=False,
                 select_group_enabled=True,
@@ -120,7 +118,7 @@ class ControllerUploader:
                 new_subject=True,
                 new_experiment=True,
             )
-        elif mode == UploaderLevel.FILE:
+        elif level == UploaderLevel.FILE:
             self._view.set_mode(
                 level_buttons_enabled=False,
                 select_group_enabled=True,
@@ -133,7 +131,7 @@ class ControllerUploader:
                 new_experiment=True,
             )
         else:
-            raise ValueError(f"Unknown upload mode: {mode}")
+            raise ValueError(f"Unknown upload mode: {level}")
 
         self.load_projects()
 
@@ -200,12 +198,13 @@ class ControllerUploader:
     # -------------------------------------------------------
     def get_directory_to_upload(self, path: str):
         self._model.input_root = path
+        self._model.validate_dicom_files()
         self.populate_tree(Path(path), TreeType.DICOM)
 
     def populate_tree(self, path: Path, tree_type: TreeType):
         """Initial tree loading"""
         try:
-            items = self._model.get_list_directory(path)
+            items = self._model.get_list_directory_treeview(path)
         except Exception as err:
             self._view.create_alert(str(err))
             return
@@ -224,7 +223,7 @@ class ControllerUploader:
             return
 
         try:
-            children = self._model.get_list_directory(node_path)
+            children = self._model.get_list_directory_treeview(node_path)
         except Exception as err:
             self._view.create_alert(str(err))
             return
@@ -260,7 +259,7 @@ class ControllerUploader:
     #
     #     try:
     #         if p.suffix.lower() in (".dcm", ".dicom"):
-    #             b64 = DicomParser.dicom_to_base64(p)
+    #             b64 = DicomService.dicom_to_base64(p)
     #             self.preview_cache[filepath] = b64
     #             self._view.set_image_preview(b64)
     #     except Exception as e:
@@ -271,7 +270,7 @@ class ControllerUploader:
             self._view.create_alert("No file selected.")
             return
         try:
-            tags = DicomParser.read_DICOM_tags(self.file_path)
+            tags = DicomService.read_DICOM_tags(self.file_path)
             self._view.show_dicom_tags_dialog(tags)
         except Exception as e:
             self._view.create_alert(f"Cannot read DICOM tags: {e}")

@@ -13,7 +13,7 @@ class ControllerCustomForm:
         self._model = model
 
         self._view_xnat_auth = None
-        self.__controller_xnat_auth = None
+        self._controller_xnat_auth = None
 
         self._xnat_session = None
         self._xnat_repo = None
@@ -24,7 +24,7 @@ class ControllerCustomForm:
     # ==========================================================
     def set_xnat_auth(self, view_auth, controller_auth):
         self._view_xnat_auth = view_auth
-        self.__controller_xnat_auth = controller_auth
+        self._controller_xnat_auth = controller_auth
 
     def on_enter_route(self):
         dlg = self._view_xnat_auth.build_dialog(
@@ -65,8 +65,8 @@ class ControllerCustomForm:
     # ==========================================================
     # SET MODE
     # ==========================================================
-    def _set_mode_for_level(self, mode):
-        if mode == CustomFormLevel.PROJECT:
+    def _set_mode_for_level(self, level):
+        if level == CustomFormLevel.PROJECT:
             self._view.set_mode(
                 level_buttons_enabled=False,
                 save_enabled=True,
@@ -75,7 +75,7 @@ class ControllerCustomForm:
                 dd_experiment=False,
                 custom_field_text=True,
             )
-        elif mode == CustomFormLevel.SUBJECT:
+        elif level == CustomFormLevel.SUBJECT:
             self._view.set_mode(
                 level_buttons_enabled=False,
                 save_enabled=True,
@@ -84,7 +84,7 @@ class ControllerCustomForm:
                 dd_experiment=False,
                 custom_field_text=True,
             )
-        elif mode == CustomFormLevel.EXPERIMENT:
+        elif level == CustomFormLevel.EXPERIMENT:
             self._view.set_mode(
                 level_buttons_enabled=False,
                 save_enabled=True,

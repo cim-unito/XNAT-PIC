@@ -67,7 +67,7 @@ class ControllerConverter:
     def populate_tree(self, path: Path, tree_type: TreeType):
         """Initial tree loading"""
         try:
-            items = self._model.get_list_directory(path)
+            items = self._model.get_list_directory_treeview(path)
         except Exception as err:
             self._view.create_alert(str(err))
             return
@@ -86,7 +86,7 @@ class ControllerConverter:
             return
 
         try:
-            children = self._model.get_list_directory(node_path)
+            children = self._model.get_list_directory_treeview(node_path)
         except Exception as err:
             self._view.create_alert(str(err))
             return

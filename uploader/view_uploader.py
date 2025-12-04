@@ -42,7 +42,6 @@ class ViewUploader(ft.Control):
         self.dlg_upload = None
         # dialog
         self._dlg_auth = None
-        self.dlg_modality = None
 
         # layout
         self._main_layout = None
@@ -620,28 +619,6 @@ class ViewUploader(ft.Control):
             modal=True,
         )
         self._page.open(dlg)
-        self._page.update()
-
-    # ------------------------------------------------------
-    # OT Modality
-    # ------------------------------------------------------
-    def show_upload_ot_modality(self):
-        self.dlg_modality = ft.AlertDialog(
-            modal=True,
-            title=ft.Text("Please confirm"),
-            content=ft.Text(
-                "In your dataset there are DICOMs with Modality OT."
-                "Upload to XNAT anyway?"),
-            actions=[
-                ft.TextButton("Yes",
-                              on_click=lambda
-                                  e: self._controller.upload_ot_modality()),
-                ft.TextButton("No", on_click=lambda
-                    e: self._page.close(self.dlg_modality)),
-            ],
-            actions_alignment=ft.MainAxisAlignment.END,
-        )
-        self._page.open(self.dlg_modality)
         self._page.update()
 
     # ------------------------------------------------------
