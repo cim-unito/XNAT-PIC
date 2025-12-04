@@ -11,31 +11,15 @@ from pydicom import dcmread
 from pydicom.dataset import FileMetaDataset, FileDataset
 from pydicom.uid import UID, generate_uid, ExplicitVRLittleEndian
 
+from uploader.services.filesystem_service import FilesystemService
+
 
 class ModelUploader:
     def __init__(self):
-        self._path_to_upload = None
-        self._list_dicom_files = []
+        self._level = None
 
-    def list_directory(self, path: Path) -> list[dict]:
-        path = Path(path)
-        items = []
-        try:
-            for child in sorted(path.iterdir()):
-                if child.name.startswith("."):
-                    continue
-                items.append({
-                    "name": child.name,
-                    "path": str(child),
-                    "is_dir": child.is_dir()
-                })
-        except PermissionError:
-            items.append({
-                "name": "[access denied]",
-                "path": "",
-                "is_dir": False
-            })
-        return items
+    def get_list_directory(self, path):
+        return FilesystemService.get_list_directory(path)
 
     def get_list_dicom_files(self, mode_selected):
         if self._path_to_upload is None:

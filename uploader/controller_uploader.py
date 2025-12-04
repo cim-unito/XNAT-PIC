@@ -1,11 +1,16 @@
 from pathlib import Path
 import threading
 import flet as ft
-from uploader.utils.dicom_parser import DicomParser
+
+from enums.tree_type import TreeType
+from enums.uploader_level import UploaderLevel
+from uploader.services.dicom_parser import DicomParser
 from xnat_client.xnat_repository import XnatRepository
-from uploader.xnat_new_project.model_xnat_new_project import ModelXnatNewProject
+from uploader.xnat_new_project.model_xnat_new_project import \
+    ModelXnatNewProject
 from uploader.xnat_new_project.view_xnat_new_project import ViewXnatNewProject
-from uploader.xnat_new_project.controller_xnat_new_project import ControllerXnatNewProject
+from uploader.xnat_new_project.controller_xnat_new_project import \
+    ControllerXnatNewProject
 
 class ControllerUploader:
     def __init__(self, view, model):
@@ -13,21 +18,21 @@ class ControllerUploader:
         self._model = model
 
         self._view_xnat_auth = None
-        self.__controller_xnat_auth = None
+        self._controller_xnat_auth = None
 
         self._model_xnat_new_project = ModelXnatNewProject()
-        self._view_xnat_new_project = ViewXnatNewProject(self._view._page,
+        self._view_xnat_new_project = ViewXnatNewProject(self._view.page,
                                                          on_submit=self.on_data_project_collected)
         self._controller_xnat_new_project = ControllerXnatNewProject(
             self._view_xnat_new_project,
             self._model_xnat_new_project,
         )
-        self._view_xnat_new_project.set_controller(self._controller_xnat_new_project)
+        self._view_xnat_new_project.set_controller(
+            self._controller_xnat_new_project)
 
         self._xnat_session = None
         self._xnat_repo = None
 
-        self._mode_selected = None
         self.file_path = None
         self.preview_cache = {}
 
@@ -66,10 +71,11 @@ class ControllerUploader:
         self._view._page.go("/")
 
     def on_home_back_clicked(self, e):
-        if self._mode_selected is None:
+        if self._model.level is None:
+            self._view.set_initial_state()
             self.go_home()
         else:
-            self._mode_selected = None
+            self._model.reset_level()
             self._view.set_initial_state()
 
     # ==========================================================
@@ -78,7 +84,7 @@ class ControllerUploader:
     def _set_mode_for_level(self, mode):
         self._mode_selected = mode
 
-        if mode == "project":
+        if mode == UploaderLevel.PROJECT:
             self._view.set_mode(
                 level_buttons_enabled=False,
                 select_group_enabled=True,
@@ -90,7 +96,7 @@ class ControllerUploader:
                 new_subject=False,
                 new_experiment=False,
             )
-        elif mode == "subject":
+        elif mode == UploaderLevel.SUBJECT:
             self._view.set_mode(
                 level_buttons_enabled=False,
                 select_group_enabled=True,
@@ -102,7 +108,7 @@ class ControllerUploader:
                 new_subject=True,
                 new_experiment=False,
             )
-        elif mode == "experiment":
+        elif mode == UploaderLevel.EXPERIMENT:
             self._view.set_mode(
                 level_buttons_enabled=False,
                 select_group_enabled=True,
@@ -114,7 +120,7 @@ class ControllerUploader:
                 new_subject=True,
                 new_experiment=True,
             )
-        elif mode == "file":
+        elif mode == UploaderLevel.FILE:
             self._view.set_mode(
                 level_buttons_enabled=False,
                 select_group_enabled=True,
@@ -134,21 +140,21 @@ class ControllerUploader:
     # ==========================================================
     # SET LEVEL (PROJECT / SUBJECT / EXPERIMENT / FILE)
     # ==========================================================
+    def set_level(self, level):
+        self._model.level = level
+        self._set_mode_for_level(level)
+
     def upload_project(self, e):
-        self._model.level = "project"
-        self._set_mode_for_level("project")
+        self.set_level(UploaderLevel.PROJECT)
 
     def upload_subject(self, e):
-        self._model.level = "subject"
-        self._set_mode_for_level("subject")
+        self.set_level(UploaderLevel.SUBJECT)
 
     def upload_experiment(self, e):
-        self._model.level = "experiment"
-        self._set_mode_for_level("experiment")
+        self.set_level(UploaderLevel.EXPERIMENT)
 
     def upload_file(self, e):
-        self._model.level = "file"
-        self._set_mode_for_level("file")
+        self.set_level(UploaderLevel.FILE)
 
     # ==========================================================
     # DROPDOWN PROJECT / SUBJECT / EXPERIMENT XNAT
@@ -189,70 +195,76 @@ class ControllerUploader:
         except Exception as e:
             self._view.create_alert(f"Cannot load experiments: {e}")
 
-    # ==========================================================
-    # FILE SYSTEM / TREEVIEW
-    # ==========================================================
+    # -------------------------------------------------------
+    # TREEVIEW DICOM FILES
+    # -------------------------------------------------------
     def get_directory_to_upload(self, path: str):
-        p = Path(path)
-        self._model.path_to_upload = p
-        if not self._model.is_valid_dicom_files(self._mode_selected):
-            upload_path_xnat = p.parent / (p.name + "_xnat")
-            self._model.create_xnat_folder(upload_path_xnat)
-            self._model.create_new_scan(upload_path_xnat)
-            p = upload_path_xnat
-            self._model.path_to_upload = upload_path_xnat
+        self._model.input_root = path
+        self.populate_tree(Path(path), TreeType.DICOM)
 
-        self.populate_tree(p)
-
-    def populate_tree(self, path: Path):
+    def populate_tree(self, path: Path, tree_type: TreeType):
+        """Initial tree loading"""
         try:
-            items = self._model.list_directory(path)
-            tree_widget = self._view.build_lazy_tree(
-                items,
-                expand_callback=self.on_expand,
-                file_selected_callback=self.on_file_selected,
-            )
-            self._view.update_tree(tree_widget)
-        except Exception as e:
-            self._view.create_alert(f"Error reading directory: {e}")
+            items = self._model.get_list_directory(path)
+        except Exception as err:
+            self._view.create_alert(str(err))
+            return
 
-    def on_expand(self, e, node_path: str, tile):
-        self._view.highlight_folder(node_path)
+        widget = self._view.build_lazy_tree(
+            items,
+            expand_callback=self.on_expand,
+            file_selected_callback=self.on_file_selected
+        )
+
+        self._view.update_tree(widget, tree_type)
+
+    def on_expand(self, e, node_path, tile):
+        """Folder expansion"""
+        if e.data != "true":
+            return
+
         try:
-            items = self._model.list_directory(Path(node_path))
-            tile.controls.clear()
-            for it in items:
-                if it["is_dir"]:
-                    tile.controls.append(
-                        self._view.make_lazy_folder(it, self.on_expand)
-                    )
-                else:
-                    tile.controls.append(
-                        self._view.make_file_tile(it, self.on_file_selected)
-                    )
-            self._view.update_page()
-        except Exception as e:
-            self._view.create_alert(f"Cannot expand folder: {e}")
+            children = self._model.get_list_directory(node_path)
+        except Exception as err:
+            self._view.create_alert(str(err))
+            return
+
+        self._view.update_expansion_tile(
+            tile,
+            children,
+            expand_callback=self.on_expand,
+            file_selected_callback=self.on_file_selected
+        )
+
+        self._view.set_selected_control(tile)
+        print(f"[SELECTED DIR] {node_path}")
+        self._view.update_page()
+
+    def on_file_selected(self, e, file_path):
+        """File selected"""
+        self._view.set_selected_control(e.control)
+        print(f"[SELECTED FILE] {file_path}")
+        self._view.update_page()
 
     # ==========================================================
     # FILE SELECTION + DICOM PREVIEW
     # ==========================================================
-    def on_file_selected(self, filepath: str):
-        p = Path(filepath)
-        self.file_path = p
-        self._view.highlight_selected_file(filepath)
-
-        if filepath in self.preview_cache:
-            self._view.set_image_preview(self.preview_cache[filepath])
-            return
-
-        try:
-            if p.suffix.lower() in (".dcm", ".dicom"):
-                b64 = DicomParser.dicom_to_base64(p)
-                self.preview_cache[filepath] = b64
-                self._view.set_image_preview(b64)
-        except Exception as e:
-            self._view.create_alert(f"Preview failed: {e}")
+    # def on_file_selected(self, filepath: str):
+    #     p = Path(filepath)
+    #     self.file_path = p
+    #     self._view.highlight_selected_file(filepath)
+    #
+    #     if filepath in self.preview_cache:
+    #         self._view.set_image_preview(self.preview_cache[filepath])
+    #         return
+    #
+    #     try:
+    #         if p.suffix.lower() in (".dcm", ".dicom"):
+    #             b64 = DicomParser.dicom_to_base64(p)
+    #             self.preview_cache[filepath] = b64
+    #             self._view.set_image_preview(b64)
+    #     except Exception as e:
+    #         self._view.create_alert(f"Preview failed: {e}")
 
     def on_show_tags_clicked(self, e):
         if not self.file_path:

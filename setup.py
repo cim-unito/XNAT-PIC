@@ -48,7 +48,7 @@ bdist_msi_options = {
 
 build_exe_options = {
     #"packages": ['ttkbootstrap'],
-    'include_files': [("controllers", ""), ("database", ""), ("models", ""), ("views", ""), ("utils", "")]
+    'include_files': [("controllers", ""), ("database", ""), ("models", ""), ("views", ""), ("services", "")]
 }
 
 

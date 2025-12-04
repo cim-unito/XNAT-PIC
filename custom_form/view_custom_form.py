@@ -247,7 +247,7 @@ class ViewCustomForm(ft.Control):
             self.dd_xnat_experiment
         ]:
             dd.options = []
-            dd.hint_text = "Select"
+            dd.key = "Select"
             dd.value = None
 
         # Reset custom forms

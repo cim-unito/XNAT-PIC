@@ -1,5 +1,7 @@
 import flet as ft
 
+from enums.tree_type import TreeType
+
 
 class ViewUploader(ft.Control):
     def __init__(self, page: ft.Page):
@@ -45,8 +47,9 @@ class ViewUploader(ft.Control):
         # layout
         self._main_layout = None
 
-        self.selected_file = None
-        self.selected_folders = set()
+        # map enum → container
+        self._tree_map: dict[TreeType, ft.Container] = {}
+        self._selected_control = None
 
     # ------------------------------------------------------
     # AUTH DIALOG
@@ -136,20 +139,13 @@ class ViewUploader(ft.Control):
             style=btn_style,
         )
 
-        # treeview
+        # treeview dicom
         self.tree_view_dcm = ft.Container(
             width=250,
             height=320,
-            content=ft.ListView([], expand=True, spacing=4),
-            border_radius=10,
-            padding=10,
-            bgcolor=ft.Colors.BLUE_50,
-            shadow=ft.BoxShadow(
-                blur_radius=10,
-                spread_radius=1,
-                color=ft.Colors.BLUE_100,
-            ),
+            content=ft.ListView(controls=[], expand=True, spacing=4),
         )
+        self.map_tree_container(TreeType.DICOM, self.tree_view_dcm)
 
         # image preview
         self.img_preview = ft.Image(
@@ -160,7 +156,7 @@ class ViewUploader(ft.Control):
             border_radius=12,
         )
 
-        # button show dicom tags and modify modality
+        # button show dicom tags
         self.btn_show_tags = ft.ElevatedButton(
             "Show DICOM tags",
             icon=ft.Icons.LIST_ALT,
@@ -432,19 +428,15 @@ class ViewUploader(ft.Control):
         self.btn_home_back.text = "Home"
         self.btn_home_back.disabled = False
 
-        # Reset internal state
-        self.selected_file = None
-        self.selected_folders = set()
-
         # Reset dropdowns
-        self.dd_xnat_project.value = None
-        self.dd_xnat_project.options = []
-
-        self.dd_xnat_subject.value = None
-        self.dd_xnat_subject.options = []
-
-        self.dd_xnat_experiment.value = None
-        self.dd_xnat_experiment.options = []
+        for dd in [
+            self.dd_xnat_project,
+            self.dd_xnat_subject,
+            self.dd_xnat_experiment
+        ]:
+            dd.options = []
+            dd.key = "Select"
+            dd.value = None
 
         # Reset preview & tree
         self.tree_view_dcm.content.controls.clear()
@@ -485,7 +477,7 @@ class ViewUploader(ft.Control):
         ]:
             c.disabled = not level_buttons_enabled
 
-        # select folder / tree / preview / show tags viaggiano insieme
+        # select folder / tree / preview / show tags
         for c in [
             self.btn_select_folder,
             self.btn_show_tags,
@@ -516,59 +508,82 @@ class ViewUploader(ft.Control):
     # FILE PICKER
     # ------------------------------------------------------
     def file_picker_result(self, e):
-        # if e.path:
-        #     self._controller.get_directory_to_upload(e.path)
-        # else:
-        #     self.create_alert("No folder selected.")
-        pass
-
-    # ------------------------------------------------------
-    # TREEVIEW
-    # ------------------------------------------------------
-    def build_lazy_tree(self, items, expand_callback, file_selected_callback):
-        tiles = []
-        for it in items:
-            if it["is_dir"]:
-                tiles.append(self.make_lazy_folder(it, expand_callback))
-            else:
-                tiles.append(self.make_file_tile(it, file_selected_callback))
-        return ft.ListView(tiles, expand=True, spacing=2)
-
-    def make_lazy_folder(self, item, expand_callback):
-        return ft.ExpansionTile(title=ft.Text(item["name"]),
-                                leading=ft.Icon(ft.Icons.FOLDER),
-                                controls=[ft.Text("Loading...")],
-                                on_change=lambda e, p=item[
-                                    "path"]: expand_callback(e, p,
-                                                             e.control), )
-
-    def make_file_tile(self, item, file_selected_callback):
-        change_color = (
-            ft.Colors.YELLOW_200
-            if self.selected_file == item["path"]
-            else ft.Colors.WHITE
-        )
-        return ft.ListTile(
-            title=ft.Text(item["name"]),
-            leading=ft.Icon(ft.Icons.DESCRIPTION),
-            bgcolor=change_color,
-            on_click=lambda e, p=item["path"]: file_selected_callback(p),
-        )
-
-    def update_tree(self, tree_widget):
-        self.tree_view_dcm.content = tree_widget
-        self._page.update()
-
-    def highlight_selected_file(self, filepath: str):
-        self.selected_file = filepath
-        self._page.update()
-
-    def highlight_folder(self, path: str):
-        if path in self.selected_folders:
-            self.selected_folders.remove(path)
+        if e.path:
+            self._controller.get_directory_to_upload(e.path)
         else:
-            self.selected_folders.add(path)
+            self.create_alert("No folder selected.")
+
+    # -------------------------------------------------------
+    # TREEVIEW RAW DATA/DICOM FILES
+    # -------------------------------------------------------
+    def map_tree_container(self, tree_type: TreeType,
+                           container: ft.Container):
+        """The container is placed in the tree map and contains the ListView inside."""
+        self._tree_map[tree_type] = container
+
+    def update_tree(self, new_widget: ft.ListView, tree_type: TreeType):
+        """Update the content of the existing container"""
+        container = self._tree_map.get(tree_type)
+        container.content = new_widget
         self._page.update()
+
+    # ----- Lazy tree builder -----
+    def build_lazy_tree(self, items, expand_callback, file_selected_callback):
+        tiles = [
+            self._build_node(item, expand_callback, file_selected_callback)
+            for item in items
+        ]
+        return ft.ListView(controls=tiles, expand=True)
+
+    def _build_node(self, item, expand_callback, file_selected_callback):
+        if item["is_dir"]:
+            return self._make_lazy_folder(item, expand_callback)
+        return self._make_file_tile(item, file_selected_callback)
+
+    def _make_lazy_folder(self, item, expand_callback):
+        return ft.ExpansionTile(
+            leading=ft.Icon(ft.Icons.FOLDER),
+            title=ft.Text(item["name"]),
+            controls=[ft.Text("Loading...")],
+            on_change=lambda e, path=item["path"]: expand_callback(
+                e, path, e.control
+            ),
+        )
+
+    def _make_file_tile(self, item, file_selected_callback):
+        return ft.ListTile(
+            leading=ft.Icon(ft.Icons.DESCRIPTION),
+            title=ft.Text(item["name"]),
+            on_click=lambda e, path=item["path"]: file_selected_callback(e,
+                                                                         path)
+        )
+
+    def update_expansion_tile(self, tile, children, expand_callback,
+                              file_selected_callback):
+        """ExpansionTile update already opened"""
+        tile.controls.clear()
+
+        if not children:
+            tile.controls.append(ft.Text("Empty folder"))
+        else:
+            for item in children:
+                node = self._build_node(item, expand_callback,
+                                        file_selected_callback)
+                tile.controls.append(node)
+
+    def set_selected_control(self, control: ft.Control):
+        """Highlight selected item"""
+        if self._selected_control:
+            self._clear_selection(self._selected_control)
+
+        self._apply_selection(control)
+        self._selected_control = control
+
+    def _apply_selection(self, control: ft.Control):
+        control.bgcolor = ft.Colors.AMBER_100
+
+    def _clear_selection(self, control: ft.Control):
+        control.bgcolor = None
 
     # ------------------------------------------------------
     # PREVIEW IMAGE

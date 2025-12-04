@@ -41,6 +41,7 @@ class ControllerCustomForm:
         self._xnat_session = xnat_session
         self._xnat_repo = XnatRepository(xnat_session)
         self._xnat_custom_form = XnatCustomForm(xnat_session)
+        self._view.set_initial_state()
 
     def _on_login_cancel(self):
         if self._xnat_session:
@@ -204,7 +205,8 @@ class ControllerCustomForm:
             if self._model.level == CustomFormLevel.PROJECT:
                 if not project_id:
                     raise ValueError("Please select a project before saving.")
-                self._xnat_custom_form.update_custom_fields(project_id, **payload)
+                self._xnat_custom_form.update_custom_fields(project_id,
+                                                            **payload)
             elif self._model.level == CustomFormLevel.SUBJECT:
                 if not project_id or not subject_id:
                     raise ValueError(
@@ -216,7 +218,7 @@ class ControllerCustomForm:
             elif self._model.level == CustomFormLevel.EXPERIMENT:
                 if not project_id or not subject_id or not experiment_id:
                     raise ValueError(
-                        "Please select project, subject, and experiment before "
+                        "Please select project, subject, and experiment before"
                         "saving."
                     )
                 self._xnat_custom_form.update_custom_fields(
