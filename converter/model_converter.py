@@ -21,7 +21,7 @@ class ModelConverter:
         self._input_scans = []
         self._output_scans = []
 
-    def get_list_directory(self, path):
+    def get_list_directory_treeview(self, path):
         return FilesystemService.get_list_directory_treeview(path)
 
     def create_dicom_output_folder(self, overwrite):

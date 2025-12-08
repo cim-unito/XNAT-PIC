@@ -1,18 +1,12 @@
-import base64
-import io
-import shutil
-import tempfile
 from pathlib import Path
 
-import numpy as np
-import pydicom
-from PIL import Image
 from pydicom import dcmread
-from pydicom.dataset import FileMetaDataset, FileDataset
-from pydicom.uid import UID, generate_uid, ExplicitVRLittleEndian
 
-from uploader.services.dicom_service import DicomService
-from uploader.services.filesystem_service import FilesystemService
+from uploader.services.dicom.dicom_compatibility_service import \
+    DicomCompatibilityService
+from uploader.services.dicom.dicom_validator_service import \
+    DicomValidatorService
+from uploader.services.filesystem.filesystem_service import FilesystemService
 
 
 class ModelUploader:
@@ -23,6 +17,9 @@ class ModelUploader:
 
     def get_list_directory_treeview(self, path):
         return FilesystemService.get_list_directory_treeview(path)
+
+    def reset_level(self):
+        self._level = None
 
     def validate_dicom_files(self):
         list_dicom_files = FilesystemService.get_list_dicom_files(
@@ -35,13 +32,16 @@ class ModelUploader:
 
         self._tmp_folder_to_upload = FilesystemService.create_temp_dicom_upload_directory()
 
+        study_instance_uid_map = {}
         for dicom_file in list_dicom_files:
-            if DicomService.is_valid_dicom_file(dicom_file):
+            if DicomValidatorService.is_valid_dicom_file(dicom_file):
                 FilesystemService.copy_dicom_file(self._input_root, dicom_file,
                                                   self._tmp_folder_to_upload)
             else:
-                new_dicom_file = DicomService.get_compatible_dicom_file(
-                    dicom_file)
+                exp_uid_map = DicomCompatibilityService.update_study_instance_uid_map(
+                    dicom_file, study_instance_uid_map)
+                new_dicom_file = DicomCompatibilityService.get_compatible_dicom_file(
+                    dicom_file, exp_uid_map)
                 if new_dicom_file:
                     pass
                     # FilesystemService.save_dicom_file(self._input_root,

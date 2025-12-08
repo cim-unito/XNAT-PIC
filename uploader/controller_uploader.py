@@ -4,7 +4,7 @@ import flet as ft
 
 from enums.tree_type import TreeType
 from enums.uploader_level import UploaderLevel
-from uploader.services.dicom_service import DicomService
+from uploader.services.dicom.dicom_preview_service import DicomPreviewService
 from xnat_client.xnat_repository import XnatRepository
 from uploader.xnat_new_project.model_xnat_new_project import \
     ModelXnatNewProject
@@ -270,7 +270,7 @@ class ControllerUploader:
             self._view.create_alert("No file selected.")
             return
         try:
-            tags = DicomService.read_DICOM_tags(self.file_path)
+            tags = DicomPreviewService.dicom_to_base64(self.file_path)
             self._view.show_dicom_tags_dialog(tags)
         except Exception as e:
             self._view.create_alert(f"Cannot read DICOM tags: {e}")
