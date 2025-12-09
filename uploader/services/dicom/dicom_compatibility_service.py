@@ -1,16 +1,20 @@
+import copy
+
 import numpy as np
 from pydicom import dcmread
-from pydicom.dataset import FileMetaDataset
-from pydicom.uid import generate_uid, UID, ExplicitVRLittleEndian
+from pydicom.dataset import FileMetaDataset, FileDataset
+from pydicom.uid import generate_uid, UID, ExplicitVRLittleEndian, \
+    ImplicitVRLittleEndian, SecondaryCaptureImageStorage, \
+    PYDICOM_IMPLEMENTATION_UID
 
 
 class DicomCompatibilityService:
     @staticmethod
     def update_study_instance_uid_map(dicom_file, study_instance_uid_map):
-        exp = dicom_file.parents[2].name + "_" + dicom_file.parents[1].name
+        sub_exp = dicom_file.parents[2].name + "_" + dicom_file.parents[1].name
 
-        if exp not in study_instance_uid_map:
-            study_instance_uid_map[exp] = generate_uid()
+        if sub_exp not in study_instance_uid_map:
+            study_instance_uid_map[sub_exp] = generate_uid()
 
         return study_instance_uid_map
 
@@ -18,81 +22,116 @@ class DicomCompatibilityService:
     def get_compatible_dicom_file(dicom_file, exp_uid_map):
         ds = dcmread(dicom_file)
 
-        if not hasattr(ds, 'file_meta') or ds.file_meta is None:
-            print("File meta doesn't exist")
-            return
+        ds.file_meta = DicomCompatibilityService._build_meta_file(ds)
 
+        manufacturer = getattr(ds, "Manufacturer", "")
+        implementation_version_name = getattr(ds.file_meta,
+                                              "ImplementationVersionName", "")
+
+        if manufacturer == "FUJIFILM VisualSonics, Inc.":
+            return DicomCompatibilityService._compatible_fujifilm(ds,
+                                                                  dicom_file,
+                                                                  exp_uid_map)
+        elif implementation_version_name == "Living Image":
+            return DicomCompatibilityService._compatible_ivis(ds, dicom_file,
+                                                              exp_uid_map)
+        else:
+            print("It is not a dicom file from ivis or fujifilm")
+            return None
+
+    @staticmethod
+    def _build_meta_file(ds):
+        # --- File Meta Dataset ---
+        if not hasattr(ds, "file_meta") or ds.file_meta is None:
+            ds.file_meta = FileMetaDataset()
+
+        # --- File Meta Information Version---
         if (not hasattr(ds.file_meta, 'FileMetaInformationVersion') or
                 ds.file_meta.FileMetaInformationVersion is None):
             ds.file_meta.FileMetaInformationVersion = b"\x00\x01"
 
-        uid = UID(ds.SOPClassUID)
-        print(uid.is_valid)
-
-        manufacturer = getattr(ds, "Manufacturer", "")
-        ImplementationVersionName = getattr(meta, "ImplementationVersionName", "")
-
-        if manufacturer == "FUJIFILM VisualSonics, Inc.":
-            return DicomCompatibilityService._compatible_fujifilm(ds,
-                                                                  dicom_file)
+        # --- Media Storage SOP Class UID ---
+        if hasattr(ds.file_meta, "MediaStorageSOPClassUID") and \
+                UID(ds.file_meta.MediaStorageSOPClassUID).is_valid:
+            pass
+        elif hasattr(ds, "SOPClassUID") and UID(ds.SOPClassUID).is_valid:
+            ds.file_meta.MediaStorageSOPClassUID = ds.SOPClassUID
         else:
-            return DicomCompatibilityService._compatible_ivis(ds, dicom_file)
+            ds.file_meta.MediaStorageSOPClassUID = SecondaryCaptureImageStorage
+
+        # --- Media Storage SOP Instance UID ---
+        if hasattr(ds.file_meta, "MediaStorageSOPInstanceUID") and \
+                UID(ds.file_meta.MediaStorageSOPInstanceUID).is_valid:
+            pass
+        elif hasattr(ds, "SOPInstanceUID") and UID(ds.SOPInstanceUID).is_valid:
+            ds.file_meta.MediaStorageSOPInstanceUID = ds.SOPInstanceUID
+        else:
+            new_uid = generate_uid()
+            ds.file_meta.MediaStorageSOPInstanceUID = new_uid
+
+        # --- Transfer Syntax UID ---
+        if not hasattr(ds.file_meta, "TransferSyntaxUID") or \
+                not UID(ds.file_meta.TransferSyntaxUID).is_valid:
+            ds.file_meta.TransferSyntaxUID = ImplicitVRLittleEndian
+
+        # --- Implementation Class UID ---
+        if not hasattr(ds.file_meta, "ImplementationClassUID") or \
+                not UID(ds.file_meta.ImplementationClassUID).is_valid:
+            ds.file_meta.ImplementationClassUID = PYDICOM_IMPLEMENTATION_UID
+
+        return ds.file_meta
 
     @staticmethod
-    def _compatible_fujifilm(ds, dicom_file):
-
-
-        ds.file_meta.MediaStorageSOPClassUID = UID(
-            "1.2.840.10008.5.1.4.1.1.6.1")
+    def _compatible_fujifilm(ds, dicom_file, exp_uid_map):
+        sub_exp = dicom_file.parents[2].name + "_" + dicom_file.parents[1].name
 
         ds.SOPClassUID = ds.file_meta.MediaStorageSOPClassUID
-
-        # Tag
-        parents = list(dicom_file.parents)
-        ds.PatientID = str(parents[2].name) + "_" + str(parents[1].name)
-        ds.StudyInstanceUID = generate_uid()
+        ds.PatientID = sub_exp
+        ds.StudyInstanceUID = exp_uid_map.get(sub_exp)
         ds.SeriesInstanceUID = generate_uid()
+        if not hasattr(ds, "Modality"):
+            ds.Modality = "OT"
 
-        ds.Modality = "OT"
-
-        ###########################################################
+        # --- From multiframe to single frame ---
+        results = []
         pixel_array = ds.pixel_array
-        n_frame = int(ds.NumberOfFrames)
-
-        for i in range(n_frame):
-            new_ds = ds.copy()
-
+        if pixel_array.ndim != 4:
+            raise ValueError("Unsupported pixel array shape")
+        n_frames = int(ds.NumberOfFrames)
+        # Tag to remove
+        tags_to_remove = [
+            (0x0028, 0x0008),  # Number of Frames
+            (0x0018, 0x1063),  # Frame Time
+            (0x0008, 0x2144),  # Recommended Display Frame Rate
+            (0x0028, 0x0009),  # Frame Increment Pointer
+        ]
+        for tag in tags_to_remove:
+            if tag in ds:
+                del ds[tag]
+        for i in range(n_frames):
+            new_ds = copy.deepcopy(ds)
+            new_file_meta = copy.deepcopy(ds.file_meta)
+            # Pixel data
             frame = pixel_array[i, :, :, :]
-
             new_ds.PixelData = frame.tobytes()
             new_ds.Rows, new_ds.Columns = frame.shape[:2]
-            voxel_spacing = [float(x) for x in ds.PixelSpacing] + [
-                1.0]  # [dx, dy, dz]
 
-            # tag to remove
-            tag_to_remove = [
-                (0x0028, 0x0008),
-                (0x0018, 0x1063),
-                (0x0008, 0x2144),
-                (0x0028, 0x0009),
-            ]
+            voxel_spacing = [float(x) for x in ds.PixelSpacing] + [1.0]
 
-            for tag in tag_to_remove:
-                if tag in new_ds:
-                    del new_ds[tag]
-
-            # UID updated
+            # UIDs
             new_uid = generate_uid()
-            new_ds.SOPInstanceUID = new_uid
             new_ds.file_meta.MediaStorageSOPInstanceUID = new_uid
-            new_ds.FrameOfReferenceUID = generate_uid()
-
+            new_ds.SOPInstanceUID = new_uid
+            new_ds.FrameOfReferenceUID = new_uid
             new_ds.InstanceNumber = i + 1
             new_ds.AcquisitionNumber = i + 1
+
+            # Position
             new_ds.ImagePositionPatient = [0, 0,
                                            i * voxel_spacing[2]]
             new_ds.SliceLocation = i * voxel_spacing[2]
 
+            # Windowing
             min_pixel = int(np.min(frame))
             max_pixel = int(np.max(frame))
             new_ds.SmallestImagePixelValue = min_pixel
@@ -100,21 +139,18 @@ class DicomCompatibilityService:
             new_ds.WindowCenter = int((max_pixel + min_pixel) / 2)
             new_ds.WindowWidth = int(max_pixel - min_pixel)
 
-            # Salva il file
-            # file_meta = new_ds.file_meta
-            # output_dicom = upload_path_xnat / dicom_scan.relative_to(
-            #     self._path_to_upload)
-            # base_name = output_dicom.stem
-            # output_dicom = output_dicom.parent
-            # filename = output_dicom / f"{base_name}_frame_{i + 1:03}.dcm"
-            # filename.parent.mkdir(parents=True, exist_ok=True)
-            # new_file = FileDataset(str(filename), new_ds,
-            #                        file_meta=file_meta,
-            #                        preamble=b"\0" * 128)
-            # new_file.save_as(str(filename))
+            # Output filename
+            filename = f"{dicom_file.stem}_frame_{i + 1:03}.dcm"
+            new_file = FileDataset(filename_or_obj="",
+                                   dataset=new_ds,
+                                   file_meta=new_file_meta,
+                                   preamble=b"\0" * 128)
+            results.append((new_file, filename))
+
+        return results
 
     @staticmethod
-    def _compatible_ivis(ds, dicom_file):
+    def _compatible_ivis(ds, dicom_file, exp_uid_map):
         ds.file_meta = FileMetaDataset()
         ds.file_meta.MediaStorageSOPClassUID = UID(
             "1.2.840.10008.5.1.4.1.1.7.4")  # TrueColor Secondary Capture

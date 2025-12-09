@@ -43,10 +43,10 @@ class ModelUploader:
                 new_dicom_file = DicomCompatibilityService.get_compatible_dicom_file(
                     dicom_file, exp_uid_map)
                 if new_dicom_file:
-                    pass
-                    # FilesystemService.save_dicom_file(self._input_root,
-                    #                                   dicom_file,
-                    #                                   self._tmp_folder_to_upload)
+                    FilesystemService.save_dicom_file(self._input_root,
+                                                      dicom_file,
+                                                      self._tmp_folder_to_upload,
+                                                      new_dicom_file)
 
     def modify_modality(self, dicom_files, new_modality):
         dirs = [Path(p) for p in dicom_files if Path(p).is_dir()]

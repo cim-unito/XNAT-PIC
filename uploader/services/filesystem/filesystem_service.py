@@ -88,11 +88,24 @@ class FilesystemService:
     @staticmethod
     def create_temp_dicom_upload_directory():
         tmpdir = tempfile.mkdtemp()
-        return tmpdir
+        return Path(tmpdir)
 
     @staticmethod
     def copy_dicom_file(input_root, dicom_file, tmpdir):
         src = dicom_file
-        dst = tmpdir / dicom_file.relative_to(input_root)
+        relative_path = dicom_file.relative_to(input_root)
+        relative_dir = relative_path.parent
+        dst = tmpdir / input_root.name / relative_dir
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(src, dst)
+
+    @staticmethod
+    def save_dicom_file(input_root, dicom_file, tmpdir, new_dicom_file):
+        relative_path = dicom_file.relative_to(input_root)
+        relative_dir = relative_path.parent
+        dst = tmpdir / input_root.name / relative_dir
+        for ds, filename in new_dicom_file:
+            out_path = dst / filename
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            ds.save_as(out_path, write_like_original=False)
+            print(f"[OK] Saved: {out_path}")
