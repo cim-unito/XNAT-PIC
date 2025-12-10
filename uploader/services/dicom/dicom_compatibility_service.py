@@ -151,33 +151,17 @@ class DicomCompatibilityService:
 
     @staticmethod
     def _compatible_ivis(ds, dicom_file, exp_uid_map):
-        ds.file_meta = FileMetaDataset()
-        ds.file_meta.MediaStorageSOPClassUID = UID(
-            "1.2.840.10008.5.1.4.1.1.7.4")  # TrueColor Secondary Capture
-        ds.file_meta.MediaStorageSOPInstanceUID = generate_uid()
-        ds.file_meta.TransferSyntaxUID = ExplicitVRLittleEndian
-        ds.file_meta.ImplementationClassUID = UID(
-            "1.2.276.0.7230010.3.0.3.6.7")
-
-        # Required DICOM identifiers
         ds.SOPClassUID = ds.file_meta.MediaStorageSOPClassUID
         ds.SOPInstanceUID = ds.file_meta.MediaStorageSOPInstanceUID
 
-        # Modality
-        ds.Modality = "OT"
-        parents = list(dicom_file.parents)
-        ds.PatientID = str(parents[2].name) + "_" + str(
-            parents[1].name)
+        sub_exp = dicom_file.parents[2].name + "_" + dicom_file.parents[1].name
+        ds.PatientID = sub_exp
+        ds.StudyInstanceUID = exp_uid_map.get(sub_exp)
+        ds.SeriesInstanceUID = generate_uid()
+        if not hasattr(ds, "Modality"):
+            ds.Modality = "OT"
         ds.PlanarConfiguration = 0
 
-        ds.StudyInstanceUID = generate_uid()
-        ds.SeriesInstanceUID = generate_uid()
-
-        # -----------------------
-        # FINAL SAVE
-        # -----------------------
-        # output_dicom = upload_path_xnat / dicom_scan.relative_to(
-        #     self._path_to_upload)
-        # output_dicom.parent.mkdir(parents=True, exist_ok=True)
-        # ds.save_as(output_dicom, write_like_original=False)
-        # print("DICOM saved in:", output_dicom)
+        filename = f"{dicom_file.stem}.dcm"
+        new_file = ds
+        return [(new_file, filename)]
