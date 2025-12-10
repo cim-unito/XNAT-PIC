@@ -67,18 +67,29 @@ class FilesystemService:
     @staticmethod
     def _is_bruker_scan(scan: Path) -> bool:
         """A Bruker scan is valid if a '2dseq' file appears in some subfolder."""
-        return any(
+        has_2dseq = any(
             item.is_file() and item.name == "2dseq"
             for item in scan.rglob("*")
         )
 
+        return has_2dseq
+
     @staticmethod
     def _is_ivis_scan(scan: Path) -> bool:
-        """An IVIS scan is valid if it contains PNGs with '_SEQ' in the name."""
-        return any(
-            f.is_file() and f.suffix.lower() == ".png" and "_SEQ" in f.name
+        """An IVIS scan is valid if it contains tif with 'cliclinfo'
+        in the name."""
+
+        has_tiff = any(
+            f.is_file() and f.suffix.lower() in {".tif", ".tiff"}
             for f in scan.iterdir()
         )
+
+        has_clickinfo = any(
+            f.is_file() and "clickinfo".lower() in f.name.lower()
+            for f in scan.iterdir()
+        )
+
+        return has_tiff and has_clickinfo
 
     @staticmethod
     def _filter_scans(experiment_list: List[Path],

@@ -108,6 +108,7 @@ class DicomCompatibilityService:
         for tag in tags_to_remove:
             if tag in ds:
                 del ds[tag]
+
         for i in range(n_frames):
             new_ds = copy.deepcopy(ds)
             new_file_meta = copy.deepcopy(ds.file_meta)

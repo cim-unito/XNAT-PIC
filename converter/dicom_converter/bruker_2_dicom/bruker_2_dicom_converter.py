@@ -16,10 +16,6 @@ import numpy as np
 import pydicom.uid
 from pydicom.dataset import Dataset, FileDataset
 
-from converter.dicom_converter.utils import read_method
-from converter.dicom_converter.utils import read_visupars
-from converter.dicom_converter.utils import cest_dict
-
 
 class Bruker2DicomConverter:
 

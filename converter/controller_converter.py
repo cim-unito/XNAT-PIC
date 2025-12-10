@@ -137,7 +137,7 @@ class ControllerConverter:
         for idx, (src, dst) in enumerate(
                 zip(self._model.input_scans, self._model.output_scans)
         ):
-            self._model.bruker_converter([str(src), str(dst)])
+            self._model.dicom_converter([str(src), str(dst)])
 
             self._view.update_progress((idx + 1) / total_scans)
 

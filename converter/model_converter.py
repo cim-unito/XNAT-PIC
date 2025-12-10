@@ -1,8 +1,9 @@
 from pathlib import Path
 
-from converter.dicom_converter.bruker_2_dicom_converter import \
+from converter.dicom_converter.bruker_2_dicom.bruker_2_dicom_converter import \
     Bruker2DicomConverter
-from converter.dicom_converter.ivis_2_dicom import Ivis2DicomConverter
+from converter.dicom_converter.ivis_2_dicom.ivis_2_dicom_converter import \
+    Ivis2DicomConverter
 from converter.services.filesystem_service import FilesystemService
 from enums.converter_type import ConverterType
 
@@ -38,11 +39,12 @@ class ModelConverter:
             self._input_root,
             self._output_root)
 
-    def bruker_converter(self, src_dst):
+    def dicom_converter(self, src_dst):
         if self.conversion_type == ConverterType.BRUKER2DICOM:
             Bruker2DicomConverter.convert(src_dst)
         elif self.conversion_type == ConverterType.IVIS2DICOM:
-            Ivis2DicomConverter.convert(src_dst)
+            ivis2dicom = Ivis2DicomConverter()
+            ivis2dicom.convert(src_dst)
 
     @property
     def input_root(self):
