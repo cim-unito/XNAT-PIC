@@ -5,29 +5,10 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 from converter.dicom_converter.ivis_2_dicom.ivis_metadata_parser import \
-    IvisMetadataParser
+    IvisMetadataParser, IVISMetadata
 
-
-# class IvisImageLocator:
-#
-#     def locate(self, src: Path, metadata: IVISMetadata) -> Dict[str, Path]:
-#         files = {f.name.lower(): f for f in src.iterdir() if f.is_file()}
-#         found = {}
-#
-#         for img in metadata.images:
-#             if not img.filename:
-#                 continue
-#
-#             fname = img.filename.lower()
-#
-#             if fname not in files:
-#                 raise FileNotFoundError(
-#                     f"Immagine '{img.filename}' dichiarata nel metadata ma non trovata in {src}"
-#                 )
-#
-#             found[img.filename] = files[fname]
-#
-#         return found
+from converter.dicom_converter.ivis_2_dicom.ivis_dicom_generator import \
+    IvisDicomGenerator
 
 
 class Ivis2DicomConverter:
@@ -43,20 +24,17 @@ class Ivis2DicomConverter:
         if not metadata_file:
             print("ClickInfo metadata file not found")
 
-        metadata = IvisMetadataParser(metadata_file).parse()
-        # images = IvisImageLocator().locate(self._src, metadata)
+        metadata_parse = IvisMetadataParser(metadata_file).parse()
 
-        # study = IvisStudy(
-        #     src_path=self._src,
-        #     dst_path=self._dst,
-        #     metadata=metadata,
-        #     images=images
-        # )
+        new_dicom_file =IvisDicomGenerator(metadata_parse).generate_dicom()
 
-        # Qui in futuro aggiungerai:
-        # self._generate_dicom(study)
+        for ds, filename in new_dicom_file:
+            out_path = self._dst / filename
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            ds.save_as(out_path, write_like_original=False)
+            print(f"[OK] Saved: {out_path}")
 
-        return study
+        return None
 
     def _find_metadata_file(self) -> Path | None:
         """

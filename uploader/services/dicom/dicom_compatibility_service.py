@@ -72,7 +72,7 @@ class DicomCompatibilityService:
         # --- Transfer Syntax UID ---
         if not hasattr(ds.file_meta, "TransferSyntaxUID") or \
                 not UID(ds.file_meta.TransferSyntaxUID).is_valid:
-            ds.file_meta.TransferSyntaxUID = ImplicitVRLittleEndian
+            ds.file_meta.TransferSyntaxUID = ExplicitVRLittleEndian
 
         # --- Implementation Class UID ---
         if not hasattr(ds.file_meta, "ImplementationClassUID") or \

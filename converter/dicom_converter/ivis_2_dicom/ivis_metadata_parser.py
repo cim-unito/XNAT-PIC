@@ -15,6 +15,7 @@ class IVISSection:
 class IVISImageInfo:
     section: str
     filename: str
+    file_path: Path
     metadata: Dict[str, str] = field(default_factory=dict)
     raw_lines: list[str] = field(default_factory=list)
 
@@ -24,13 +25,6 @@ class IVISMetadata:
     sections: list[IVISSection] = field(default_factory=list)
     images: list[IVISImageInfo] = field(default_factory=list)
 
-
-# @dataclass
-# class IvisStudy:
-#     src_path: Path
-#     dst_path: Path
-#     metadata: IVISMetadata
-#     images: Dict[str, Path]
 
 class IvisMetadataParser:
     SECTION_PATTERN = re.compile(r"^\*\*\*\s*([^:]+):\s*(.*)$")
@@ -47,27 +41,6 @@ class IvisMetadataParser:
         self.metadata_file = metadata_file
         self.section_counter = defaultdict(int)
 
-    # ------------------------------------------------------------------ #
-    # SAFE STORE (no overwrite, no duplicates)
-    # ------------------------------------------------------------------ #
-    @staticmethod
-    def _store(target: dict, key: str, value: Any):
-        if key not in target:
-            target[key] = value
-            return
-
-        existing = target[key]
-
-        if isinstance(existing, list):
-            if value != existing[-1]:  # evita duplicati identici
-                existing.append(value)
-        else:
-            if value != existing:
-                target[key] = [existing, value]
-
-    # ------------------------------------------------------------------ #
-    # MAIN PARSER
-    # ------------------------------------------------------------------ #
     def parse(self):
         metadata = IVISMetadata()
 
@@ -89,9 +62,6 @@ class IvisMetadataParser:
                         current_image.raw_lines.append(line)
                     continue
 
-                # ------------------------------------------------------------
-                # SECTION HEADER
-                # ------------------------------------------------------------
                 sec = self.SECTION_PATTERN.match(stripped)
                 if sec:
                     base_name = sec.group(1).strip()
@@ -105,12 +75,16 @@ class IvisMetadataParser:
                         filename = (
                             possible_value
                             if possible_value
-                               and possible_value.lower().endswith((".tif", ".tiff"))
+                               and possible_value.lower().endswith(
+                                (".tif", ".tiff"))
                             else None
                         )
-                        current_image = IVISImageInfo(
-                            section=base_name, filename=filename
-                        )
+                        if filename:
+                            file_path = self.metadata_file.parent / filename
+                            current_image = IVISImageInfo(
+                                section=base_name, filename=filename,
+                                file_path=file_path
+                            )
                         current_image.raw_lines.append(line)
                         metadata.images.append(current_image)
                         continue
@@ -169,3 +143,18 @@ class IvisMetadataParser:
                     current_image.raw_lines.append(line)
 
         return metadata
+
+    @staticmethod
+    def _store(target: dict, key: str, value: Any):
+        if key not in target:
+            target[key] = value
+            return
+
+        existing = target[key]
+
+        if isinstance(existing, list):
+            if value != existing[-1]:
+                existing.append(value)
+        else:
+            if value != existing:
+                target[key] = [existing, value]
