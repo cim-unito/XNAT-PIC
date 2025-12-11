@@ -17,6 +17,7 @@ class IvisDicomGenerator:
     def generate_dicom(self):
         image_list = self._metadata_parse.images
         results = []
+        study_instance_uid = generate_uid()
         for image in image_list:
             np_img, samples_per_pixel = self._load_image(image.file_path)
 
@@ -37,7 +38,7 @@ class IvisDicomGenerator:
             ds.ImageType = ["ORIGINAL", "PRIMARY"]
             ds.PatientName = "IVIS_SUBJECT"
             ds.PatientID = "IVIS001"
-            ds.StudyInstanceUID = generate_uid()
+            ds.StudyInstanceUID = study_instance_uid
             ds.SeriesInstanceUID = generate_uid()
             ds.SeriesNumber = 1
             ds.InstanceNumber = 1
@@ -110,49 +111,55 @@ class IvisDicomGenerator:
     def _convert_to_16bit(self, np_img):
         np_img = np.asarray(np_img)
 
-        # Bool (da immagini 1 bit)
+        # --- BOOL (1-bit)
         if np.issubdtype(np_img.dtype, np.bool_):
-            return np_img.astype(np.uint16) * 65535
+            return (np_img.astype(np.uint16) * 65535)
 
-        # Interi
+        # --- INTEGER (signed o unsigned)
         if np.issubdtype(np_img.dtype, np.integer):
-            vmin = int(np_img.min())
-            vmax = int(np_img.max())
 
-            if vmin == vmax:
+            # Caso ottimizzato: già uint16, range valido
+            if np_img.dtype == np.uint16:
+                return np_img.copy()
+
+            # Convertiamo a float64 per evitare overflow
+            img = np_img.astype(np.float64)
+
+            vmin = img.min()
+            vmax = img.max()
+
+            # Range costante → immagine piatta
+            if vmax == vmin:
                 return np.zeros_like(np_img, dtype=np.uint16)
 
-            # Se unsigned 16bit già in 0..65535 puoi decidere di non riscalare:
-            if np.issubdtype(np_img.dtype,
-                             np.uint16) and vmin >= 0 and vmax <= 65535:
-                return np_img.astype(np.uint16)
+            # Normalizzazione a 0..1
+            img_norm = (img - vmin) / (vmax - vmin)
+            img_norm = np.clip(img_norm, 0.0, 1.0)
 
-            # Per altri casi, riscalo a 0..65535
-            if np.issubdtype(np_img.dtype, np.signedinteger):
-                np_img = np_img.astype(np.int32)
-                np_img = np_img - vmin
-                vmax = int(np_img.max())
-                vmin = 0
+            return (img_norm * 65535.0).astype(np.uint16)
 
-            scale = 65535.0 / (vmax - vmin)
-            np_float = (np_img.astype(np.float32) - vmin) * scale
-            return np.clip(np_float, 0, 65535).astype(np.uint16)
-
-        # Float
+        # --- FLOATING POINT
         if np.issubdtype(np_img.dtype, np.floating):
-            finite_mask = np.isfinite(np_img)
-            if not np.any(finite_mask):
-                raise ValueError("Immagine float senza valori finiti.")
+            img = np_img.astype(np.float64)
 
-            vmin = float(np_img[finite_mask].min())
-            vmax = float(np_img[finite_mask].max())
+            # Maschera dei valori finiti
+            mask = np.isfinite(img)
+
+            if not np.any(mask):
+                raise ValueError(
+                    "L'immagine float non contiene valori finiti.")
+
+            vmin = img[mask].min()
+            vmax = img[mask].max()
 
             if vmax == vmin:
                 return np.zeros_like(np_img, dtype=np.uint16)
 
-            np_norm = (np_img - vmin) / (vmax - vmin)
-            np_norm = np.clip(np_norm, 0.0, 1.0)
-            return (np_norm * 65535.0).astype(np.uint16)
+            # Normalizzazione solo sui valori validi
+            img_norm = (img - vmin) / (vmax - vmin)
+            img_norm = np.clip(img_norm, 0.0, 1.0)
+
+            return (img_norm * 65535.0).astype(np.uint16)
 
         raise ValueError(f"Tipo pixel non supportato: {np_img.dtype}")
 

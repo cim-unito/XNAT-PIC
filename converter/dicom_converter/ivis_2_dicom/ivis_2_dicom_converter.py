@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 from converter.dicom_converter.ivis_2_dicom.ivis_metadata_parser import \
-    IvisMetadataParser, IVISMetadata
+    IvisMetadataParser, IVISMetadata, IVISImageInfo
 
 from converter.dicom_converter.ivis_2_dicom.ivis_dicom_generator import \
     IvisDicomGenerator
@@ -25,8 +25,10 @@ class Ivis2DicomConverter:
             print("ClickInfo metadata file not found")
 
         metadata_parse = IvisMetadataParser(metadata_file).parse()
+        if self._exist_png():
+            self._add_png(metadata_parse)
 
-        new_dicom_file =IvisDicomGenerator(metadata_parse).generate_dicom()
+        new_dicom_file = IvisDicomGenerator(metadata_parse).generate_dicom()
 
         for ds, filename in new_dicom_file:
             out_path = self._dst / filename
@@ -53,3 +55,25 @@ class Ivis2DicomConverter:
 
         return None
 
+    def _exist_png(self):
+        # Ottieni la cartella superiore
+        parent_dir = self._src.parent
+
+        # Controlla se contiene almeno un PNG
+        return any(parent_dir.glob("*.png"))
+
+    def _add_png(self, metadata_parse):
+        # Ottieni la cartella superiore
+        parent_dir = self._src.parent
+        png_files = list(parent_dir.glob("*.png"))
+        file_path = png_files[0]
+        filename = file_path.name
+
+        png_image = IVISImageInfo(
+            section="png image", filename=filename,
+            file_path=file_path
+        )
+
+        metadata_parse.images.append(png_image)
+
+        return metadata_parse
