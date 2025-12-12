@@ -28,15 +28,7 @@ class Ivis2DicomConverter:
         if self._exist_png():
             self._add_png(metadata_parse)
 
-        new_dicom_file = IvisDicomGenerator(metadata_parse).generate_dicom()
-
-        for ds, filename in new_dicom_file:
-            out_path = self._dst / filename
-            out_path.parent.mkdir(parents=True, exist_ok=True)
-            ds.save_as(out_path, write_like_original=False)
-            print(f"[OK] Saved: {out_path}")
-
-        return None
+        IvisDicomGenerator(metadata_parse).generate_dicom(self._dst)
 
     def _find_metadata_file(self) -> Path | None:
         """
