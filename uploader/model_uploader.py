@@ -4,6 +4,7 @@ from pydicom import dcmread
 
 from uploader.services.dicom.dicom_compatibility_service import \
     DicomCompatibilityService
+from uploader.services.dicom.dicom_modify_modality import DicomModifyModality
 from uploader.services.dicom.dicom_validator_service import \
     DicomValidatorService
 from uploader.services.filesystem.filesystem_service import FilesystemService
@@ -48,26 +49,26 @@ class ModelUploader:
                                                       self._tmp_folder_to_upload,
                                                       new_dicom_file)
 
-    def modify_modality(self, dicom_files, new_modality):
-        dirs = [Path(p) for p in dicom_files if Path(p).is_dir()]
+    def modify_modality(self, dicom_path, new_modality):
+        dicom_files_to_modify = []
 
-        unique = []
-        for p in dirs:
-            if not any(
-                    other != p and other.is_relative_to(p) for other in dirs):
-                unique.append(Path(p))
+        if dicom_path.is_file():
+            if dicom_path.suffix.lower() in [".dcm", ".dicom"]:
+                dicom_files_to_modify.append(dicom_path)
+            else:
+                raise ValueError("It is not a dicom file (.dcm o .dicom)")
 
-        dicom_files_to_modify = [
-            f
-            for folder in unique
-            for ext in ("*.dcm", "*.dicom")
-            for f in folder.rglob(ext)
-        ]
-        for dicom_scan in dicom_files_to_modify:
-            ds = dcmread(dicom_scan)
-            ds.Modality = new_modality
-            dicom_scan.parent.mkdir(parents=True, exist_ok=True)
-            ds.save_as(dicom_scan, write_like_original=False)
+        elif dicom_path.is_dir():
+            dicom_files_to_modify = list(dicom_path.rglob("*.dcm")) + list(
+                dicom_path.rglob("*.dicom"))
+
+            if not dicom_files_to_modify:
+                raise ValueError("Folder does not contain dicom file")
+
+        else:
+            raise ValueError("Path does not exist")
+
+        DicomModifyModality.modify_modality(dicom_files_to_modify, new_modality)
 
     @property
     def input_root(self):
@@ -87,3 +88,11 @@ class ModelUploader:
     @level.setter
     def level(self, level):
         self._level = level
+
+    @property
+    def tmp_folder_to_upload(self):
+        return self._tmp_folder_to_upload
+
+    @tmp_folder_to_upload.setter
+    def tmp_folder_to_upload(self, tmp_folder_to_upload):
+        self._tmp_folder_to_upload = tmp_folder_to_upload

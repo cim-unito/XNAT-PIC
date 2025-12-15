@@ -149,8 +149,8 @@ class ViewUploader(ft.Control):
         # image preview
         self.img_preview = ft.Image(
             src="assets/images/ImagePreview.png",
-            width=260,
-            height=260,
+            width=256,
+            height=256,
             fit=ft.ImageFit.CONTAIN,
             border_radius=12,
         )

@@ -202,7 +202,7 @@ class ControllerUploader:
     def get_directory_to_upload(self, path: str):
         self._model.input_root = path
         self._model.validate_dicom_files()
-        self.populate_tree(Path(path), TreeType.DICOM)
+        self.populate_tree(self._model.tmp_folder_to_upload, TreeType.DICOM)
 
     def populate_tree(self, path: Path, tree_type: TreeType):
         """Initial tree loading"""
@@ -223,6 +223,7 @@ class ControllerUploader:
     def on_expand(self, e, node_path, tile):
         """Folder expansion"""
         if e.data != "true":
+            self.folder_path_selected = None
             self.file_path_selected = None
             return
 
@@ -274,10 +275,39 @@ class ControllerUploader:
             self._view.create_alert("No file selected.")
             return
         try:
-            tags = DicomTagReaderService.read_dicom_tags(self.file_path_selected)
+            tags = DicomTagReaderService.read_dicom_tags(
+                self.file_path_selected)
             self._view.show_dicom_tags_dialog(tags)
         except Exception as e:
             self._view.create_alert(f"Cannot read DICOM tags: {e}")
+
+    # ==========================================================
+    # MODIFY MODALITY
+    # ==========================================================
+    def modify_modality(self, e):
+        self._view.cnt_modify_modality.controls.clear()
+        self._view.cnt_modify_modality.controls.append(
+            self._view.dd_modify_modality)
+        self._view._page.update()
+
+    def on_select_modality(self, e):
+        if self.folder_path_selected is None and self.file_path_selected is None:
+            self._view.create_alert("No file selected.")
+            return
+
+        selected_item = self.folder_path_selected if (self.folder_path_selected
+                                                      is not None) \
+            else self.file_path_selected
+        print(selected_item)
+        self._model.modify_modality(Path(selected_item),
+                                    e.control.value)
+        self.populate_tree(Path(self._model.tmp_folder_to_upload),
+                           TreeType.DICOM)
+        self._view.dd_modify_modality.value = None
+        self._view.cnt_modify_modality.controls.clear()
+        self._view.cnt_modify_modality.controls.append(
+            self._view.btn_modify_modality)
+        self._view._page.update()
 
     # ==========================================================
     # NEW XNAT PROJECT
@@ -319,30 +349,11 @@ class ControllerUploader:
             self._view.create_alert("You must login to XNAT first.")
             return
 
-        base_path = self._model.path_to_upload
+        base_path = self._model.tmp_folder_to_upload
         if not base_path or not base_path.exists():
             self._view.create_alert("Select a folder to upload.")
             return
-        if not self._model.exist_ot_modality(self._mode_selected):
-            project_id = self._view.dd_xnat_project.value
-            if not project_id:
-                self._view.create_alert("Select a project in XNAT.")
-                return
 
-            self._view.show_progress_dialog()
-
-            t = threading.Thread(
-                target=self._upload_project_thread,
-                args=(base_path, project_id),
-                daemon=True,
-            )
-            t.start()
-        else:
-            self._view.show_upload_ot_modality()
-
-    def upload_ot_modality(self):
-        self._view._page.close(self._view.dlg_modality)
-        base_path = self._model.path_to_upload
         project_id = self._view.dd_xnat_project.value
         if not project_id:
             self._view.create_alert("Select a project in XNAT.")
@@ -356,24 +367,6 @@ class ControllerUploader:
             daemon=True,
         )
         t.start()
-
-    def modify_modality(self, e):
-        self._view.cnt_modify_modality.controls.clear()
-        self._view.cnt_modify_modality.controls.append(
-            self._view.dd_modify_modality)
-        self._view._page.update()
-
-    def on_select_modality(self, e):
-        self._model.modify_modality(self._view.selected_folders,
-                                    e.control.value)
-        p = Path(self._model.path_to_upload)
-        self.populate_tree(p)
-        self._view.selected_folders = set()
-        self._view.dd_modify_modality.value = None
-        self._view.cnt_modify_modality.controls.clear()
-        self._view.cnt_modify_modality.controls.append(
-            self._view.btn_modify_modality)
-        self._view._page.update()
 
     def _upload_project_thread(self, base_path: Path, project_id: str):
         subjects = [p for p in base_path.iterdir() if p.is_dir()]
@@ -420,7 +413,6 @@ class ControllerUploader:
 
                 except Exception as err:
                     self._view.create_alert(f"Upload error: {err}")
-                    self._view._page.update()
                     return
 
                 # UPDATE PROGRESS (TUO METODO ORIGINALE)
@@ -436,4 +428,3 @@ class ControllerUploader:
 
         # chiudi dialog e mostra messaggio finale
         self._view.create_alert("Upload completed successfully!")
-        self._view._page.update()

@@ -92,12 +92,10 @@ class FilesystemService:
 
     @staticmethod
     def copy_dicom_file(input_root, dicom_file, tmpdir):
-        src = dicom_file
-        relative_path = dicom_file.relative_to(input_root)
-        relative_dir = relative_path.parent
-        dst = tmpdir / input_root.name / relative_dir
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(src, dst)
+        dst_file = tmpdir / input_root.name / dicom_file.relative_to(
+            input_root)
+        dst_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(dicom_file, dst_file)
 
     @staticmethod
     def save_dicom_file(input_root, dicom_file, tmpdir, new_dicom_file):

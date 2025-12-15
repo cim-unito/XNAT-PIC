@@ -59,7 +59,7 @@ class DicomPreviewService:
                 mode = "RGB" if pixels.shape[-1] == 3 else "RGBA" if pixels.shape[-1] == 4 else None
                 img = Image.fromarray(pixels, mode=mode)
 
-            img.thumbnail((512, 512))
+            img.thumbnail((256, 256))
 
             buffer = io.BytesIO()
             img.save(buffer, format="PNG")
