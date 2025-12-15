@@ -1,4 +1,6 @@
 import pydicom
+from pydicom.multival import MultiValue
+from pydicom.tag import Tag
 
 
 class DicomTagReaderService:
@@ -22,31 +24,74 @@ class DicomTagReaderService:
     }
 
     @staticmethod
-    def read_dicom_tags(dicom_path):
-        try:
-            ds = pydicom.dcmread(dicom_path, stop_before_pixels=True)
-            elements = []
+    def _safe_string(value, max_length=200):
+        if value is None:
+            return ""
 
-            for elem in ds:
-                if elem.tag == (0x7FE0, 0x0010):  # Salta pixel data
-                    continue
+        if isinstance(value, bytes):
+            preview = value[:64].hex()
+            suffix = "..." if len(value) > 64 else ""
+            return f"0x{preview}{suffix} ({len(value)} bytes)"
 
-                tag_tuple = (elem.tag.group, elem.tag.elem)
+        if isinstance(value, MultiValue):
+            joined = ", ".join(DicomTagReaderService._safe_string(v, max_length) for v in value[:8])
+            if len(value) > 8:
+                joined += ", ..."
+            return f"[{joined}]"
 
-                if tag_tuple in DicomTagReaderService.CEST_PRIVATE_TAGS:
-                    name = DicomTagReaderService.CEST_PRIVATE_TAGS[tag_tuple]
-                elif elem.name.startswith("Private tag"):
-                    name = f"Unknown private tag {tag_tuple}"
-                else:
-                    name = elem.name
+        value_str = str(value)
+        if len(value_str) > max_length:
+            return f"{value_str[:max_length]}..."
+        return value_str
 
+    @staticmethod
+    def _tag_name(dataset, elem):
+        tag_tuple = (elem.tag.group, elem.tag.elem)
+
+        if tag_tuple in DicomTagReaderService.CEST_PRIVATE_TAGS:
+            return DicomTagReaderService.CEST_PRIVATE_TAGS[tag_tuple]
+
+        if elem.tag.is_private:
+            creator = getattr(elem, "private_creator", None)
+            creator_label = f"{creator}: " if creator else ""
+            return f"{creator_label}{elem.name}"
+
+        return elem.name
+
+    @staticmethod
+    def _process_dataset(dataset, elements, parent_path=""):
+        for elem in dataset:
+            if elem.tag == Tag(0x7FE0, 0x0010):
+                continue
+
+            tag_tuple = (elem.tag.group, elem.tag.elem)
+            name = DicomTagReaderService._tag_name(dataset, elem)
+            path = f"{parent_path}{name}" if not parent_path else f"{parent_path}/{name}"
+
+            if elem.VR == "SQ":
                 elements.append({
                     "tag": tag_tuple,
                     "name": name,
-                    "value": str(elem.value)
+                    "value": f"Sequence of {len(elem.value)} item(s)",
+                    "path": path
+                })
+                for index, item in enumerate(elem.value):
+                    DicomTagReaderService._process_dataset(item, elements, f"{path}[{index}]")
+            else:
+                elements.append({
+                    "tag": tag_tuple,
+                    "name": name,
+                    "value": DicomTagReaderService._safe_string(elem.value),
+                    "path": path
                 })
 
+    @staticmethod
+    def read_dicom_tags(dicom_path):
+        try:
+            dataset = pydicom.dcmread(dicom_path, stop_before_pixels=True, force=True)
+            elements = []
+            DicomTagReaderService._process_dataset(dataset, elements)
             return elements
 
-        except Exception as e:
-            raise ValueError(f"DICOM tag reading error: {e}")
+        except Exception as error:
+            raise ValueError(f"DICOM tag reading error: {error}")

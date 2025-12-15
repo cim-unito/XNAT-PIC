@@ -547,6 +547,7 @@ class ViewUploader(ft.Control):
             on_change=lambda e, path=item["path"]: expand_callback(
                 e, path, e.control
             ),
+            data=item["path"],
         )
 
     def _make_file_tile(self, item, file_selected_callback):
@@ -578,6 +579,9 @@ class ViewUploader(ft.Control):
         self._apply_selection(control)
         self._selected_control = control
 
+    def get_selected_control(self):
+        return self._selected_control
+
     def _apply_selection(self, control: ft.Control):
         control.bgcolor = ft.Colors.AMBER_100
 
@@ -600,9 +604,9 @@ class ViewUploader(ft.Control):
             rows.append(
                 ft.Row(
                     controls=[
-                        ft.Text(str(elem["tag"]), width=120),
-                        ft.Text(elem["name"], width=200),
-                        ft.Text(elem["value"], width=350),
+                        ft.Text(str(elem["tag"]), width=140),
+                        ft.Text(elem["name"], width=260, no_wrap=True),
+                        ft.Text(elem["value"], width=760, no_wrap=True),
                     ]
                 )
             )
@@ -611,8 +615,8 @@ class ViewUploader(ft.Control):
             title=ft.Text("DICOM Tags"),
             content=ft.Container(
                 ft.ListView(rows, expand=True),
-                width=700,
-                height=450,
+                width=1200,
+                height=650,
             ),
             actions=[ft.TextButton("Close",
                                    on_click=lambda e: self._page.close(dlg))],

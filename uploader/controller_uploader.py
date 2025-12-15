@@ -5,6 +5,8 @@ import flet as ft
 from enums.tree_type import TreeType
 from enums.uploader_level import UploaderLevel
 from uploader.services.dicom.dicom_preview_service import DicomPreviewService
+from uploader.services.dicom.dicom_tag_reader_service import \
+    DicomTagReaderService
 from xnat_client.xnat_repository import XnatRepository
 from uploader.xnat_new_project.model_xnat_new_project import \
     ModelXnatNewProject
@@ -33,7 +35,8 @@ class ControllerUploader:
         self._xnat_session = None
         self._xnat_repo = None
 
-        self.file_path = None
+        self.file_path_selected = None
+        self.folder_path_selected = None
         self.preview_cache = {}
 
     # ==========================================================
@@ -220,6 +223,7 @@ class ControllerUploader:
     def on_expand(self, e, node_path, tile):
         """Folder expansion"""
         if e.data != "true":
+            self.file_path_selected = None
             return
 
         try:
@@ -236,41 +240,41 @@ class ControllerUploader:
         )
 
         self._view.set_selected_control(tile)
-        print(f"[SELECTED DIR] {node_path}")
-        self._view.update_page()
-
-    def on_file_selected(self, e, file_path):
-        """File selected"""
-        self._view.set_selected_control(e.control)
-        print(f"[SELECTED FILE] {file_path}")
+        self.folder_path_selected = node_path
+        self.file_path_selected = None
+        print(f"[SELECTED DIR] {self.folder_path_selected}")
         self._view.update_page()
 
     # ==========================================================
     # FILE SELECTION + DICOM PREVIEW
     # ==========================================================
-    # def on_file_selected(self, filepath: str):
-    #     p = Path(filepath)
-    #     self.file_path = p
-    #     self._view.highlight_selected_file(filepath)
-    #
-    #     if filepath in self.preview_cache:
-    #         self._view.set_image_preview(self.preview_cache[filepath])
-    #         return
-    #
-    #     try:
-    #         if p.suffix.lower() in (".dcm", ".dicom"):
-    #             b64 = DicomService.dicom_to_base64(p)
-    #             self.preview_cache[filepath] = b64
-    #             self._view.set_image_preview(b64)
-    #     except Exception as e:
-    #         self._view.create_alert(f"Preview failed: {e}")
+    def on_file_selected(self, e, file_path):
+        """File selected"""
+        self._view.set_selected_control(e.control)
+        self.file_path_selected = file_path
+        self.folder_path_selected = None
+        print(f"[SELECTED FILE] {self.file_path_selected}")
+        self._view.update_page()
+        p = Path(self.file_path_selected)
+
+        if p in self.preview_cache:
+            self._view.set_image_preview(self.preview_cache[file_path])
+            return
+
+        try:
+            if p.suffix.lower() in (".dcm", ".dicom"):
+                b64 = DicomPreviewService.dicom_to_base64(p)
+                self.preview_cache[file_path] = b64
+                self._view.set_image_preview(b64)
+        except Exception as e:
+            self._view.create_alert(f"Preview failed: {e}")
 
     def on_show_tags_clicked(self, e):
-        if not self.file_path:
+        if not self.file_path_selected:
             self._view.create_alert("No file selected.")
             return
         try:
-            tags = DicomPreviewService.dicom_to_base64(self.file_path)
+            tags = DicomTagReaderService.read_dicom_tags(self.file_path_selected)
             self._view.show_dicom_tags_dialog(tags)
         except Exception as e:
             self._view.create_alert(f"Cannot read DICOM tags: {e}")
