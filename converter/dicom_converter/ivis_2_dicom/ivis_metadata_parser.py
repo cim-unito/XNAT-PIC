@@ -5,25 +5,37 @@ from collections import defaultdict
 from typing import Any, Dict
 
 @dataclass
-class IVISSection:
+class IvisSection:
     name: str
     metadata: dict[str, str] = field(default_factory=dict)
     raw_lines: list[str] = field(default_factory=list)
 
+    def get_metadata_value(self, value):
+        return self.metadata.get(value)
+
 
 @dataclass
-class IVISImageInfo:
+class IvisImageInfo:
     section: str
     filename: str
     file_path: Path
     metadata: Dict[str, str] = field(default_factory=dict)
     raw_lines: list[str] = field(default_factory=list)
 
+    def get_metadata_value(self, value):
+        return self.metadata.get(value)
+
 
 @dataclass
-class IVISMetadata:
-    sections: list[IVISSection] = field(default_factory=list)
-    images: list[IVISImageInfo] = field(default_factory=list)
+class IvisMetadata:
+    sections: list[IvisSection] = field(default_factory=list)
+    images: list[IvisImageInfo] = field(default_factory=list)
+
+    def get_sections(self):
+        return self.sections
+
+    def get_images(self):
+        return self.images
 
 
 class IvisMetadataParser:
@@ -42,7 +54,7 @@ class IvisMetadataParser:
         self.section_counter = defaultdict(int)
 
     def parse(self):
-        metadata = IVISMetadata()
+        metadata = IvisMetadata()
 
         current_section = None
         current_image = None
@@ -81,7 +93,7 @@ class IvisMetadataParser:
                         )
                         if filename:
                             file_path = self.metadata_file.parent / filename
-                            current_image = IVISImageInfo(
+                            current_image = IvisImageInfo(
                                 section=base_name, filename=filename,
                                 file_path=file_path
                             )
@@ -94,7 +106,7 @@ class IvisMetadataParser:
                     name = base_name if count == 0 else f"{base_name} ({count})"
                     self.section_counter[base_name] += 1
 
-                    current_section = IVISSection(name=name)
+                    current_section = IvisSection(name=name)
                     current_section.raw_lines.append(line)
                     metadata.sections.append(current_section)
 

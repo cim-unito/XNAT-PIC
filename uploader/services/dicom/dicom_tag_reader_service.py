@@ -23,6 +23,24 @@ class DicomTagReaderService:
         (0x1061, 0x1015): "Saturation offset (ppm)"
     }
 
+    IVIS_PRIVATE_TAGS = {
+        (0x0011, 0x1001): "Binning Factor",
+        (0x0011, 0x1002): "f Number",
+        (0x0011, 0x1003): "Field of View",
+        (0x0011, 0x1004): "Filter Position",
+        (0x0011, 0x1005): "Emission filter",
+        (0x0011, 0x1006): "Exposure Time Sec",
+        (0x0011, 0x1007): "Read Bias Level",
+        (0x0011, 0x1008): "Demand Temperature",
+        (0x0011, 0x1009): "Measured Temperature",
+        (0x0011, 0x1010): "Data Multiplier",
+        (0x0011, 0x1011): "Background Exposure (Seconds)",
+        (0x0011, 0x1012): "Luminescent Exposure (Seconds)",
+        (0x0011, 0x1013): "Luminescent Exposure Units",
+        (0x0011, 0x1014): "Excitation filter",
+
+    }
+
     @staticmethod
     def _safe_string(value, max_length=200):
         if value is None:
@@ -50,6 +68,9 @@ class DicomTagReaderService:
 
         if tag_tuple in DicomTagReaderService.CEST_PRIVATE_TAGS:
             return DicomTagReaderService.CEST_PRIVATE_TAGS[tag_tuple]
+
+        elif tag_tuple in DicomTagReaderService.IVIS_PRIVATE_TAGS:
+            return DicomTagReaderService.IVIS_PRIVATE_TAGS[tag_tuple]
 
         if elem.tag.is_private:
             creator = getattr(elem, "private_creator", None)

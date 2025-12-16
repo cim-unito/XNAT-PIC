@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 from converter.dicom_converter.ivis_2_dicom.ivis_metadata_parser import \
-    IvisMetadataParser, IVISMetadata, IVISImageInfo
+    IvisMetadataParser, IvisMetadata, IvisImageInfo
 
 from converter.dicom_converter.ivis_2_dicom.ivis_dicom_generator import \
     IvisDicomGenerator
@@ -61,7 +61,7 @@ class Ivis2DicomConverter:
         file_path = png_files[0]
         filename = file_path.name
 
-        png_image = IVISImageInfo(
+        png_image = IvisImageInfo(
             section="png image", filename=filename,
             file_path=file_path
         )
