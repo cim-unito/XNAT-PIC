@@ -1,5 +1,16 @@
+from dataclasses import dataclass
+
 import flet as ft
 
+@dataclass
+class Palette:
+    primary: str
+    primary_hover: str
+    primary_pressed: str
+    primary_text: str
+    surface: str
+    surface_stronger: str
+    subtle_text: str
 
 class ViewMainInterface(ft.Control):
     def __init__(self, page: ft.Page):
@@ -16,15 +27,26 @@ class ViewMainInterface(ft.Control):
         self.btn_converter = None
         self.btn_uploader = None
         self.btn_custom_form = None
-        self.converter_card = None
-        self.uploader_card = None
-        self.custom_form_card = None
+        self.card_converter = None
+        self.card_uploader = None
+        self.card_custom_form = None
         self.img_cnr = None
         self.img_ibb = None
         self.img_unito = None
 
         # layout
         self._main_layout = None
+
+        # palette
+        self.palette = Palette(
+            primary=ft.Colors.BLUE_600,
+            primary_hover=ft.Colors.BLUE_700,
+            primary_pressed=ft.Colors.BLUE_800,
+            primary_text=ft.Colors.BLUE_900,
+            surface=ft.Colors.BLUE_50,
+            surface_stronger=ft.Colors.BLUE_100,
+            subtle_text="#475569",
+        )
 
     # ------------------------------------------------------
     # BUILD MAIN INTERFACE
@@ -38,23 +60,14 @@ class ViewMainInterface(ft.Control):
 
     def _build_controls(self):
         """Graphical elements"""
-        # shared colors for the blue / light-blue palette
-        primary = ft.Colors.BLUE_600
-        primary_hover = ft.Colors.BLUE_700
-        primary_pressed = ft.Colors.BLUE_800
-        primary_text = ft.Colors.BLUE_900
-        surface = ft.Colors.BLUE_50
-        surface_stronger = ft.Colors.BLUE_100
-        subtle_text = "#475569"
-
         # button style
         btn_style = ft.ButtonStyle(
             bgcolor={
-                ft.ControlState.DEFAULT: primary,
-                ft.ControlState.HOVERED: primary_hover,
-                ft.ControlState.FOCUSED: primary_hover,
-                ft.ControlState.PRESSED: primary_pressed,
-                ft.ControlState.DISABLED: surface_stronger,
+                ft.ControlState.DEFAULT: self.palette.primary,
+                ft.ControlState.HOVERED: self.palette.primary_hover,
+                ft.ControlState.FOCUSED: self.palette.primary_hover,
+                ft.ControlState.PRESSED: self.palette.primary_pressed,
+                ft.ControlState.DISABLED: self.palette.surface_stronger,
             },
             color={
                 ft.ControlState.DEFAULT: ft.Colors.WHITE,
@@ -84,7 +97,7 @@ class ViewMainInterface(ft.Control):
                         "XNAT-PIC",
                         size=24,
                         weight=ft.FontWeight.W_600,
-                        color=primary_text,
+                        color=self.palette.primary_text,
                         font_family="Inter",
                     ),
                     padding=ft.padding.symmetric(horizontal=16, vertical=10),
@@ -150,38 +163,23 @@ class ViewMainInterface(ft.Control):
             tooltip="Create and manage tailored data forms",
         )
 
-        self.converter_card = self._build_action_card(
+        self.card_converter = self._build_action_card(
             title="Convert your datasets",
             description="Transform image data with presets and quality checks before sharing.",
             icon=ft.Icons.AUTO_FIX_HIGH,
             button=self.btn_converter,
-            primary=primary,
-            primary_text=primary_text,
-            subtle_text=subtle_text,
-            surface=surface,
-            surface_stronger=surface_stronger,
         )
-        self.uploader_card = self._build_action_card(
+        self.card_uploader = self._build_action_card(
             title="Upload to XNAT",
             description="Send validated data to XNAT with progress feedback and retries.",
             icon=ft.Icons.CLOUD_SYNC,
             button=self.btn_uploader,
-            primary=primary,
-            primary_text=primary_text,
-            subtle_text=subtle_text,
-            surface=surface,
-            surface_stronger=surface_stronger,
         )
-        self.custom_form_card = self._build_action_card(
+        self.card_custom_form = self._build_action_card(
             title="Custom data forms",
             description="Design metadata forms to keep submissions consistent across teams.",
             icon=ft.Icons.DASHBOARD_OUTLINED,
             button=self.btn_custom_form,
-            primary=primary,
-            primary_text=primary_text,
-            subtle_text=subtle_text,
-            surface=surface,
-            surface_stronger=surface_stronger,
         )
 
         self.img_cnr = ft.Image(src="assets/images/CNR.png", width=130,
@@ -191,32 +189,18 @@ class ViewMainInterface(ft.Control):
         self.img_unito = ft.Image(src="assets/images/Unito.png", width=130,
                                   fit=ft.ImageFit.CONTAIN)
 
-
     def _build_action_card(
             self,
-            title,
-            description,
-            icon,
-            button,
-            primary,
-            primary_text,
-            subtle_text,
-            surface,
-            surface_stronger,
-    ):
+            title: str,
+            description: str,
+            icon: str,
+            button: ft.Control,
+            palette: Palette | None = None,
+    ) -> ft.Control:
         """Reusable modern card for each main action."""
-        return ft.Container(
-            col={"xs": 12, "sm": 6, "md": 4},
+        palette = palette or self.palette
+        card_content = ft.Container(
             padding=20,
-            bgcolor=surface,
-            border=ft.border.all(1, surface_stronger),
-            border_radius=18,
-            ink=True,
-            shadow=ft.BoxShadow(
-                spread_radius=1,
-                blur_radius=10,
-                color=ft.Colors.with_opacity(0.14, primary),
-            ),
             content=ft.Column(
                 spacing=12,
                 alignment=ft.MainAxisAlignment.START,
@@ -225,35 +209,45 @@ class ViewMainInterface(ft.Control):
                     ft.Container(
                         width=42,
                         height=42,
-                        bgcolor=surface_stronger,
+                        bgcolor=palette.surface_stronger,
                         border_radius=12,
-                        content=ft.Icon(icon, size=24, color=primary),
+                        content=ft.Icon(icon, size=24, color=palette.primary),
                         alignment=ft.alignment.center,
                     ),
                     ft.Text(
                         title,
                         size=16,
                         weight=ft.FontWeight.W_600,
-                        color=primary_text,
+                        color=palette.primary_text,
                         font_family="Inter",
                     ),
                     ft.Text(
                         description,
                         size=13,
-                        color=subtle_text,
+                        color=palette.subtle_text,
                         font_family="Inter",
                         max_lines=3,
                         overflow=ft.TextOverflow.ELLIPSIS,
                     ),
-                    ft.Row([
-                        ft.Container(
-                            content=button,
-                            alignment=ft.alignment.center_left,
-                        ),
-                    ]),
+                    ft.Container(
+                        content=button,
+                        alignment=ft.alignment.center_left,
+                    ),
                 ],
             ),
         )
+
+        return ft.Container(
+            col={"xs": 12, "sm": 6, "md": 4},
+            content=ft.Card(
+                content=card_content,
+                color=palette.surface,
+                surface_tint_color=palette.primary,
+                elevation=3,
+                shape=ft.RoundedRectangleBorder(radius=18),
+            ),
+        )
+
 
     def _bind_events(self):
         """Bind events"""
@@ -272,9 +266,9 @@ class ViewMainInterface(ft.Control):
             spacing=18,
             vertical_alignment=ft.CrossAxisAlignment.START,
             controls=[
-                self.converter_card,
-                self.uploader_card,
-                self.custom_form_card,
+                self.card_converter,
+                self.card_uploader,
+                self.card_custom_form,
             ],
         )
 
@@ -301,36 +295,6 @@ class ViewMainInterface(ft.Control):
             padding=ft.padding.symmetric(vertical=16),
         )
 
-        cards_area = ft.Container(
-            content=ft.Column(
-                spacing=16,
-                controls=[
-                    ft.Row(
-                        [
-                            ft.Text(
-                                "Quick actions",
-                                size=18,
-                                weight=ft.FontWeight.W_600,
-                                color=ft.Colors.BLUE_900,
-                                font_family="Inter",
-                            ),
-                            ft.Text(
-                                "Choose the task you want to perform.",
-                                size=14,
-                                color="#475569",
-                                font_family="Inter",
-                            ),
-                        ],
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    ),
-                    buttons_row,
-                ],
-            ),
-            padding=ft.padding.all(16),
-            bgcolor=ft.Colors.with_opacity(0.2, ft.Colors.BLUE_50),
-            border_radius=20,
-        )
-
         self._main_layout = ft.Container(
             expand=True,
             padding=ft.padding.symmetric(horizontal=28, vertical=18),
@@ -339,7 +303,7 @@ class ViewMainInterface(ft.Control):
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 controls=[
                     hero,
-                    cards_area,
+                    buttons_row,
                     ft.Container(
                         footer_logos,
                         padding=20,
