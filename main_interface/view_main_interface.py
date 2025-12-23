@@ -85,7 +85,7 @@ class ViewMainInterface(ft.Control):
         # image EuroBioimaging
         self.img_eurobioimaging = ft.Image(
             src="assets/images/EuroBioimaging.png",
-            width=260,
+            width=380,
             fit=ft.ImageFit.CONTAIN,
         )
 
@@ -95,13 +95,14 @@ class ViewMainInterface(ft.Control):
                 ft.Container(
                     content=ft.Text(
                         "XNAT-PIC",
-                        size=24,
-                        weight=ft.FontWeight.W_600,
+                        size=32,
+                        weight=ft.FontWeight.W_700,
                         color=self.palette.primary_text,
                         font_family="Inter",
                     ),
-                    padding=ft.padding.symmetric(horizontal=16, vertical=10),
-                    border_radius=16,
+                    padding=ft.padding.symmetric(horizontal=20, vertical=12),
+                    border_radius=18,
+                    bgcolor=self.palette.surface,
                 )
             ],
             alignment=ft.MainAxisAlignment.CENTER,
@@ -182,11 +183,11 @@ class ViewMainInterface(ft.Control):
             button=self.btn_custom_form,
         )
 
-        self.img_cnr = ft.Image(src="assets/images/CNR.png", width=130,
+        self.img_cnr = ft.Image(src="assets/images/CNR.png", width=110,
                                 fit=ft.ImageFit.CONTAIN)
-        self.img_ibb = ft.Image(src="assets/images/IBB.png", width=140,
+        self.img_ibb = ft.Image(src="assets/images/IBB.png", width=110,
                                 fit=ft.ImageFit.CONTAIN)
-        self.img_unito = ft.Image(src="assets/images/Unito.png", width=130,
+        self.img_unito = ft.Image(src="assets/images/Unito.png", width=110,
                                   fit=ft.ImageFit.CONTAIN)
 
     def _build_action_card(
@@ -272,13 +273,18 @@ class ViewMainInterface(ft.Control):
             ],
         )
 
-        footer_logos = ft.Row(
-            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        footer_logos = ft.ResponsiveRow(
+            alignment=ft.MainAxisAlignment.CENTER,
+            run_spacing=32,
+            spacing=28,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
-                self.img_cnr,
-                self.img_ibb,
-                self.img_unito,
+                ft.Container(self.img_cnr, col={"xs": 12, "sm": 4},
+                             alignment=ft.alignment.center),
+                ft.Container(self.img_ibb, col={"xs": 12, "sm": 4},
+                             alignment=ft.alignment.center),
+                ft.Container(self.img_unito, col={"xs": 12, "sm": 4},
+                             alignment=ft.alignment.center),
             ],
         )
 
@@ -306,7 +312,7 @@ class ViewMainInterface(ft.Control):
                     buttons_row,
                     ft.Container(
                         footer_logos,
-                        padding=20,
+                        padding=ft.padding.symmetric(vertical=12),
                     ),
                 ],
                 expand=True,
