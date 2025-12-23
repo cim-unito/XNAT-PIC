@@ -1,16 +1,8 @@
-from dataclasses import dataclass
-
 import flet as ft
 
-@dataclass
-class Palette:
-    primary: str
-    primary_hover: str
-    primary_pressed: str
-    primary_text: str
-    surface: str
-    surface_stronger: str
-    subtle_text: str
+from app_modules.palette import Palette
+from app_modules.buttons import Buttons
+
 
 class ViewMainInterface(ft.Control):
     def __init__(self, page: ft.Page):
@@ -74,9 +66,9 @@ class ViewMainInterface(ft.Control):
 
     def _build_controls(self):
         """Graphical elements"""
-        btn_style = self._create_button_style(self.palette)
+        btn_style = Buttons().create_button_style(self.palette)
 
-        # image eurobioimaging
+        # logo eurobioimaging
         self.img_eurobioimaging = ft.Image(
             src="assets/images/EuroBioimaging.png",
             width=380,
@@ -158,6 +150,7 @@ class ViewMainInterface(ft.Control):
             tooltip="Create and manage tailored data forms",
         )
 
+        # card converter, uploader, custom form
         self.card_converter = self._build_action_card(
             title="Convert your datasets",
             description="Transform image data with presets and quality checks before sharing.",
@@ -195,7 +188,7 @@ class ViewMainInterface(ft.Control):
             button: ft.Control,
             palette: Palette,
     ) -> ft.Control:
-        """Reusable modern card for each main action."""
+        """Define card for each main action."""
         card_content = ft.Container(
             padding=20,
             content=ft.Column(
@@ -324,28 +317,5 @@ class ViewMainInterface(ft.Control):
             surface=ft.Colors.BLUE_50,
             surface_stronger=ft.Colors.BLUE_100,
             subtle_text="#475569",
-        )
-
-    @staticmethod
-    def _create_button_style(palette: Palette) -> ft.ButtonStyle:
-        return ft.ButtonStyle(
-            bgcolor={
-                ft.ControlState.DEFAULT: palette.primary,
-                ft.ControlState.HOVERED: palette.primary_hover,
-                ft.ControlState.FOCUSED: palette.primary_hover,
-                ft.ControlState.PRESSED: palette.primary_pressed,
-                ft.ControlState.DISABLED: palette.surface_stronger,
-            },
-            color={
-                ft.ControlState.DEFAULT: ft.Colors.WHITE,
-                ft.ControlState.HOVERED: ft.Colors.WHITE,
-                ft.ControlState.FOCUSED: ft.Colors.WHITE,
-                ft.ControlState.PRESSED: ft.Colors.WHITE,
-                ft.ControlState.DISABLED: ft.Colors.BLUE_300,
-            },
-            shape=ft.RoundedRectangleBorder(radius=12),
-            padding=ft.Padding(16, 12, 16, 12),
-            elevation=2,
-            animation_duration=250,
         )
 
