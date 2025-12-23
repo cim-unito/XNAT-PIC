@@ -88,7 +88,7 @@ class ViewMainInterface(ft.Control):
                     ),
                     padding=ft.padding.symmetric(horizontal=20, vertical=12),
                     border_radius=18,
-                    bgcolor=self.palette.surface,
+                    #bgcolor=self.palette.surface,
                 )
             ],
             alignment=ft.MainAxisAlignment.CENTER,
@@ -180,64 +180,6 @@ class ViewMainInterface(ft.Control):
         self.img_unito = ft.Image(src="assets/images/Unito.png", width=110,
                                   fit=ft.ImageFit.CONTAIN)
 
-    def _build_action_card(
-            self,
-            title: str,
-            description: str,
-            icon: str,
-            button: ft.Control,
-            palette: Palette,
-    ) -> ft.Control:
-        """Define card for each main action."""
-        card_content = ft.Container(
-            padding=20,
-            content=ft.Column(
-                spacing=12,
-                alignment=ft.MainAxisAlignment.START,
-                horizontal_alignment=ft.CrossAxisAlignment.START,
-                controls=[
-                    ft.Container(
-                        width=42,
-                        height=42,
-                        bgcolor=palette.surface_stronger,
-                        border_radius=12,
-                        content=ft.Icon(icon, size=24, color=palette.primary),
-                        alignment=ft.alignment.center,
-                    ),
-                    ft.Text(
-                        title,
-                        size=16,
-                        weight=ft.FontWeight.W_600,
-                        color=palette.primary_text,
-                        font_family="Inter",
-                    ),
-                    ft.Text(
-                        description,
-                        size=13,
-                        color=palette.subtle_text,
-                        font_family="Inter",
-                        max_lines=3,
-                        overflow=ft.TextOverflow.ELLIPSIS,
-                    ),
-                    ft.Container(
-                        content=button,
-                        alignment=ft.alignment.center_left,
-                    ),
-                ],
-            ),
-        )
-
-        return ft.Container(
-            col={"xs": 12, "sm": 6, "md": 4},
-            content=ft.Card(
-                content=card_content,
-                color=palette.surface,
-                surface_tint_color=palette.primary,
-                elevation=3,
-                shape=ft.RoundedRectangleBorder(radius=18),
-            ),
-        )
-
     def _bind_events(self):
         """Bind events"""
         self.btn_converter.on_click = lambda \
@@ -319,3 +261,60 @@ class ViewMainInterface(ft.Control):
             subtle_text="#475569",
         )
 
+    @staticmethod
+    def _build_action_card(
+            title: str,
+            description: str,
+            icon: str,
+            button: ft.Control,
+            palette: Palette,
+    ) -> ft.Control:
+        """Define card for each main action."""
+        card_content = ft.Container(
+            padding=20,
+            content=ft.Column(
+                spacing=12,
+                alignment=ft.MainAxisAlignment.START,
+                horizontal_alignment=ft.CrossAxisAlignment.START,
+                controls=[
+                    ft.Container(
+                        width=42,
+                        height=42,
+                        bgcolor=palette.surface_stronger,
+                        border_radius=12,
+                        content=ft.Icon(icon, size=24, color=palette.primary),
+                        alignment=ft.alignment.center,
+                    ),
+                    ft.Text(
+                        title,
+                        size=16,
+                        weight=ft.FontWeight.W_600,
+                        color=palette.primary_text,
+                        font_family="Inter",
+                    ),
+                    ft.Text(
+                        description,
+                        size=13,
+                        color=palette.subtle_text,
+                        font_family="Inter",
+                        max_lines=3,
+                        overflow=ft.TextOverflow.ELLIPSIS,
+                    ),
+                    ft.Container(
+                        content=button,
+                        alignment=ft.alignment.center_left,
+                    ),
+                ],
+            ),
+        )
+
+        return ft.Container(
+            col={"xs": 12, "sm": 6, "md": 4},
+            content=ft.Card(
+                content=card_content,
+                color=palette.surface,
+                surface_tint_color=palette.primary,
+                elevation=3,
+                shape=ft.RoundedRectangleBorder(radius=18),
+            ),
+        )
