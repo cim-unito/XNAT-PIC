@@ -22,8 +22,8 @@ class ViewMainInterface(ft.Control):
 
         # graphical elements
         self.img_eurobioimaging = None
-        self.title = None
-        self.subtitle = None
+        self.row_title = None
+        self.txt_subtitle = None
         self.btn_converter = None
         self.btn_uploader = None
         self.btn_custom_form = None
@@ -38,15 +38,7 @@ class ViewMainInterface(ft.Control):
         self._main_layout = None
 
         # palette
-        self.palette = Palette(
-            primary=ft.Colors.BLUE_600,
-            primary_hover=ft.Colors.BLUE_700,
-            primary_pressed=ft.Colors.BLUE_800,
-            primary_text=ft.Colors.BLUE_900,
-            surface=ft.Colors.BLUE_50,
-            surface_stronger=ft.Colors.BLUE_100,
-            subtle_text="#475569",
-        )
+        self.palette = self._create_default_palette()
 
     # ------------------------------------------------------
     # BUILD MAIN INTERFACE
@@ -56,33 +48,35 @@ class ViewMainInterface(ft.Control):
         self._bind_events()
         self._define_layout()
         self.set_initial_state()
+
         return self._main_layout
+
+    def set_initial_state(self):
+        """Set initial state"""
+        self.btn_converter.disabled = False
+        self.btn_uploader.disabled = False
+        self.btn_custom_form.disabled = False
+
+    @property
+    def controller(self):
+        return self._controller
+
+    @controller.setter
+    def controller(self, controller):
+        self._controller = controller
+
+    def set_controller(self, controller):
+        self._controller = controller
+
+    @property
+    def page(self):
+        return self._page
 
     def _build_controls(self):
         """Graphical elements"""
-        # button style
-        btn_style = ft.ButtonStyle(
-            bgcolor={
-                ft.ControlState.DEFAULT: self.palette.primary,
-                ft.ControlState.HOVERED: self.palette.primary_hover,
-                ft.ControlState.FOCUSED: self.palette.primary_hover,
-                ft.ControlState.PRESSED: self.palette.primary_pressed,
-                ft.ControlState.DISABLED: self.palette.surface_stronger,
-            },
-            color={
-                ft.ControlState.DEFAULT: ft.Colors.WHITE,
-                ft.ControlState.HOVERED: ft.Colors.WHITE,
-                ft.ControlState.FOCUSED: ft.Colors.WHITE,
-                ft.ControlState.PRESSED: ft.Colors.WHITE,
-                ft.ControlState.DISABLED: ft.Colors.BLUE_300,
-            },
-            shape=ft.RoundedRectangleBorder(radius=12),
-            padding=ft.Padding(16, 12, 16, 12),
-            elevation=2,
-            animation_duration=250,
-        )
+        btn_style = self._create_button_style(self.palette)
 
-        # image EuroBioimaging
+        # image eurobioimaging
         self.img_eurobioimaging = ft.Image(
             src="assets/images/EuroBioimaging.png",
             width=380,
@@ -90,12 +84,12 @@ class ViewMainInterface(ft.Control):
         )
 
         # title
-        self.title = ft.Row(
+        self.row_title = ft.Row(
             [
                 ft.Container(
                     content=ft.Text(
                         "XNAT-PIC",
-                        size=32,
+                        size=36,
                         weight=ft.FontWeight.W_700,
                         color=self.palette.primary_text,
                         font_family="Inter",
@@ -110,7 +104,7 @@ class ViewMainInterface(ft.Control):
         )
 
         # subtitle
-        self.subtitle = ft.Text(
+        self.txt_subtitle = ft.Text(
             "Image dataset transfer to XNAT for preclinical imaging centers",
             size=15,
             text_align=ft.TextAlign.CENTER,
@@ -169,18 +163,21 @@ class ViewMainInterface(ft.Control):
             description="Transform image data with presets and quality checks before sharing.",
             icon=ft.Icons.AUTO_FIX_HIGH,
             button=self.btn_converter,
+            palette=self.palette,
         )
         self.card_uploader = self._build_action_card(
             title="Upload to XNAT",
             description="Send validated data to XNAT with progress feedback and retries.",
             icon=ft.Icons.CLOUD_SYNC,
             button=self.btn_uploader,
+            palette=self.palette,
         )
         self.card_custom_form = self._build_action_card(
             title="Custom data forms",
             description="Design metadata forms to keep submissions consistent across teams.",
             icon=ft.Icons.DASHBOARD_OUTLINED,
             button=self.btn_custom_form,
+            palette=self.palette,
         )
 
         self.img_cnr = ft.Image(src="assets/images/CNR.png", width=110,
@@ -196,10 +193,9 @@ class ViewMainInterface(ft.Control):
             description: str,
             icon: str,
             button: ft.Control,
-            palette: Palette | None = None,
+            palette: Palette,
     ) -> ft.Control:
         """Reusable modern card for each main action."""
-        palette = palette or self.palette
         card_content = ft.Container(
             padding=20,
             content=ft.Column(
@@ -249,7 +245,6 @@ class ViewMainInterface(ft.Control):
             ),
         )
 
-
     def _bind_events(self):
         """Bind events"""
         self.btn_converter.on_click = lambda \
@@ -288,14 +283,14 @@ class ViewMainInterface(ft.Control):
             ],
         )
 
-        hero = ft.Container(
+        hero_section = ft.Container(
             content=ft.Column(
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 spacing=12,
                 controls=[
                     self.img_eurobioimaging,
-                    self.title,
-                    self.subtitle,
+                    self.row_title,
+                    self.txt_subtitle,
                 ],
             ),
             padding=ft.padding.symmetric(vertical=16),
@@ -308,7 +303,7 @@ class ViewMainInterface(ft.Control):
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 controls=[
-                    hero,
+                    hero_section,
                     buttons_row,
                     ft.Container(
                         footer_logos,
@@ -319,26 +314,38 @@ class ViewMainInterface(ft.Control):
             ),
         )
 
-    # ------------------------------------------------------
-    # INITIAL STATE
-    # ------------------------------------------------------
-    def set_initial_state(self):
-        """Set initial state"""
-        self.btn_converter.disabled = False
-        self.btn_uploader.disabled = False
-        self.btn_custom_form.disabled = False
+    @staticmethod
+    def _create_default_palette() -> Palette:
+        return Palette(
+            primary=ft.Colors.BLUE_600,
+            primary_hover=ft.Colors.BLUE_700,
+            primary_pressed=ft.Colors.BLUE_800,
+            primary_text=ft.Colors.BLUE_900,
+            surface=ft.Colors.BLUE_50,
+            surface_stronger=ft.Colors.BLUE_100,
+            subtle_text="#475569",
+        )
 
-    @property
-    def controller(self):
-        return self._controller
+    @staticmethod
+    def _create_button_style(palette: Palette) -> ft.ButtonStyle:
+        return ft.ButtonStyle(
+            bgcolor={
+                ft.ControlState.DEFAULT: palette.primary,
+                ft.ControlState.HOVERED: palette.primary_hover,
+                ft.ControlState.FOCUSED: palette.primary_hover,
+                ft.ControlState.PRESSED: palette.primary_pressed,
+                ft.ControlState.DISABLED: palette.surface_stronger,
+            },
+            color={
+                ft.ControlState.DEFAULT: ft.Colors.WHITE,
+                ft.ControlState.HOVERED: ft.Colors.WHITE,
+                ft.ControlState.FOCUSED: ft.Colors.WHITE,
+                ft.ControlState.PRESSED: ft.Colors.WHITE,
+                ft.ControlState.DISABLED: ft.Colors.BLUE_300,
+            },
+            shape=ft.RoundedRectangleBorder(radius=12),
+            padding=ft.Padding(16, 12, 16, 12),
+            elevation=2,
+            animation_duration=250,
+        )
 
-    @controller.setter
-    def controller(self, controller):
-        self._controller = controller
-
-    def set_controller(self, controller):
-        self._controller = controller
-
-    @property
-    def page(self):
-        return self._page
