@@ -1,7 +1,7 @@
 import flet as ft
 
-from app_modules.buttons import Buttons
-from app_modules.palette import Palette
+from shared_ui.ui.buttons import Buttons
+from shared_ui.ui.palette import Palette
 
 
 class ViewMainInterface(ft.Control):

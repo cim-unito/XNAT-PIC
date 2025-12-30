@@ -1,6 +1,6 @@
 import flet as ft
 
-from app_modules.palette import Palette
+from shared_ui.ui.palette import Palette
 
 
 class Buttons:

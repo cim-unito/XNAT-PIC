@@ -11,7 +11,7 @@ class ViewConverter(ft.Control):
         # after the controller is created)
         self._controller = None
 
-        # ----- Graphical elements -----
+        # graphical elements
         self.title = None
         # top level
         self.dd_conversion_type = None
