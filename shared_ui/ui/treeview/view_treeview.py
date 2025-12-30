@@ -4,7 +4,7 @@ import flet as ft
 class ViewTreeview:
     def __init__(self, host_view=None):
         self._host_view = host_view
-        self._selected_control: ft.Control | None = None
+        self._selected_control = None
 
     def build_lazy_tree(self, items, expand_callback, file_selected_callback):
         tiles = [
