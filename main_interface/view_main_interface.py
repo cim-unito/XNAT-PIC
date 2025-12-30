@@ -97,7 +97,7 @@ class ViewMainInterface(ft.Control):
 
         # subtitle
         self.txt_subtitle = ft.Text(
-            value="Image dataset transfer to XNAT for preclinical imaging"
+            value="Image dataset transfer to XNAT for preclinical imaging "
                   "centers",
             size=15,
             text_align=ft.TextAlign.CENTER,
@@ -167,7 +167,7 @@ class ViewMainInterface(ft.Control):
         )
         self.card_uploader = self._build_action_card(
             title="Upload to XNAT",
-            description="Upload DICOM files and not to XNAT",
+            description="Upload files to XNAT",
             icon=ft.Icons.CLOUD_SYNC,
             button=self.btn_uploader,
             palette=self.palette,
