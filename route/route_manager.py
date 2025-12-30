@@ -1,14 +1,6 @@
-from dataclasses import dataclass
-from typing import Callable
-
 import flet as ft
 
-
-@dataclass
-class RouteConfig:
-    control: ft.Control
-    enter_hook: Callable | None = None
-    exit_hook: Callable | None = None
+from route.route_config import RouteConfig
 
 
 class RouteManager:
@@ -18,9 +10,7 @@ class RouteManager:
         self.content_container = ft.Column(expand=True)
 
         self.page.views.clear()
-        self.page.views.append(
-            ft.View("/", controls=[self.content_container])
-        )
+        self.page.views.append(ft.View("/", controls=[self.content_container]))
 
         self.current_route: str | None = None
 
@@ -78,4 +68,3 @@ class RouteManager:
     def _set_content(self, control: ft.Control):
         self.content_container.controls = [control]
         self.content_container.update()
-

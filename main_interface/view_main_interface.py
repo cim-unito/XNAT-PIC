@@ -1,7 +1,7 @@
 import flet as ft
 
-from app_modules.palette import Palette
 from app_modules.buttons import Buttons
+from app_modules.palette import Palette
 
 
 class ViewMainInterface(ft.Control):
@@ -13,7 +13,7 @@ class ViewMainInterface(ft.Control):
         self._controller = None
 
         # graphical elements
-        self.img_eurobioimaging = None
+        self.img_euro_bioimaging = None
         self.row_title = None
         self.txt_subtitle = None
         self.btn_converter = None
@@ -68,8 +68,8 @@ class ViewMainInterface(ft.Control):
         """Graphical elements"""
         btn_style = Buttons().create_button_style(self.palette)
 
-        # logo eurobioimaging
-        self.img_eurobioimaging = ft.Image(
+        # logo euro-bioimaging
+        self.img_euro_bioimaging = ft.Image(
             src="assets/images/EuroBioimaging.png",
             width=380,
             fit=ft.ImageFit.CONTAIN,
@@ -80,7 +80,7 @@ class ViewMainInterface(ft.Control):
             [
                 ft.Container(
                     content=ft.Text(
-                        "XNAT-PIC",
+                        value="XNAT-PIC",
                         size=36,
                         weight=ft.FontWeight.W_700,
                         color=self.palette.primary_text,
@@ -88,7 +88,7 @@ class ViewMainInterface(ft.Control):
                     ),
                     padding=ft.padding.symmetric(horizontal=20, vertical=12),
                     border_radius=18,
-                    #bgcolor=self.palette.surface,
+                    bgcolor=self.palette.surface,
                 )
             ],
             alignment=ft.MainAxisAlignment.CENTER,
@@ -97,7 +97,8 @@ class ViewMainInterface(ft.Control):
 
         # subtitle
         self.txt_subtitle = ft.Text(
-            "Image dataset transfer to XNAT for preclinical imaging centers",
+            value="Image dataset transfer to XNAT for preclinical imaging"
+                  "centers",
             size=15,
             text_align=ft.TextAlign.CENTER,
             color=ft.Colors.BLUE_700,
@@ -111,13 +112,15 @@ class ViewMainInterface(ft.Control):
                 spacing=10,
                 controls=[
                     ft.Icon(ft.Icons.CHANGE_CIRCLE_OUTLINED, size=26),
-                    ft.Text("Converter", size=16, weight=ft.FontWeight.W_600,
+                    ft.Text(value="Converter",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
                             font_family="Inter"),
                 ],
             ),
             style=btn_style,
             height=52,
-            tooltip="Convert imaging datasets with guided steps",
+            tooltip="Convert raw data to standard DICOM",
         )
 
         self.btn_uploader = ft.ElevatedButton(
@@ -126,13 +129,15 @@ class ViewMainInterface(ft.Control):
                 spacing=10,
                 controls=[
                     ft.Icon(ft.Icons.CLOUD_UPLOAD, size=26),
-                    ft.Text("Uploader", size=16, weight=ft.FontWeight.W_600,
+                    ft.Text(value="Uploader",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
                             font_family="Inter"),
                 ],
             ),
             style=btn_style,
             height=52,
-            tooltip="Upload converted data directly to XNAT",
+            tooltip="Upload files to XNAT",
         )
 
         self.btn_custom_form = ft.ElevatedButton(
@@ -141,33 +146,35 @@ class ViewMainInterface(ft.Control):
                 spacing=10,
                 controls=[
                     ft.Icon(ft.Icons.TABLE_ROWS, size=26),
-                    ft.Text("Custom Form", size=16, weight=ft.FontWeight.W_600,
+                    ft.Text(value="Custom Form",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
                             font_family="Inter"),
                 ],
             ),
             style=btn_style,
             height=52,
-            tooltip="Create and manage tailored data forms",
+            tooltip="Manage Custom Forms data in XNAT",
         )
 
         # card converter, uploader, custom form
         self.card_converter = self._build_action_card(
-            title="Convert your datasets",
-            description="Transform image data with presets and quality checks before sharing.",
-            icon=ft.Icons.AUTO_FIX_HIGH,
+            title="Convert to standard DICOM",
+            description="Convert raw data to standard DICOM",
+            icon=ft.Icons.CHANGE_CIRCLE_OUTLINED,
             button=self.btn_converter,
             palette=self.palette,
         )
         self.card_uploader = self._build_action_card(
             title="Upload to XNAT",
-            description="Send validated data to XNAT with progress feedback and retries.",
+            description="Upload DICOM files and not to XNAT",
             icon=ft.Icons.CLOUD_SYNC,
             button=self.btn_uploader,
             palette=self.palette,
         )
         self.card_custom_form = self._build_action_card(
-            title="Custom data forms",
-            description="Design metadata forms to keep submissions consistent across teams.",
+            title="Custom Forms data",
+            description="Manage Custom Forms data in XNAT",
             icon=ft.Icons.DASHBOARD_OUTLINED,
             button=self.btn_custom_form,
             palette=self.palette,
@@ -218,12 +225,12 @@ class ViewMainInterface(ft.Control):
             ],
         )
 
-        hero_section = ft.Container(
+        header_section = ft.Container(
             content=ft.Column(
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 spacing=12,
                 controls=[
-                    self.img_eurobioimaging,
+                    self.img_euro_bioimaging,
                     self.row_title,
                     self.txt_subtitle,
                 ],
@@ -238,7 +245,7 @@ class ViewMainInterface(ft.Control):
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 controls=[
-                    hero_section,
+                    header_section,
                     buttons_row,
                     ft.Container(
                         footer_logos,

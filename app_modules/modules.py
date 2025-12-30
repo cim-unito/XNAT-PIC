@@ -73,4 +73,3 @@ class AppModules:
         self.controller_custom_form.set_xnat_auth(
             self.view_xnat_auth, self.controller_xnat_auth
         )
-
