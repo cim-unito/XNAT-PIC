@@ -1,7 +1,7 @@
 import flet as ft
 
 from enums.tree_type import TreeType
-from shared_ui.ui.view_treeview import Treeview
+from shared_ui.ui.treeview.view_treeview import ViewTreeview
 
 
 class ViewConverter(ft.Control):
@@ -38,7 +38,7 @@ class ViewConverter(ft.Control):
 
         # map enum → container
         self._tree_map: dict[TreeType, ft.Container] = {}
-        self._treeview = Treeview()
+        self._treeview = ViewTreeview()
 
     # ------------------------------------------------------
     # BUILD CONVERTER INTERFACE

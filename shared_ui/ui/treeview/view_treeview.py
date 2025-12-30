@@ -2,7 +2,8 @@ import flet as ft
 
 
 class ViewTreeview:
-    def __init__(self):
+    def __init__(self, host_view=None):
+        self._host_view = host_view
         self._selected_control: ft.Control | None = None
 
     def build_lazy_tree(self, items, expand_callback, file_selected_callback):
@@ -11,6 +12,18 @@ class ViewTreeview:
             for item in items
         ]
         return ft.ListView(controls=tiles, expand=True)
+
+    def update_tree(self, new_widget: ft.ListView, tree_type):
+        if self._host_view:
+            self._host_view.update_tree(new_widget, tree_type)
+
+    def create_alert(self, message):
+        if self._host_view:
+            self._host_view.create_alert(message)
+
+    def update_page(self):
+        if self._host_view:
+            self._host_view.update_page()
 
     def update_expansion_tile(self, tile, children, expand_callback,
                               file_selected_callback):

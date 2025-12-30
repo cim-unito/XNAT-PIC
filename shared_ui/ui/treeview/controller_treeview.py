@@ -1,15 +1,19 @@
 from pathlib import Path
 
 from enums.tree_type import TreeType
-from shared_ui.services.filesystem_service import FilesystemService
 
 
 class ControllerTreeview:
+    def __init__(self, model, view):
+        self._model = model
+        self._view = view
+
     def populate_tree(self, path: Path, tree_type: TreeType):
         """Initial tree loading"""
         try:
-            items = FilesystemService().get_list_directory_treeview(path)
+            items = self._model.get_list_directory_treeview(path)
         except Exception as err:
+            self._view.create_alert(str(err))
             return
 
         widget = self._view.build_lazy_tree(

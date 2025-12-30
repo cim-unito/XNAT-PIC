@@ -1,8 +1,11 @@
 from pathlib import Path
 
+from converter.controller_treeview_converter import ControllerTreeviewConverter
 from enums.converter_level import ConverterLevel
 from enums.converter_type import ConverterType
 from enums.tree_type import TreeType
+from shared_ui.ui.treeview.model_treeview import ModelTreeview
+from shared_ui.ui.treeview.view_treeview import ViewTreeview
 
 
 class ControllerConverter:
@@ -11,6 +14,13 @@ class ControllerConverter:
         self._view = view
         # the model, which implements the logic of the program and holds the data
         self._model = model
+        self._treeview_model = ModelTreeview()
+        self._treeview_view = ViewTreeview(self._view)
+        self._treeview_controller = ControllerTreeviewConverter(
+            self._treeview_model,
+            self._treeview_view,
+            self
+        )
 
     # -------------------------------------------------------
     # HOME / BACK
@@ -62,45 +72,7 @@ class ControllerConverter:
     # -------------------------------------------------------
     def get_directory_to_convert(self, path: str):
         self._model.input_root = path
-        self.populate_tree(Path(path), TreeType.RAW)
-
-    def populate_tree(self, path: Path, tree_type: TreeType):
-        """Initial tree loading"""
-        try:
-            items = self._model.get_list_directory_treeview(path)
-        except Exception as err:
-            self._view.create_alert(str(err))
-            return
-
-        widget = self._view.build_lazy_tree(
-            items,
-            expand_callback=self.on_expand,
-            file_selected_callback=self.on_file_selected
-        )
-
-        self._view.update_tree(widget, tree_type)
-
-    def on_expand(self, e, node_path, tile):
-        """Folder expansion"""
-        if e.data != "true":
-            return
-
-        try:
-            children = self._model.get_list_directory_treeview(node_path)
-        except Exception as err:
-            self._view.create_alert(str(err))
-            return
-
-        self._view.update_expansion_tile(
-            tile,
-            children,
-            expand_callback=self.on_expand,
-            file_selected_callback=self.on_file_selected
-        )
-
-        self._view.set_selected_control(tile)
-        print(f"[SELECTED DIR] {node_path}")
-        self._view.update_page()
+        self._treeview_controller.populate_tree(Path(path), TreeType.RAW)
 
     def on_file_selected(self, e, file_path):
         """File selected"""
