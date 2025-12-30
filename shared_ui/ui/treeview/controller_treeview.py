@@ -4,9 +4,19 @@ from enums.tree_type import TreeType
 
 
 class ControllerTreeview:
-    def __init__(self, model, view):
+    def __init__(
+            self,
+            model,
+            view,
+            on_collapse=None,
+            on_expand_selected=None,
+            on_file_selected=None,
+    ):
         self._model = model
         self._view = view
+        self._on_collapse_callback = on_collapse
+        self._on_expand_selected_callback = on_expand_selected
+        self._on_file_selected_callback = on_file_selected
 
     def populate_tree(self, path: Path, tree_type: TreeType):
         """Initial tree loading"""
@@ -54,10 +64,13 @@ class ControllerTreeview:
         self._view.update_page()
 
     def _on_collapse(self, node_path, tile):
-        return
+        if self._on_collapse_callback:
+            self._on_collapse_callback(node_path, tile)
 
     def _on_expand_selected(self, node_path, tile):
-        return
+        if self._on_expand_selected_callback:
+            self._on_expand_selected_callback(node_path, tile)
 
     def _on_file_selected(self, file_path):
-        return
+        if self._on_file_selected_callback:
+            self._on_file_selected_callback(file_path)

@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from converter.controller_treeview_converter import ControllerTreeviewConverter
 from enums.converter_level import ConverterLevel
 from enums.converter_type import ConverterType
 from enums.tree_type import TreeType
+from shared_ui.ui.treeview.controller_treeview import ControllerTreeview
 from shared_ui.ui.treeview.model_treeview import ModelTreeview
 from shared_ui.ui.treeview.view_treeview import ViewTreeview
 
@@ -16,7 +16,7 @@ class ControllerConverter:
         self._model = model
         self._treeview_model = ModelTreeview()
         self._treeview_view = ViewTreeview(self._view)
-        self._treeview_controller = ControllerTreeviewConverter(
+        self._treeview_controller = ControllerTreeview(
             self._treeview_model,
             self._treeview_view,
             self
@@ -79,6 +79,18 @@ class ControllerConverter:
         self._view.set_selected_control(e.control)
         print(f"[SELECTED FILE] {file_path}")
         self._view.update_page()
+
+    def _on_treeview_collapse(self, node_path, tile):
+        self.folder_path_selected = None
+        self.file_path_selected = None
+
+    def _on_treeview_expand(self, node_path, tile):
+        self.folder_path_selected = node_path
+        self.file_path_selected = None
+
+    def _on_treeview_file_selected(self, file_path):
+        self.file_path_selected = file_path
+        self.folder_path_selected = None
 
     # -------------------------------------------------------
     # DICOM CONVERTER
