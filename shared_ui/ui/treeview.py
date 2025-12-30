@@ -17,7 +17,8 @@ class Treeview:
             return self._make_lazy_folder(item, expand_callback)
         return self._make_file_tile(item, file_selected_callback)
 
-    def _make_lazy_folder(self, item, expand_callback):
+    @staticmethod
+    def _make_lazy_folder(item, expand_callback):
         return ft.ExpansionTile(
             leading=ft.Icon(ft.Icons.FOLDER),
             title=ft.Text(item["name"]),
@@ -28,7 +29,8 @@ class Treeview:
             data=item["path"],
         )
 
-    def _make_file_tile(self, item, file_selected_callback):
+    @staticmethod
+    def _make_file_tile(item, file_selected_callback):
         return ft.ListTile(
             leading=ft.Icon(ft.Icons.DESCRIPTION),
             title=ft.Text(item["name"]),
@@ -59,8 +61,10 @@ class Treeview:
     def get_selected_control(self):
         return self._selected_control
 
-    def _apply_selection(self, control: ft.Control):
+    @staticmethod
+    def _apply_selection(control: ft.Control):
         control.bgcolor = ft.Colors.AMBER_100
 
-    def _clear_selection(self, control: ft.Control):
+    @staticmethod
+    def _clear_selection(control: ft.Control):
         control.bgcolor = None
