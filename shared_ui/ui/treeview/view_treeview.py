@@ -1,4 +1,9 @@
+from pathlib import Path
+from typing import List, Dict, Callable
+
 import flet as ft
+
+from enums.tree_type import TreeType
 
 
 class ViewTreeview:
@@ -6,18 +11,25 @@ class ViewTreeview:
         self._host_view = host_view
         self._selected_control = None
 
-    def build_lazy_tree(self, items, expand_callback, file_selected_callback):
+    def build_lazy_tree(
+            self,
+            items: List[Dict],
+            expand_callback: Callable[
+                [ft.ControlEvent, Path, ft.Control], None],
+            file_selected_callback: Callable[[ft.ControlEvent, Path], None],
+    ) -> ft.ListView:
+        """Build the lazy-loading tree list view for the provided items."""
         tiles = [
             self._build_node(item, expand_callback, file_selected_callback)
             for item in items
         ]
         return ft.ListView(controls=tiles, expand=True)
 
-    def update_tree(self, new_widget: ft.ListView, tree_type):
+    def update_tree(self, new_widget: ft.ListView, tree_type: TreeType):
         if self._host_view:
             self._host_view.update_tree(new_widget, tree_type)
 
-    def create_alert(self, message):
+    def create_alert(self, message: str):
         if self._host_view:
             self._host_view.create_alert(message)
 
@@ -25,8 +37,14 @@ class ViewTreeview:
         if self._host_view:
             self._host_view.update_page()
 
-    def update_expansion_tile(self, tile, children, expand_callback,
-                              file_selected_callback):
+    def update_expansion_tile(self,
+                              tile: ft.ExpansionTile,
+                              children: list[Dict],
+                              expand_callback: Callable[
+                                  [ft.ControlEvent, Path, ft.Control], None],
+                              file_selected_callback: Callable[
+                                  [ft.ControlEvent, Path], None]):
+        """Replace the children of the expansion tile with new nodes."""
         tile.controls.clear()
 
         if not children:
@@ -47,13 +65,23 @@ class ViewTreeview:
     def get_selected_control(self):
         return self._selected_control
 
-    def _build_node(self, item, expand_callback, file_selected_callback):
+    def _build_node(self,
+                    item: Dict,
+                    expand_callback: Callable[
+                        [ft.ControlEvent, Path, ft.Control], None],
+                    file_selected_callback: Callable[
+                        [ft.ControlEvent, Path], None]
+                    ):
         if item["is_dir"]:
             return self._make_lazy_folder(item, expand_callback)
         return self._make_file_tile(item, file_selected_callback)
 
     @staticmethod
-    def _make_lazy_folder(item, expand_callback):
+    def _make_lazy_folder(
+            item: Dict,
+            expand_callback: Callable[
+                [ft.ControlEvent, Path, ft.Control], None],
+    ) -> ft.ExpansionTile:
         return ft.ExpansionTile(
             leading=ft.Icon(ft.Icons.FOLDER),
             title=ft.Text(item["name"]),
@@ -65,7 +93,10 @@ class ViewTreeview:
         )
 
     @staticmethod
-    def _make_file_tile(item, file_selected_callback):
+    def _make_file_tile(
+            item: Dict,
+            file_selected_callback: Callable[[ft.ControlEvent, Path], None],
+    ) -> ft.ListTile:
         return ft.ListTile(
             leading=ft.Icon(ft.Icons.DESCRIPTION),
             title=ft.Text(item["name"]),

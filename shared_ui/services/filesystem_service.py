@@ -14,15 +14,10 @@ class FilesystemService:
             # - Within groups (directories and files), case-insensitive
             # alphabetical sorting
             children = sorted(
-                path.iterdir(),
-                key=lambda p: (not p.is_dir(), p.name.lower())
+                path.iterdir(), key=lambda p: (not p.is_dir(), p.name.lower())
             )
         except PermissionError:
-            return [{
-                "name": "[access denied]",
-                "path": path,
-                "is_dir": False
-            }]
+            return [{"name": "[access denied]", "path": path, "is_dir": False}]
         except FileNotFoundError:
             raise ValueError(f"Path not found: {path}")
 
@@ -31,10 +26,12 @@ class FilesystemService:
             if child.name.startswith("."):
                 continue
 
-            items.append({
-                "name": child.name,
-                "path": child,
-                "is_dir": child.is_dir(),
-            })
+            items.append(
+                {
+                    "name": child.name,
+                    "path": child,
+                    "is_dir": child.is_dir(),
+                }
+            )
 
         return items

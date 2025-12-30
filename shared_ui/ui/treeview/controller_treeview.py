@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import flet as ft
+
 from enums.tree_type import TreeType
 
 
@@ -34,8 +36,9 @@ class ControllerTreeview:
 
         self._view.update_tree(widget, tree_type)
 
-    def on_expand(self, e, node_path, tile):
-        """Folder expansion"""
+    def on_expand(self, e: ft.ControlEvent, node_path: Path,
+                  tile: ft.ExpansionTile):
+        """Handle expansion or collapse of a folder node."""
         if e.data != "true":
             self._on_collapse(node_path, tile)
             return
@@ -57,20 +60,20 @@ class ControllerTreeview:
         self._on_expand_selected(node_path, tile)
         self._view.update_page()
 
-    def on_file_selected(self, e, file_path):
+    def on_file_selected(self, e: ft.ControlEvent, file_path: Path):
         """File selected"""
         self._view.set_selected_control(e.control)
         self._on_file_selected(file_path)
         self._view.update_page()
 
-    def _on_collapse(self, node_path, tile):
+    def _on_collapse(self, node_path: Path, tile: ft.ExpansionTile):
         if self._on_collapse_callback:
             self._on_collapse_callback(node_path, tile)
 
-    def _on_expand_selected(self, node_path, tile):
+    def _on_expand_selected(self, node_path: Path, tile: ft.ExpansionTile):
         if self._on_expand_selected_callback:
             self._on_expand_selected_callback(node_path, tile)
 
-    def _on_file_selected(self, file_path):
+    def _on_file_selected(self, file_path: Path):
         if self._on_file_selected_callback:
             self._on_file_selected_callback(file_path)
