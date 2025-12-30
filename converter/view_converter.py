@@ -1,7 +1,6 @@
 import flet as ft
 
 from enums.tree_type import TreeType
-from shared_ui.ui.treeview.view_treeview import ViewTreeview
 
 
 class ViewConverter(ft.Control):
@@ -38,7 +37,6 @@ class ViewConverter(ft.Control):
 
         # map enum → container
         self._tree_map: dict[TreeType, ft.Container] = {}
-        self._treeview = ViewTreeview()
 
     # ------------------------------------------------------
     # BUILD CONVERTER INTERFACE
@@ -310,28 +308,6 @@ class ViewConverter(ft.Control):
         container = self._tree_map.get(tree_type)
         container.content = new_widget
         self._page.update()
-
-    # ----- Lazy tree builder -----
-    def build_lazy_tree(self, items, expand_callback, file_selected_callback):
-        return self._treeview.build_lazy_tree(
-            items,
-            expand_callback,
-            file_selected_callback,
-        )
-
-    def update_expansion_tile(self, tile, children, expand_callback,
-                              file_selected_callback):
-        """ExpansionTile update already opened"""
-        self._treeview.update_expansion_tile(
-            tile,
-            children,
-            expand_callback,
-            file_selected_callback,
-        )
-
-    def set_selected_control(self, control: ft.Control):
-        """Highlight selected item"""
-        self._treeview.set_selected_control(control)
 
     # -------------------------------------------------------
     # PROGRESSBAR

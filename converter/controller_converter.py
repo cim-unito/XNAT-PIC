@@ -19,7 +19,9 @@ class ControllerConverter:
         self._treeview_controller = ControllerTreeview(
             self._treeview_model,
             self._treeview_view,
-            self
+            on_collapse=self._on_treeview_collapse,
+            on_expand_selected=self._on_treeview_expand,
+            on_file_selected=self._on_treeview_file_selected,
         )
 
     # -------------------------------------------------------
