@@ -1,6 +1,7 @@
 import flet as ft
 
 from enums.tree_type import TreeType
+from shared_ui.ui.view_treeview import Treeview
 
 
 class ViewConverter(ft.Control):
@@ -37,7 +38,7 @@ class ViewConverter(ft.Control):
 
         # map enum → container
         self._tree_map: dict[TreeType, ft.Container] = {}
-        self._selected_control = None
+        self._treeview = Treeview()
 
     # ------------------------------------------------------
     # BUILD CONVERTER INTERFACE
@@ -312,61 +313,25 @@ class ViewConverter(ft.Control):
 
     # ----- Lazy tree builder -----
     def build_lazy_tree(self, items, expand_callback, file_selected_callback):
-        tiles = [
-            self._build_node(item, expand_callback, file_selected_callback)
-            for item in items
-        ]
-        return ft.ListView(controls=tiles, expand=True)
-
-    def _build_node(self, item, expand_callback, file_selected_callback):
-        if item["is_dir"]:
-            return self._make_lazy_folder(item, expand_callback)
-        return self._make_file_tile(item, file_selected_callback)
-
-    def _make_lazy_folder(self, item, expand_callback):
-        return ft.ExpansionTile(
-            leading=ft.Icon(ft.Icons.FOLDER),
-            title=ft.Text(item["name"]),
-            controls=[ft.Text("Loading...")],
-            on_change=lambda e, path=item["path"]: expand_callback(
-                e, path, e.control
-            ),
-        )
-
-    def _make_file_tile(self, item, file_selected_callback):
-        return ft.ListTile(
-            leading=ft.Icon(ft.Icons.DESCRIPTION),
-            title=ft.Text(item["name"]),
-            on_click=lambda e, path=item["path"]: file_selected_callback(e,
-                                                                         path)
+        return self._treeview.build_lazy_tree(
+            items,
+            expand_callback,
+            file_selected_callback,
         )
 
     def update_expansion_tile(self, tile, children, expand_callback,
                               file_selected_callback):
         """ExpansionTile update already opened"""
-        tile.controls.clear()
-
-        if not children:
-            tile.controls.append(ft.Text("Empty folder"))
-        else:
-            for item in children:
-                node = self._build_node(item, expand_callback,
-                                        file_selected_callback)
-                tile.controls.append(node)
+        self._treeview.update_expansion_tile(
+            tile,
+            children,
+            expand_callback,
+            file_selected_callback,
+        )
 
     def set_selected_control(self, control: ft.Control):
         """Highlight selected item"""
-        if self._selected_control:
-            self._clear_selection(self._selected_control)
-
-        self._apply_selection(control)
-        self._selected_control = control
-
-    def _apply_selection(self, control: ft.Control):
-        control.bgcolor = ft.Colors.AMBER_100
-
-    def _clear_selection(self, control: ft.Control):
-        control.bgcolor = None
+        self._treeview.set_selected_control(control)
 
     # -------------------------------------------------------
     # PROGRESSBAR

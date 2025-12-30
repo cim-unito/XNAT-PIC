@@ -1,7 +1,7 @@
 import flet as ft
 
 
-class Treeview:
+class ViewTreeview:
     def __init__(self):
         self._selected_control: ft.Control | None = None
 
@@ -11,6 +11,28 @@ class Treeview:
             for item in items
         ]
         return ft.ListView(controls=tiles, expand=True)
+
+    def update_expansion_tile(self, tile, children, expand_callback,
+                              file_selected_callback):
+        tile.controls.clear()
+
+        if not children:
+            tile.controls.append(ft.Text("Empty folder"))
+        else:
+            for item in children:
+                node = self._build_node(item, expand_callback,
+                                        file_selected_callback)
+                tile.controls.append(node)
+
+    def set_selected_control(self, control: ft.Control):
+        if self._selected_control:
+            self._clear_selection(self._selected_control)
+
+        self._apply_selection(control)
+        self._selected_control = control
+
+    def get_selected_control(self):
+        return self._selected_control
 
     def _build_node(self, item, expand_callback, file_selected_callback):
         if item["is_dir"]:
@@ -38,28 +60,6 @@ class Treeview:
                 e, path
             )
         )
-
-    def update_expansion_tile(self, tile, children, expand_callback,
-                              file_selected_callback):
-        tile.controls.clear()
-
-        if not children:
-            tile.controls.append(ft.Text("Empty folder"))
-        else:
-            for item in children:
-                node = self._build_node(item, expand_callback,
-                                        file_selected_callback)
-                tile.controls.append(node)
-
-    def set_selected_control(self, control: ft.Control):
-        if self._selected_control:
-            self._clear_selection(self._selected_control)
-
-        self._apply_selection(control)
-        self._selected_control = control
-
-    def get_selected_control(self):
-        return self._selected_control
 
     @staticmethod
     def _apply_selection(control: ft.Control):
