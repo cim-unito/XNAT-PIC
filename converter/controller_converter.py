@@ -12,7 +12,8 @@ class ControllerConverter:
     def __init__(self, view, model):
         # the view, with the graphical elements of the UI
         self._view = view
-        # the model, which implements the logic of the program and holds the data
+        # the model, which implements the logic of the program and holds the
+        # data
         self._model = model
         # treeview
         self._treeview_model = ModelTreeview()
@@ -40,22 +41,11 @@ class ControllerConverter:
             self._view.set_initial_state()
 
     # -------------------------------------------------------
-    # SET MODE
-    # -------------------------------------------------------
-    def _set_mode_for_level(self):
-        self._view.set_mode(
-            top_level_buttons_enabled=False,
-            sw_enabled=True,
-            select_folder_enabled=True,
-            convert_enabled=True,
-        )
-
-    # -------------------------------------------------------
     # SET LEVEL (PROJECT / SUBJECT / EXPERIMENT)
     # -------------------------------------------------------
     def set_level(self, level):
         self._model.level = level
-        self._set_mode_for_level()
+        self._view.set_mode()
 
     def convert_project(self, e):
         self.set_level(ConverterLevel.PROJECT)

@@ -4,6 +4,7 @@ from enums.tree_type import TreeType
 from shared_ui.ui.buttons import Buttons
 from shared_ui.ui.palette import Palette
 
+
 class ViewConverter(ft.Control):
     def __init__(self, page: ft.Page):
         super().__init__()
@@ -42,15 +43,121 @@ class ViewConverter(ft.Control):
         # map enum → container
         self._tree_map: dict[TreeType, ft.Container] = {}
 
-    # ------------------------------------------------------
-    # BUILD CONVERTER INTERFACE
-    # -----------------------------------------------------
     def build_interface(self):
+        """Build converter interface"""
         self._build_controls()
         self._bind_events()
         self._define_layout()
         self.set_initial_state()
         return self._main_layout
+
+    def set_initial_state(self):
+        """Set initial state"""
+        # enable top-level
+        for c in [
+            self.dd_conversion_type,
+            self.sw_overwrite,
+            self.btn_project,
+            self.btn_subject,
+            self.btn_experiment,
+        ]:
+            c.disabled = False
+
+        # disable the other controls
+        self.btn_convert.disabled = True
+
+        # reset home/back
+        self.btn_home_back.text = "Home"
+        self.btn_home_back.disabled = False
+
+        # reset dropdown
+        self.dd_conversion_type.key = "Select"
+        self.dd_conversion_type.value = None
+
+        # reset switch
+        self.sw_overwrite.value = False
+
+        # reset treeview
+        self.tree_view_raw_list.controls.clear()
+        self.tree_view_dcm_list.controls.clear()
+
+        self._page.update()
+
+    def set_mode(self):
+        """Set mode"""
+        # disable top-level
+        for c in [
+            self.dd_conversion_type,
+            self.sw_overwrite,
+            self.btn_project,
+            self.btn_subject,
+            self.btn_experiment,
+        ]:
+            c.disabled = True
+
+        # enable the other controls
+        self.btn_convert.disabled = False
+
+        # enable/disable home/back
+        if self.btn_home_back:
+            self.btn_home_back.text = "Back"
+
+        self._page.update()
+
+    def open_directory_picker(self):
+        """Open directory"""
+        self.file_picker.get_directory_path()
+
+    def update_tree(self, new_widget: ft.ListView, tree_type: TreeType):
+        """Update the content of the existing container"""
+        container = self._tree_map.get(tree_type)
+        container.content = new_widget
+        self._page.update()
+
+    def show_progressbar_dialog(self):
+        self._page.open(self.dlg_conversion)
+        self._page.update()
+
+    def update_progressbar(self, value: float):
+        self.pb_conversion.value = value
+        self._page.update()
+
+    def create_alert(self, message):
+        dlg = ft.AlertDialog(title=ft.Text(message))
+        self._page.open(dlg)
+        self._page.update()
+
+    def update_page(self):
+        self._page.update()
+
+    def file_picker_result(self, e: ft.FilePickerResultEvent):
+        """
+        Handle file picker result, delegating file processing to the
+        controller; alert when no file is selected.
+        """
+        if e.path:
+            self._controller.get_directory_to_convert(e.path)
+        else:
+            self.create_alert("No folder selected!")
+
+    @property
+    def controller(self):
+        return self._controller
+
+    @controller.setter
+    def controller(self, controller):
+        self._controller = controller
+
+    @property
+    def page(self):
+        return self._page
+
+    @page.setter
+    def page(self, page):
+        self._page = page
+
+    def set_controller(self, controller):
+        self._controller = controller
 
     def _build_controls(self):
         """Graphical elements"""
@@ -167,7 +274,7 @@ class ViewConverter(ft.Control):
             expand=True,
             content=self.tree_view_raw_list,
         )
-        self.map_tree_container(TreeType.RAW, raw_list_container)
+        self._map_tree_container(TreeType.RAW, raw_list_container)
         self.tree_view_raw = self._build_tree_panel(
             title="Raw data",
             icon=ft.Icons.FOLDER_OPEN,
@@ -183,7 +290,7 @@ class ViewConverter(ft.Control):
             expand=True,
             content=self.tree_view_dcm_list,
         )
-        self.map_tree_container(TreeType.DICOM, dcm_list_container)
+        self._map_tree_container(TreeType.DICOM, dcm_list_container)
         self.tree_view_dcm = self._build_tree_panel(
             title="DICOM output",
             icon=ft.Icons.DOCUMENT_SCANNER,
@@ -342,160 +449,6 @@ class ViewConverter(ft.Control):
             ),
         )
 
-    # ------------------------------------------------------
-    # INITIAL STATE
-    # ------------------------------------------------------
-    def set_initial_state(self):
-        """Set initial state"""
-        # enable top-level
-        self.dd_conversion_type.disabled = False
-        self.btn_project.disabled = False
-        self.btn_subject.disabled = False
-        self.btn_experiment.disabled = False
-
-        # disable the other controls
-        for c in [
-            self.sw_overwrite,
-            self.btn_convert,
-        ]:
-            c.disabled = True
-
-        # reset home/back
-        self.btn_home_back.text = "Home"
-        self.btn_home_back.disabled = False
-
-        # reset dropdown
-        self.dd_conversion_type.key = "Select"
-        self.dd_conversion_type.value = None
-
-        # reset switch
-        self.sw_overwrite.value = False
-
-        # reset treeview
-        self.tree_view_raw_list.controls.clear()
-        self.tree_view_dcm_list.controls.clear()
-
-        self._page.update()
-
-    # ------------------------------------------------------
-    # LEVEL MODE
-    # ------------------------------------------------------
-    def set_mode(
-            self,
-            top_level_buttons_enabled,
-            sw_enabled,
-            select_folder_enabled,
-            convert_enabled,
-    ):
-        # enable/disable top-level
-        for c in [
-            self.dd_conversion_type,
-            self.btn_project,
-            self.btn_subject,
-            self.btn_experiment,
-        ]:
-            c.disabled = not top_level_buttons_enabled
-
-        # enable/disable sw
-        for c in [
-            self.sw_overwrite,
-        ]:
-            c.disabled = not sw_enabled
-
-        # enable/disable select folder
-        for c in [
-        ]:
-            c.disabled = not select_folder_enabled
-
-        # enable/disable convert
-        self.btn_convert.disabled = not convert_enabled
-
-        # enable/disable home/back
-        if self.btn_home_back:
-            self.btn_home_back.text = "Back"
-
-        self._page.update()
-
-    def open_directory_picker(self):
-        self.file_picker.get_directory_path()
-
-    # ------------------------------------------------------
-    # FILE PICKER
-    # ------------------------------------------------------
-    def file_picker_result(self, e: ft.FilePickerResultEvent):
-        """
-        Handle file picker result, delegating file processing to the
-        controller; alert when no file is selected.
-        """
-        if e.path:
-            self._controller.get_directory_to_convert(e.path)
-        else:
-            self.create_alert("No folder selected!")
-
-    # -------------------------------------------------------
-    # TREEVIEW RAW DATA/DICOM FILES
-    # -------------------------------------------------------
-    def map_tree_container(self, tree_type: TreeType,
-                           container: ft.Container):
-        """The container is placed in the tree map and contains the ListView inside."""
-        self._tree_map[tree_type] = container
-
-    def update_tree(self, new_widget: ft.ListView, tree_type: TreeType):
-        """Update the content of the existing container"""
-        container = self._tree_map.get(tree_type)
-        container.content = new_widget
-        self._page.update()
-
-    # -------------------------------------------------------
-    # PROGRESSBAR
-    # -------------------------------------------------------
-    def show_progress_dialog(self):
-        self._page.open(self.dlg_conversion)
-        self._page.update()
-
-    def update_progress(self, value: float):
-        self.pb_conversion.value = value
-        self._page.update()
-
-    @property
-    def controller(self):
-        return self._controller
-
-    @controller.setter
-    def controller(self, controller):
-        self._controller = controller
-
-    def set_controller(self, controller):
-        self._controller = controller
-
-    @property
-    def page(self):
-        return self._page
-
-    @page.setter
-    def page(self, page):
-        self.page = page
-
-    def create_alert(self, message):
-        dlg = ft.AlertDialog(title=ft.Text(message))
-        self._page.open(dlg)
-        self._page.update()
-
-    def update_page(self):
-        self._page.update()
-
-    @staticmethod
-    def _create_default_palette() -> Palette:
-        return Palette(
-            primary=ft.Colors.BLUE_600,
-            primary_hover=ft.Colors.BLUE_700,
-            primary_pressed=ft.Colors.BLUE_800,
-            primary_text=ft.Colors.BLUE_900,
-            surface=ft.Colors.BLUE_50,
-            surface_stronger=ft.Colors.BLUE_100,
-            subtle_text="#475569",
-        )
-
     def _build_section_card(
             self,
             title: str,
@@ -591,3 +544,24 @@ class ViewConverter(ft.Control):
                 ],
             ),
         )
+
+    def _map_tree_container(self, tree_type: TreeType,
+                            container: ft.Container):
+        """
+        The container is placed in the tree map and contains the ListView
+        inside.
+        """
+        self._tree_map[tree_type] = container
+
+    @staticmethod
+    def _create_default_palette() -> Palette:
+        return Palette(
+            primary=ft.Colors.BLUE_600,
+            primary_hover=ft.Colors.BLUE_700,
+            primary_pressed=ft.Colors.BLUE_800,
+            primary_text=ft.Colors.BLUE_900,
+            surface=ft.Colors.BLUE_50,
+            surface_stronger=ft.Colors.BLUE_100,
+            subtle_text="#475569",
+        )
+
