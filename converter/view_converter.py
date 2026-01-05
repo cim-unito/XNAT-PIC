@@ -172,6 +172,7 @@ class ViewConverter(ft.Control):
             icon=ft.Icons.FOLDER_OPEN,
             list_container=raw_list_container,
         )
+
         self.tree_view_dcm_list = ft.ListView(
             controls=[],
             expand=True,
@@ -226,25 +227,37 @@ class ViewConverter(ft.Control):
             ],
         )
 
-        row_top = ft.ResponsiveRow(
+        row_conversion_type = ft.ResponsiveRow(
             alignment=ft.MainAxisAlignment.CENTER,
             run_spacing=12,
             spacing=12,
             controls=[
                 ft.Container(
-                    col={"xs": 12, "sm": 6, "md": 4},
+                    col={"xs": 12, "md": 4},
                     content=self.dd_conversion_type,
                 ),
                 ft.Container(
-                    col={"xs": 12, "sm": 6, "md": 4},
+                    col={"xs": 12, "sm": 4},
+                    content=self.sw_overwrite,
+                ),
+            ],
+        )
+
+        row_levels = ft.ResponsiveRow(
+            alignment=ft.MainAxisAlignment.CENTER,
+            run_spacing=12,
+            spacing=12,
+            controls=[
+                ft.Container(
+                    col={"xs": 12, "sm": 4},
                     content=self.btn_project,
                 ),
                 ft.Container(
-                    col={"xs": 12, "sm": 6, "md": 4},
+                    col={"xs": 12, "sm": 4},
                     content=self.btn_subject,
                 ),
                 ft.Container(
-                    col={"xs": 12, "sm": 6, "md": 4},
+                    col={"xs": 12, "sm": 4},
                     content=self.btn_experiment,
                 ),
             ],
@@ -252,19 +265,16 @@ class ViewConverter(ft.Control):
 
         setup_card = self._build_section_card(
             title="Conversion setup",
-            description="Choose the conversion type and the level you want to process.",
+            description=(
+                "Select the conversion type, choose the folder to process, "
+                "and set overwrite behavior."
+            ),
             icon=ft.Icons.TUNE,
-            content=row_top,
-        )
-
-        source_card = self._build_section_card(
-            title="Source selection",
-            description="Decide if existing outputs should be overwritten and pick the input folder.",
-            icon=ft.Icons.FOLDER,
             content=ft.Column(
                 spacing=12,
                 controls=[
-                    self.sw_overwrite,
+                    row_conversion_type,
+                    row_levels,
                 ],
             ),
         )
@@ -287,24 +297,9 @@ class ViewConverter(ft.Control):
 
         preview_card = self._build_section_card(
             title="Preview",
-            description="Review the input tree and the DICOM output structure before converting.",
+            description="Review the input tree and the DICOM output structure.",
             icon=ft.Icons.ACCOUNT_TREE,
             content=row_mid,
-        )
-
-        row_bottom = ft.Row(
-            alignment=ft.MainAxisAlignment.CENTER,
-            controls=[
-                self.btn_home_back,
-                self.btn_convert,
-            ],
-        )
-
-        action_card = self._build_section_card(
-            title="Actions",
-            description="Start the conversion or return to the home screen.",
-            icon=ft.Icons.PLAYLIST_PLAY,
-            content=row_bottom,
         )
 
         self._main_layout = ft.Container(
@@ -317,9 +312,7 @@ class ViewConverter(ft.Control):
                 controls=[
                     header_section,
                     setup_card,
-                    source_card,
                     preview_card,
-                    action_card,
                 ],
             ),
         )
@@ -550,7 +543,7 @@ class ViewConverter(ft.Control):
             bgcolor=self.palette.surface,
             border_radius=16,
             border=ft.border.all(1, self.palette.surface_stronger),
-            height=340,
+            height=160,
             content=ft.Column(
                 spacing=8,
                 controls=[
