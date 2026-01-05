@@ -30,6 +30,7 @@ class ViewConverter(ft.Control):
         # bottom level
         self.btn_home_back = None
         self.txt_home_back = None
+        self.icon_home_back = None
         self.btn_convert = None
         # progressbar
         self.pb_conversion = None
@@ -70,6 +71,8 @@ class ViewConverter(ft.Control):
         # reset home/back
         if self.txt_home_back:
             self.txt_home_back.value = "Home"
+        if self.icon_home_back:
+            self.icon_home_back.name = ft.Icons.HOME
         self.btn_home_back.disabled = False
 
         # reset dropdown
@@ -105,6 +108,8 @@ class ViewConverter(ft.Control):
         # enable/disable home/back
         if self.txt_home_back:
             self.txt_home_back.value = "Back"
+        if self.icon_home_back:
+            self.icon_home_back.name = ft.Icons.ARROW_BACK
 
         self._page.update()
 
@@ -313,12 +318,13 @@ class ViewConverter(ft.Control):
             weight=ft.FontWeight.W_600,
             font_family="Inter",
         )
+        self.icon_home_back = ft.Icon(ft.Icons.HOME, size=26)
         self.btn_home_back = ft.ElevatedButton(
             content=ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
                 spacing=10,
                 controls=[
-                    ft.Icon(ft.Icons.ARROW_BACK, size=26),
+                    self.icon_home_back,
                     self.txt_home_back,
                 ],
             ),
