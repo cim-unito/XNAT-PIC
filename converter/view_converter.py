@@ -1,7 +1,8 @@
 import flet as ft
 
 from enums.tree_type import TreeType
-
+from shared_ui.ui.buttons import Buttons
+from shared_ui.ui.palette import Palette
 
 class ViewConverter(ft.Control):
     def __init__(self, page: ft.Page):
@@ -20,7 +21,6 @@ class ViewConverter(ft.Control):
         self.btn_experiment = None
         # mid level
         self.sw_overwrite = None
-        self.sw_copy_files = None
         self.btn_select_folder = None
         self.file_picker = None
         self.tree_view_raw = None
@@ -34,6 +34,9 @@ class ViewConverter(ft.Control):
 
         # layout
         self._main_layout = None
+
+        # palette
+        self.palette = self._create_default_palette()
 
         # map enum → container
         self._tree_map: dict[TreeType, ft.Container] = {}
@@ -50,13 +53,7 @@ class ViewConverter(ft.Control):
 
     def _build_controls(self):
         """Graphical elements"""
-        # button style
-        btn_style = ft.ButtonStyle(
-            bgcolor=ft.Colors.BLUE_200,
-            color=ft.Colors.BLUE_900,
-            shape=ft.RoundedRectangleBorder(radius=10),
-            padding=15,
-        )
+        btn_style = Buttons().create_button_style(self.palette)
 
         # title
         self.title = ft.Row(
@@ -64,13 +61,14 @@ class ViewConverter(ft.Control):
                 ft.Icon(
                     ft.Icons.CHANGE_CIRCLE,
                     size=36,
-                    color=ft.Colors.BLUE_700
+                    color=self.palette.primary_text,
                 ),
                 ft.Text(
-                    "XNAT-PIC Converter",
-                    size=30,
-                    weight=ft.FontWeight.BOLD,
-                    color=ft.Colors.BLUE_700,
+                    value="XNAT-PIC Converter",
+                    size=36,
+                    weight=ft.FontWeight.W_700,
+                    color=self.palette.primary_text,
+                    font_family="Inter",
                 ),
             ],
             alignment=ft.MainAxisAlignment.CENTER,
@@ -85,43 +83,85 @@ class ViewConverter(ft.Control):
             ],
             hint_text="Conversion type",
             width=200,
+            expand=True,
 
         )
+
         # level buttons: project, subject, experiment
         self.btn_project = ft.ElevatedButton(
-            text="Convert Project",
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Text(value="Convert Project",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
+            style=btn_style,
             width=200,
+            expand=True,
             tooltip="Select the project to convert",
-            style=btn_style
         )
         self.btn_subject = ft.ElevatedButton(
-            text="Convert Subject",
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Text(value="Convert Subject",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
+            style=btn_style,
             width=200,
+            expand=True,
             tooltip="Select the subject to convert",
-            style=btn_style
         )
         self.btn_experiment = ft.ElevatedButton(
-            text="Convert Experiment",
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Text(value="Convert Experiment",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
+            style=btn_style,
             width=200,
+            expand=True,
             tooltip="Select the experiment to convert",
-            style=btn_style
         )
 
         # switch
         self.sw_overwrite = ft.Switch(
             label="Overwrite existing folders",
         )
-        self.sw_copy_files = ft.Switch(label="Copy additional files", )
 
         # button select folder
         self.file_picker = ft.FilePicker()
         self._page.overlay.append(self.file_picker)
         self.btn_select_folder = ft.ElevatedButton(
-            text="Select folder",
-            icon=ft.Icons.FOLDER_OPEN,
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Icon(ft.Icons.FOLDER_OPEN, size=16),
+                    ft.Text(value="Select folder",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
             style=btn_style,
+            width=200,
+            expand=True,
+            tooltip="Select the folder to convert",
         )
-
         # treeview raw data and dicom converted
         self.tree_view_raw = ft.Container(
             width=250,
@@ -200,7 +240,6 @@ class ViewConverter(ft.Control):
                 self.title,
                 row_top,
                 self.sw_overwrite,
-                self.sw_copy_files,
                 self.btn_select_folder,
                 row_mid,
                 row_bottom,
@@ -221,7 +260,6 @@ class ViewConverter(ft.Control):
         # disable the other controls
         for c in [
             self.sw_overwrite,
-            self.sw_copy_files,
             self.btn_select_folder,
             self.btn_convert,
         ]:
@@ -237,7 +275,6 @@ class ViewConverter(ft.Control):
 
         # reset switch
         self.sw_overwrite.value = False
-        self.sw_copy_files.value = False
 
         # reset treeview
         self.tree_view_raw.content.controls.clear()
@@ -267,7 +304,6 @@ class ViewConverter(ft.Control):
         # enable/disable sw
         for c in [
             self.sw_overwrite,
-            self.sw_copy_files,
         ]:
             c.disabled = not sw_enabled
 
@@ -289,7 +325,11 @@ class ViewConverter(ft.Control):
     # ------------------------------------------------------
     # FILE PICKER
     # ------------------------------------------------------
-    def file_picker_result(self, e):
+    def file_picker_result(self, e: ft.FilePickerResultEvent):
+        """
+        Handle file picker result, delegating file processing to the
+        controller; alert when no file is selected.
+        """
         if e.path:
             self._controller.get_directory_to_convert(e.path)
         else:
@@ -346,3 +386,15 @@ class ViewConverter(ft.Control):
 
     def update_page(self):
         self._page.update()
+
+    @staticmethod
+    def _create_default_palette() -> Palette:
+        return Palette(
+            primary=ft.Colors.BLUE_600,
+            primary_hover=ft.Colors.BLUE_700,
+            primary_pressed=ft.Colors.BLUE_800,
+            primary_text=ft.Colors.BLUE_900,
+            surface=ft.Colors.BLUE_50,
+            surface_stronger=ft.Colors.BLUE_100,
+            subtle_text="#475569",
+        )

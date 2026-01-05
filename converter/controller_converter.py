@@ -14,6 +14,7 @@ class ControllerConverter:
         self._view = view
         # the model, which implements the logic of the program and holds the data
         self._model = model
+        # treeview
         self._treeview_model = ModelTreeview()
         self._treeview_view = ViewTreeview(self._view)
         self._treeview_controller = ControllerTreeview(
