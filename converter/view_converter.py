@@ -29,6 +29,7 @@ class ViewConverter(ft.Control):
         self.tree_view_dcm_list = None
         # bottom level
         self.btn_home_back = None
+        self.txt_home_back = None
         self.btn_convert = None
         # progressbar
         self.pb_conversion = None
@@ -67,7 +68,8 @@ class ViewConverter(ft.Control):
         self.btn_convert.disabled = True
 
         # reset home/back
-        self.btn_home_back.text = "Home"
+        if self.txt_home_back:
+            self.txt_home_back.value = "Home"
         self.btn_home_back.disabled = False
 
         # reset dropdown
@@ -78,8 +80,10 @@ class ViewConverter(ft.Control):
         self.sw_overwrite.value = False
 
         # reset treeview
-        self.tree_view_raw_list.controls.clear()
-        self.tree_view_dcm_list.controls.clear()
+        if self.tree_view_raw_list:
+            self.tree_view_raw_list.controls.clear()
+        if self.tree_view_dcm_list:
+            self.tree_view_dcm_list.controls.clear()
 
         self._page.update()
 
@@ -99,8 +103,8 @@ class ViewConverter(ft.Control):
         self.btn_convert.disabled = False
 
         # enable/disable home/back
-        if self.btn_home_back:
-            self.btn_home_back.text = "Back"
+        if self.txt_home_back:
+            self.txt_home_back.value = "Back"
 
         self._page.update()
 
@@ -112,6 +116,10 @@ class ViewConverter(ft.Control):
         """Update the content of the existing container"""
         container = self._tree_map.get(tree_type)
         container.content = new_widget
+        if tree_type == TreeType.RAW:
+            self.tree_view_raw_list = new_widget
+        elif tree_type == TreeType.DICOM:
+            self.tree_view_dcm_list = new_widget
         self._page.update()
 
     def show_progressbar_dialog(self):
@@ -139,6 +147,7 @@ class ViewConverter(ft.Control):
             self._controller.get_directory_to_convert(e.path)
         else:
             self.create_alert("No folder selected!")
+            self.set_initial_state()
 
     @property
     def controller(self):
@@ -298,16 +307,19 @@ class ViewConverter(ft.Control):
         )
 
         # button home/back and convert
+        self.txt_home_back = ft.Text(
+            value="Go home",
+            size=16,
+            weight=ft.FontWeight.W_600,
+            font_family="Inter",
+        )
         self.btn_home_back = ft.ElevatedButton(
             content=ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
                 spacing=10,
                 controls=[
                     ft.Icon(ft.Icons.ARROW_BACK, size=26),
-                    ft.Text(value="Go home",
-                            size=16,
-                            weight=ft.FontWeight.W_600,
-                            font_family="Inter"),
+                    self.txt_home_back,
                 ],
             ),
             style=btn_style,
