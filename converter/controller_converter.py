@@ -59,12 +59,15 @@ class ControllerConverter:
 
     def convert_project(self, e):
         self.set_level(ConverterLevel.PROJECT)
+        self._view.open_directory_picker()
 
     def convert_subject(self, e):
         self.set_level(ConverterLevel.SUBJECT)
+        self._view.open_directory_picker()
 
     def convert_experiment(self, e):
         self.set_level(ConverterLevel.EXPERIMENT)
+        self._view.open_directory_picker()
 
     def conversion_type(self, e):
         self._model.conversion_type = ConverterType(e.control.value)
