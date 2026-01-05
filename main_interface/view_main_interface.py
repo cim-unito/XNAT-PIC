@@ -36,15 +36,20 @@ class ViewMainInterface(ft.Control):
     # BUILD MAIN INTERFACE
     # -----------------------------------------------------
     def build_interface(self):
+        """Create and return the main layout for the main interface view.
+
+        This method instantiates all UI controls, binds events to the
+        controller, defines the page layout, and resets the initial state
+        so the view is ready for user interaction.
+        """
         self._build_controls()
         self._bind_events()
         self._define_layout()
         self.set_initial_state()
-
         return self._main_layout
 
     def set_initial_state(self):
-        """Set initial state"""
+        """Reset the UI to the default idle state."""
         self.btn_converter.disabled = False
         self.btn_uploader.disabled = False
         self.btn_custom_form.disabled = False
@@ -57,15 +62,15 @@ class ViewMainInterface(ft.Control):
     def controller(self, controller):
         self._controller = controller
 
-    def set_controller(self, controller):
-        self._controller = controller
-
     @property
     def page(self):
         return self._page
 
+    def set_controller(self, controller):
+        self._controller = controller
+
     def _build_controls(self):
-        """Graphical elements"""
+        """Instantiate and configure all UI controls used by the view."""
         btn_style = Buttons().create_button_style(self.palette)
 
         # logo euro-bioimaging
@@ -188,7 +193,7 @@ class ViewMainInterface(ft.Control):
                                   fit=ft.ImageFit.CONTAIN)
 
     def _bind_events(self):
-        """Bind events"""
+        """Wire UI events to the controller callbacks."""
         self.btn_converter.on_click = lambda \
                 _: self._controller.go_to_converter()
         self.btn_uploader.on_click = lambda \

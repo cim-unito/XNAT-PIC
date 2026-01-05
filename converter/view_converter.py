@@ -1,5 +1,6 @@
 import flet as ft
 
+from enums.converter_type import ConverterType
 from enums.tree_type import TreeType
 from shared_ui.ui.buttons import Buttons
 from shared_ui.ui.palette import Palette
@@ -232,10 +233,7 @@ class ViewConverter(ft.Control):
 
         # dropdown conversion type
         self.dd_conversion_type = ft.Dropdown(
-            options=[
-                ft.dropdown.Option("Bruker2Dicom"),
-                ft.dropdown.Option("Ivis2Dicom"),
-            ],
+            options=[ft.dropdown.Option(ct.value) for ct in ConverterType],
             hint_text="Conversion type",
             expand=True,
             filled=True,

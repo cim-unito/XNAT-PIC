@@ -18,12 +18,12 @@ class ModelConverter:
         self._output_scans = []
 
     def reset_level(self):
+        self._input_root = None
+        self._output_root = None
         self._level = None
+        self._conversion_type = None
         self._input_scans = []
         self._output_scans = []
-
-    def get_list_directory_treeview(self, path):
-        return FilesystemService.get_list_directory_treeview(path)
 
     def create_dicom_output_folder(self, overwrite):
         FilesystemService.create_dicom_output_folder(self._output_root,
