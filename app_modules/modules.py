@@ -1,22 +1,22 @@
+from main_interface.controller_main_interface import ControllerMainInterface
 from main_interface.model_main_interface import ModelMainInterface
 from main_interface.view_main_interface import ViewMainInterface
-from main_interface.controller_main_interface import ControllerMainInterface
 
+from converter.controller_converter import ControllerConverter
 from converter.model_converter import ModelConverter
 from converter.view_converter import ViewConverter
-from converter.controller_converter import ControllerConverter
 
+from uploader.controller_uploader import ControllerUploader
 from uploader.model_uploader import ModelUploader
 from uploader.view_uploader import ViewUploader
-from uploader.controller_uploader import ControllerUploader
 
+from custom_form.controller_custom_form import ControllerCustomForm
 from custom_form.model_custom_form import ModelCustomForm
 from custom_form.view_custom_form import ViewCustomForm
-from custom_form.controller_custom_form import ControllerCustomForm
 
+from xnat_auth.controller_xnat_auth import ControllerXnatAuth
 from xnat_auth.model_xnat_auth import ModelXnatAuth
 from xnat_auth.view_xnat_auth import ViewXnatAuth
-from xnat_auth.controller_xnat_auth import ControllerXnatAuth
 
 
 class AppModules:
