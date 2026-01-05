@@ -16,12 +16,12 @@ class ViewConverter(ft.Control):
         self.title = None
         # top level
         self.dd_conversion_type = None
+        self.sw_overwrite = None
+        self.file_picker = None
         self.btn_project = None
         self.btn_subject = None
         self.btn_experiment = None
         # mid level
-        self.sw_overwrite = None
-        self.file_picker = None
         self.tree_view_raw = None
         self.tree_view_dcm = None
         self.tree_view_raw_list = None
@@ -83,6 +83,7 @@ class ViewConverter(ft.Control):
                 alignment=ft.MainAxisAlignment.CENTER,
                 spacing=16,
             ),
+            bgcolor=self.palette.surface,
             padding=ft.padding.symmetric(horizontal=18, vertical=12),
             border_radius=20,
         )
@@ -191,14 +192,35 @@ class ViewConverter(ft.Control):
 
         # button home/back and convert
         self.btn_home_back = ft.ElevatedButton(
-            text="Go home",
-            icon=ft.Icons.ARROW_BACK,
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Icon(ft.Icons.ARROW_BACK, size=26),
+                    ft.Text(value="Go home",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
             style=btn_style,
+            expand=True,
         )
-        self.btn_convert = ft.ElevatedButton(text="Convert",
-                                             icon=ft.Icons.CHANGE_CIRCLE,
-                                             style=btn_style)
-
+        self.btn_convert = ft.ElevatedButton(
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Icon(ft.Icons.CHANGE_CIRCLE, size=26),
+                    ft.Text(value="Convert",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
+            style=btn_style,
+            expand=True,
+        )
         # progressbar dialog
         self.pb_conversion = ft.ProgressBar(width=300)
         self.dlg_conversion = ft.AlertDialog(
@@ -233,13 +255,14 @@ class ViewConverter(ft.Control):
             spacing=12,
             controls=[
                 ft.Container(
-                    col={"xs": 12, "md": 4},
+                    col={"xs": 12, "sm": 4},
                     content=self.dd_conversion_type,
                 ),
                 ft.Container(
                     col={"xs": 12, "sm": 4},
                     content=self.sw_overwrite,
                 ),
+                ft.Container(col={"xs": 12, "sm": 4}),
             ],
         )
 
@@ -263,22 +286,6 @@ class ViewConverter(ft.Control):
             ],
         )
 
-        setup_card = self._build_section_card(
-            title="Conversion setup",
-            description=(
-                "Select the conversion type, choose the folder to process, "
-                "and set overwrite behavior."
-            ),
-            icon=ft.Icons.TUNE,
-            content=ft.Column(
-                spacing=12,
-                controls=[
-                    row_conversion_type,
-                    row_levels,
-                ],
-            ),
-        )
-
         row_mid = ft.ResponsiveRow(
             alignment=ft.MainAxisAlignment.CENTER,
             run_spacing=16,
@@ -295,11 +302,29 @@ class ViewConverter(ft.Control):
             ],
         )
 
-        preview_card = self._build_section_card(
-            title="Preview",
-            description="Review the input tree and the DICOM output structure.",
-            icon=ft.Icons.ACCOUNT_TREE,
-            content=row_mid,
+        setup_card = self._build_section_card(
+            title="Conversion setup",
+            description=(
+                "Select the conversion type, choose the folder to process, "
+                "and set overwrite behavior."
+            ),
+            icon=ft.Icons.TUNE,
+            content=ft.Column(
+                spacing=12,
+                controls=[
+                    row_conversion_type,
+                    row_levels,
+                    row_mid,
+                ],
+            ),
+        )
+
+        action_row = ft.Row(
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            controls=[
+                self.btn_home_back,
+                self.btn_convert,
+            ],
         )
 
         self._main_layout = ft.Container(
@@ -312,7 +337,7 @@ class ViewConverter(ft.Control):
                 controls=[
                     header_section,
                     setup_card,
-                    preview_card,
+                    action_row,
                 ],
             ),
         )
@@ -543,7 +568,7 @@ class ViewConverter(ft.Control):
             bgcolor=self.palette.surface,
             border_radius=16,
             border=ft.border.all(1, self.palette.surface_stronger),
-            height=160,
+            height=280,
             content=ft.Column(
                 spacing=8,
                 controls=[
