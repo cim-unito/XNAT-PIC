@@ -46,7 +46,12 @@ class ViewConverter(ft.Control):
         self._tree_map: dict[TreeType, ft.Container] = {}
 
     def build_interface(self):
-        """Build converter interface"""
+        """Create and return the main layout for the converter view.
+
+        This method instantiates all UI controls, binds events to the
+        controller, defines the page layout, and resets the initial state
+        so the view is ready for user interaction.
+        """
         self._build_controls()
         self._bind_events()
         self._define_layout()
@@ -54,7 +59,12 @@ class ViewConverter(ft.Control):
         return self._main_layout
 
     def set_initial_state(self):
-        """Set initial state"""
+        """Reset the UI to the default idle state.
+
+        Enables the top-level controls, disables the convert button, resets
+        the home/back label and icon, clears tree views, and restores default
+        dropdown/switch values.
+        """
         # enable top-level
         for c in [
             self.dd_conversion_type,
@@ -91,7 +101,11 @@ class ViewConverter(ft.Control):
         self._page.update()
 
     def set_mode(self):
-        """Set mode"""
+        """Switch the UI to the active conversion mode.
+
+        Disables top-level selection controls and enables conversion actions
+        while toggling the home/back label to indicate a back navigation.
+        """
         # disable top-level
         for c in [
             self.dd_conversion_type,
@@ -114,11 +128,11 @@ class ViewConverter(ft.Control):
         self._page.update()
 
     def open_directory_picker(self):
-        """Open directory"""
+        """Open the directory picker dialog."""
         self.file_picker.get_directory_path()
 
     def update_tree(self, new_widget: ft.ListView, tree_type: TreeType):
-        """Update the content of the existing container"""
+        """Replace the list view for the given tree type and refresh the UI."""
         container = self._tree_map.get(tree_type)
         container.content = new_widget
         if tree_type == TreeType.RAW:
@@ -127,26 +141,33 @@ class ViewConverter(ft.Control):
             self.tree_view_dcm_list = new_widget
         self._page.update()
 
-    def show_progressbar_dialog(self):
+    def show_progress_bar_dialog(self):
+        """Display the modal progress dialog."""
         self._page.open(self.dlg_conversion)
         self._page.update()
 
-    def update_progressbar(self, value: float):
+    def update_progress_bar(self, value: float):
+        """Update the progress bar value and refresh the page."""
         self.pb_conversion.value = value
         self._page.update()
 
     def create_alert(self, message):
+        """Show a simple alert dialog with the given message."""
         dlg = ft.AlertDialog(title=ft.Text(message))
         self._page.open(dlg)
         self._page.update()
 
     def update_page(self):
+        """Force a UI refresh on the current page."""
         self._page.update()
 
     def file_picker_result(self, e: ft.FilePickerResultEvent):
         """
-        Handle file picker result, delegating file processing to the
-        controller; alert when no file is selected.
+        Handle file picker results and delegate processing to the controller.
+
+        If a folder is selected, the controller is asked to process it;
+        otherwise, the user is alerted and the view resets to the initial
+        state.
         """
         if e.path:
             self._controller.get_directory_to_convert(e.path)
@@ -174,7 +195,7 @@ class ViewConverter(ft.Control):
         self._controller = controller
 
     def _build_controls(self):
-        """Graphical elements"""
+        """Instantiate and configure all UI controls used by the view."""
         btn_style = Buttons().create_button_style(self.palette)
 
         # title
@@ -269,12 +290,12 @@ class ViewConverter(ft.Control):
             tooltip="Select the experiment to convert",
         )
 
-        # switch
+        # switch overwrite existing folder
         self.sw_overwrite = ft.Switch(
-            label="Overwrite existing folders",
+            label="Overwrite existing folder",
         )
 
-        # button select folder
+        # file picker
         self.file_picker = ft.FilePicker()
         self._page.overlay.append(self.file_picker)
 
@@ -355,7 +376,7 @@ class ViewConverter(ft.Control):
         )
 
     def _bind_events(self):
-        """Bind events"""
+        """Wire UI events to the controller callbacks."""
         self.dd_conversion_type.on_change = self._controller.conversion_type
         self.btn_project.on_click = self._controller.convert_project
         self.btn_subject.on_click = self._controller.convert_subject
@@ -566,8 +587,7 @@ class ViewConverter(ft.Control):
     def _map_tree_container(self, tree_type: TreeType,
                             container: ft.Container):
         """
-        The container is placed in the tree map and contains the ListView
-        inside.
+        Register the container that hosts a tree ListView for updates.
         """
         self._tree_map[tree_type] = container
 
