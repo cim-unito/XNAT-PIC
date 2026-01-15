@@ -521,15 +521,26 @@ class ViewUploader(ft.Control):
 
     def _define_layout(self):
         """Define layout"""
-        row_top = ft.Row(
-            [
-                self.btn_project,
-                self.btn_subject,
-                self.btn_experiment,
-                self.btn_file,
-            ],
+        header_section = ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=8,
+            controls=[self.title],
+        )
+
+        row_levels = ft.ResponsiveRow(
             alignment=ft.MainAxisAlignment.CENTER,
+            run_spacing=12,
             spacing=12,
+            controls=[
+                ft.Container(col={"xs": 12, "sm": 6, "md": 3},
+                             content=self.btn_project),
+                ft.Container(col={"xs": 12, "sm": 6, "md": 3},
+                             content=self.btn_subject),
+                ft.Container(col={"xs": 12, "sm": 6, "md": 3},
+                             content=self.btn_experiment),
+                ft.Container(col={"xs": 12, "sm": 6, "md": 3},
+                             content=self.btn_file),
+            ],
         )
 
         col_tools = ft.Column(
@@ -548,36 +559,47 @@ class ViewUploader(ft.Control):
                 col_tools,
             ],
             alignment=ft.MainAxisAlignment.CENTER,
-            spacing=20,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=16,
         )
 
-        row_file = ft.Row(
-            [
-                self.tree_view_dcm,
-                ft.Container(col_preview, expand=True),
-            ],
+        row_file = ft.ResponsiveRow(
             alignment=ft.MainAxisAlignment.CENTER,
-            spacing=20,
+            run_spacing=16,
+            spacing=16,
+            controls=[
+                ft.Container(col={"xs": 12, "md": 7},
+                             content=self.tree_view_dcm),
+                ft.Container(col={"xs": 12, "md": 5}, content=col_preview),
+            ],
         )
 
-        row_dd = ft.Row(
-            [
-                self.dd_xnat_project,
-                self.dd_xnat_subject,
-                self.dd_xnat_experiment,
-            ],
+        row_dd = ft.ResponsiveRow(
             alignment=ft.MainAxisAlignment.CENTER,
-            spacing=20,
+            run_spacing=12,
+            spacing=12,
+            controls=[
+                ft.Container(col={"xs": 12, "md": 4},
+                             content=self.dd_xnat_project),
+                ft.Container(col={"xs": 12, "md": 4},
+                             content=self.dd_xnat_subject),
+                ft.Container(col={"xs": 12, "md": 4},
+                             content=self.dd_xnat_experiment),
+            ],
         )
 
-        row_new = ft.Row(
-            [
-                self.btn_new_project,
-                self.btn_new_subject,
-                self.btn_new_experiment,
-            ],
+        row_new = ft.ResponsiveRow(
             alignment=ft.MainAxisAlignment.CENTER,
-            spacing=20,
+            run_spacing=12,
+            spacing=12,
+            controls=[
+                ft.Container(col={"xs": 12, "md": 4},
+                             content=self.btn_new_project),
+                ft.Container(col={"xs": 12, "md": 4},
+                             content=self.btn_new_subject),
+                ft.Container(col={"xs": 12, "md": 4},
+                             content=self.btn_new_experiment),
+            ],
         )
 
         row_home_upload = ft.Row(
@@ -585,85 +607,114 @@ class ViewUploader(ft.Control):
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         )
 
-        # ----- Local Section -----
-        local_section = ft.Column(
-            [
-                ft.Row(
-                    [
-                        ft.Container(
-                            ft.Divider(thickness=1, color=ft.Colors.BLUE_300),
-                            expand=True),
-                        ft.Icon(ft.Icons.COMPUTER, size=22,
-                                color=ft.Colors.BLUE_800),
-                        ft.Text(
-                            "Upload from your PC...",
-                            size=20,
-                            weight=ft.FontWeight.BOLD,
-                            color=ft.Colors.BLUE_900,
-                        ),
-                        ft.Container(
-                            ft.Divider(thickness=1, color=ft.Colors.BLUE_300),
-                            expand=True),
-                    ],
-                    alignment=ft.MainAxisAlignment.CENTER,
-                ),
-                row_file,
-            ],
-            spacing=20,
-        )
-
-        # ----- XNAT Section -----
-        xnat_section = ft.Column(
-            [
-                ft.Row(
-                    [
-                        ft.Container(
-                            ft.Divider(thickness=1, color=ft.Colors.BLUE_300),
-                            expand=True),
-                        ft.Icon(ft.Icons.CLOUD, size=22,
-                                color=ft.Colors.BLUE_800),
-                        ft.Text(
-                            "...to XNAT",
-                            size=20,
-                            weight=ft.FontWeight.BOLD,
-                            color=ft.Colors.BLUE_900,
-                        ),
-                        ft.Container(
-                            ft.Divider(thickness=1, color=ft.Colors.BLUE_300),
-                            expand=True),
-                    ],
-                    alignment=ft.MainAxisAlignment.CENTER,
-                ),
-                row_dd,
-                row_new,
-            ],
-            spacing=20,
-        )
-
-        # ---- SCROLLABLE CONTENT ----
-        scrollable_content = ft.Container(
+        local_section = self._build_section_card(
+            title="Upload from your PC",
+            description=(
+                "Choose the source level and review the DICOM preview before "
+                "sending data to XNAT."
+            ),
+            icon=ft.Icons.COMPUTER,
             content=ft.Column(
-                [
-                    row_top,
+                spacing=16,
+                controls=[
+                    row_levels,
+                    row_file,
+                ],
+            ),
+        )
+
+        xnat_section = self._build_section_card(
+            title="To XNAT",
+            description=(
+                "Select the destination project, subject, and experiment or "
+                "create new records before uploading."
+            ),
+            icon=ft.Icons.CLOUD,
+            content=ft.Column(
+                spacing=16,
+                controls=[
+                    row_dd,
+                    row_new,
+                ],
+            ),
+        )
+
+        self._main_layout = ft.Container(
+            expand=True,
+            padding=ft.padding.symmetric(horizontal=28, vertical=18),
+            content=ft.Column(
+                alignment=ft.MainAxisAlignment.START,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=18,
+                controls=[
+                    header_section,
                     local_section,
                     xnat_section,
+                    ft.Container(expand=True),
+                    row_home_upload,
                 ],
-                spacing=32,
-                expand=True,
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             ),
-            expand=True,
         )
 
-        # ---- MAIN LAYOUT ----
-        self._main_layout = ft.Column(
-            [
-                self.title,
-                ft.Container(scrollable_content, expand=True),
-                row_home_upload,
-            ],
-            spacing=20,
-            expand=True,
+    def _build_section_card(
+            self,
+            title: str,
+            description: str,
+            icon: str,
+            content: ft.Control,
+    ) -> ft.Control:
+        return ft.Container(
+            content=ft.Card(
+                color=self.palette.surface,
+                surface_tint_color=self.palette.primary,
+                elevation=3,
+                shape=ft.RoundedRectangleBorder(radius=18),
+                content=ft.Container(
+                    padding=18,
+                    content=ft.Column(
+                        spacing=12,
+                        controls=[
+                            ft.Row(
+                                spacing=12,
+                                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                                controls=[
+                                    ft.Container(
+                                        width=36,
+                                        height=36,
+                                        border_radius=10,
+                                        bgcolor=self.palette.surface_stronger,
+                                        alignment=ft.alignment.center,
+                                        content=ft.Icon(
+                                            icon,
+                                            size=20,
+                                            color=self.palette.primary,
+                                        ),
+                                    ),
+                                    ft.Column(
+                                        spacing=2,
+                                        controls=[
+                                            ft.Text(
+                                                title,
+                                                size=16,
+                                                weight=ft.FontWeight.W_600,
+                                                color=self.palette.primary_text,
+                                                font_family="Inter",
+                                            ),
+                                            ft.Text(
+                                                description,
+                                                size=12,
+                                                color=self.palette.subtle_text,
+                                                font_family="Inter",
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                            content,
+                        ],
+                    ),
+                ),
+            ),
         )
 
     def _build_tree_panel(
@@ -677,7 +728,7 @@ class ViewUploader(ft.Control):
             bgcolor=self.palette.surface,
             border_radius=16,
             border=ft.border.all(1, self.palette.surface_stronger),
-            height=280,
+            height=180,
             content=ft.Column(
                 spacing=8,
                 controls=[
