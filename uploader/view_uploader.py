@@ -370,28 +370,53 @@ class ViewUploader(ft.Control):
 
         # button show dicom tags
         self.btn_show_tags = ft.ElevatedButton(
-            "Show DICOM tags",
-            icon=ft.Icons.LIST_ALT,
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Icon(ft.Icons.LIST_ALT),
+                    ft.Text(value="Show DICOM tags",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
             style=btn_style,
+            tooltip="Show the DICOM tags of the selected image",
+            width=220,
         )
-
         # button and dropdown modify modality
         self.cnt_modify_modality = ft.Column()
         self.btn_modify_modality = ft.ElevatedButton(
-            "Modify DICOM modality",
-            icon=ft.Icons.BUILD,
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Icon(ft.Icons.BUILD),
+                    ft.Text(value="Modify DICOM modality",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
             style=btn_style,
+            tooltip="Edit the modality tag of the selected file",
+            width=220,
         )
         self.dd_modify_modality = ft.Dropdown(
             options=[ft.dropdown.Option(ct.value) for ct in DicomModality],
             hint_text="New Modality",
             width=200,
+            filled=True,
+            bgcolor=self.palette.surface,
+            border_radius=12,
         )
         self.cnt_modify_modality.controls.append(self.btn_modify_modality)
 
         # xnat dropdowns project, subject, experiment
         self.dd_xnat_project = ft.Dropdown(
             hint_text="Project",
+            prefix_icon=ft.Icons.DASHBOARD,
             expand=True,
             filled=True,
             bgcolor=self.palette.surface,
@@ -399,6 +424,7 @@ class ViewUploader(ft.Control):
         )
         self.dd_xnat_subject = ft.Dropdown(
             hint_text="Subject",
+            prefix_icon=ft.Icons.PERSON,
             expand=True,
             filled=True,
             bgcolor=self.palette.surface,
@@ -406,6 +432,7 @@ class ViewUploader(ft.Control):
         )
         self.dd_xnat_experiment = ft.Dropdown(
             hint_text="Experiment",
+            prefix_icon=ft.Icons.SCIENCE,
             expand=True,
             filled=True,
             bgcolor=self.palette.surface,
@@ -551,16 +578,7 @@ class ViewUploader(ft.Control):
             spacing=12,
             alignment=ft.MainAxisAlignment.CENTER,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        )
-
-        col_preview = ft.Row(
-            [
-                self.img_preview,
-                col_tools,
-            ],
-            alignment=ft.MainAxisAlignment.CENTER,
-            vertical_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=16,
+            expand=True,
         )
 
         row_file = ft.ResponsiveRow(
@@ -568,9 +586,22 @@ class ViewUploader(ft.Control):
             run_spacing=16,
             spacing=16,
             controls=[
-                ft.Container(col={"xs": 12, "md": 7},
+                ft.Container(col={"xs": 12, "md": 6},
                              content=self.tree_view_dcm),
-                ft.Container(col={"xs": 12, "md": 5}, content=col_preview),
+                ft.Container(
+                    col={"xs": 12, "md": 3},
+                    alignment=ft.alignment.center,
+                    content=self.img_preview,
+                ),
+                ft.Container(
+                    col={"xs": 12, "md": 3},
+                    alignment=ft.alignment.center,
+                    content=ft.Container(
+                        alignment=ft.alignment.center,
+                        expand=True,
+                        content=col_tools,
+                    ),
+                ),
             ],
         )
 
@@ -728,7 +759,7 @@ class ViewUploader(ft.Control):
             bgcolor=self.palette.surface,
             border_radius=16,
             border=ft.border.all(1, self.palette.surface_stronger),
-            height=180,
+            height=256,
             content=ft.Column(
                 spacing=8,
                 controls=[
