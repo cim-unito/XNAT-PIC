@@ -26,6 +26,7 @@ class ViewUploader(ft.Control):
         self.tree_view_dcm = None
         self.tree_view_dcm_list = None
         self.img_preview = None
+        self.img_preview_card = None
         self.btn_show_tags = None
         self.cnt_modify_modality = None
         self.btn_modify_modality = None
@@ -362,10 +363,51 @@ class ViewUploader(ft.Control):
         # image preview
         self.img_preview = ft.Image(
             src="assets/images/ImagePreview.png",
-            width=256,
-            height=256,
+            width=220,
+            height=220,
             fit=ft.ImageFit.CONTAIN,
             border_radius=12,
+        )
+        self.img_preview_card = ft.Container(
+            width=260,
+            height=260,
+            padding=12,
+            border_radius=18,
+            bgcolor=self.palette.surface,
+            border=ft.border.all(2, self.palette.primary),
+            content=ft.Column(
+                spacing=8,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                controls=[
+                    ft.Row(
+                        spacing=6,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                        controls=[
+                            ft.Icon(
+                                ft.Icons.IMAGE_OUTLINED,
+                                size=16,
+                                color=self.palette.primary,
+                            ),
+                            ft.Text(
+                                "Preview",
+                                size=12,
+                                weight=ft.FontWeight.W_600,
+                                color=self.palette.subtle_text,
+                                font_family="Inter",
+                            ),
+                        ],
+                    ),
+                    ft.Container(
+                        expand=True,
+                        alignment=ft.alignment.center,
+                        bgcolor=self.palette.surface_stronger,
+                        border_radius=14,
+                        border=ft.border.all(1, self.palette.surface_stronger),
+                        padding=8,
+                        content=self.img_preview,
+                    ),
+                ],
+            ),
         )
 
         # button show dicom tags
@@ -591,7 +633,7 @@ class ViewUploader(ft.Control):
                 ft.Container(
                     col={"xs": 12, "md": 3},
                     alignment=ft.alignment.center,
-                    content=self.img_preview,
+                    content=self.img_preview_card,
                 ),
                 ft.Container(
                     col={"xs": 12, "md": 3},
