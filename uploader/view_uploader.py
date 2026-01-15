@@ -596,6 +596,7 @@ class ViewUploader(ft.Control):
                 ft.Container(
                     col={"xs": 12, "md": 3},
                     alignment=ft.alignment.center,
+                    height=256,
                     content=ft.Container(
                         alignment=ft.alignment.center,
                         expand=True,
