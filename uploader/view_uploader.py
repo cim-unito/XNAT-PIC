@@ -125,10 +125,7 @@ class ViewUploader(ft.Control):
         if self.tree_view_dcm_list:
             self.tree_view_dcm_list.controls.clear()
         self._controller.preview_cache.clear()
-        self.img_preview.src_base64 = None
-        self.img_preview.src_bytes = None
-        self.img_preview.src = None
-        self.img_preview.src = "assets/images/ImagePreview.png"
+        self.reset_image_preview()
 
         # Modality dropdown reset
         self.cnt_modify_modality.controls.clear()
@@ -175,6 +172,13 @@ class ViewUploader(ft.Control):
             self.icon_home_back.name = ft.Icons.ARROW_BACK
 
         self._page.update()
+
+    def reset_image_preview(self):
+        """Restore the default image preview placeholder."""
+        self.img_preview.src_base64 = None
+        self.img_preview.src_bytes = None
+        self.img_preview.src = None
+        self.img_preview.src = "assets/images/ImagePreview.png"
 
     def open_directory_picker(self):
         """Open the directory picker dialog."""

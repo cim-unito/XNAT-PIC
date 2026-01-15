@@ -221,6 +221,8 @@ class ControllerUploader:
             Path(self._model.tmp_folder_to_upload),
             TreeType.DICOM
         )
+        self.preview_cache.clear()
+        self._view.reset_image_preview()
         self._view.dd_modify_modality.value = None
         self._view.cnt_modify_modality.controls.clear()
         self._view.cnt_modify_modality.controls.append(
