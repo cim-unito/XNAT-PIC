@@ -383,7 +383,7 @@ class ViewUploader(ft.Control):
             ),
             style=btn_style,
             tooltip="Show the DICOM tags of the selected image",
-            width=220,
+            width=250,
         )
         # button and dropdown modify modality
         self.cnt_modify_modality = ft.Column()
@@ -401,7 +401,7 @@ class ViewUploader(ft.Control):
             ),
             style=btn_style,
             tooltip="Edit the modality tag of the selected file",
-            width=220,
+            width=250,
         )
         self.dd_modify_modality = ft.Dropdown(
             options=[ft.dropdown.Option(ct.value) for ct in DicomModality],
