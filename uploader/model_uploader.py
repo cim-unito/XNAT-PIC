@@ -1,7 +1,5 @@
 from pathlib import Path
 
-from pydicom import dcmread
-
 from uploader.services.dicom.dicom_compatibility_service import \
     DicomCompatibilityService
 from uploader.services.dicom.dicom_modify_modality import DicomModifyModality
@@ -15,9 +13,6 @@ class ModelUploader:
         self._input_root = None
         self._level = None
         self._tmp_folder_to_upload = None
-
-    def get_list_directory_treeview(self, path):
-        return FilesystemService.get_list_directory_treeview(path)
 
     def reset_level(self):
         self._level = None

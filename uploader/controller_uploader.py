@@ -176,9 +176,8 @@ class ControllerUploader:
     # ==========================================================
     # FILE SELECTION + DICOM PREVIEW
     # ==========================================================
-    def _on_treeview_file_selected(self, file_path):
+    def on_file_selected(self, e, file_path):
         """File selected"""
-        self._view.set_selected_control(e.control)
         self.file_path_selected = file_path
         self.folder_path_selected = None
         print(f"[SELECTED FILE] {self.file_path_selected}")
@@ -214,7 +213,7 @@ class ControllerUploader:
         self._view.cnt_modify_modality.controls.clear()
         self._view.cnt_modify_modality.controls.append(
             self._view.dd_modify_modality)
-        self._view._page.update()
+        self._view.page.update()
 
     def on_select_modality(self, e):
         if self.folder_path_selected is None and self.file_path_selected is None:
@@ -235,7 +234,7 @@ class ControllerUploader:
         self._view.cnt_modify_modality.controls.clear()
         self._view.cnt_modify_modality.controls.append(
             self._view.btn_modify_modality)
-        self._view._page.update()
+        self._view.page.update()
 
     # ==========================================================
     # NEW XNAT PROJECT
