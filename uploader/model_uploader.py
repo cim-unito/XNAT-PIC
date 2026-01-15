@@ -26,7 +26,8 @@ class ModelUploader:
                 f"The folder {self._input_root} does not contain dicom files)")
             return
 
-        self._tmp_folder_to_upload = FilesystemService.create_temp_dicom_upload_directory()
+        tmp_dir = FilesystemService.create_temp_dicom_upload_directory()
+        self._tmp_folder_to_upload = tmp_dir / self._input_root.name
 
         study_instance_uid_map = {}
         for dicom_file in list_dicom_files:

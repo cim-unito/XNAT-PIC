@@ -334,7 +334,7 @@ class ControllerUploader:
                     return
 
         # ---- Completed! ----
-        self._view.dlg_uploader.open = False
+        self._view.dlg_upload.open = False
         self._view.update_page()
         self._view.create_alert("Upload completed successfully!")
 

@@ -446,7 +446,8 @@ class ViewUploader(ft.Control):
             width=250,
         )
         self.dd_modify_modality = ft.Dropdown(
-            options=[ft.dropdown.Option(ct.value) for ct in DicomModality],
+            options=[ft.dropdown.Option(ct.value.upper()) for ct in
+                     DicomModality],
             hint_text="New Modality",
             width=200,
             filled=True,
