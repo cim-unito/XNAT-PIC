@@ -164,20 +164,11 @@ class ControllerUploader:
             self._model.tmp_folder_to_upload,
             TreeType.DICOM)
 
-    def _on_treeview_collapse(self, node_path, tile):
-        self.folder_path_selected = None
-        self.file_path_selected = None
-
-    def _on_treeview_expand(self, node_path, tile):
-        self.folder_path_selected = node_path
-        self.file_path_selected = None
-        print(f"[SELECTED DIR] {self.folder_path_selected}")
-
     # ==========================================================
     # FILE SELECTION + DICOM PREVIEW
     # ==========================================================
-    def on_file_selected(self, e, file_path):
-        """File selected"""
+    def _on_treeview_file_selected(self, file_path):
+        """Handle a file selection in the treeview."""
         self.file_path_selected = file_path
         self.folder_path_selected = None
         print(f"[SELECTED FILE] {self.file_path_selected}")
@@ -286,14 +277,16 @@ class ControllerUploader:
             self._view.create_alert("Select a project in XNAT.")
             return
 
-        self._view.show_progress_dialog()
+        self._view.show_progress_bar_dialog()
 
-        t = threading.Thread(
-            target=self._upload_project_thread,
-            args=(base_path, project_id),
-            daemon=True,
-        )
-        t.start()
+        # t = threading.Thread(
+        #     target=self._upload_project_thread,
+        #     args=(base_path, project_id),
+        #     daemon=True,
+        # )
+        # t.start()
+
+        self._upload_project_thread(base_path, project_id)
 
     def _upload_project_thread(self, base_path: Path, project_id: str):
         subjects = [p for p in base_path.iterdir() if p.is_dir()]
@@ -309,8 +302,6 @@ class ControllerUploader:
         if total == 0:
             self._view.create_alert("No experiment folders found.")
             return
-
-        done = 0
 
         for subj in subjects:
 
@@ -342,18 +333,9 @@ class ControllerUploader:
                     self._view.create_alert(f"Upload error: {err}")
                     return
 
-                # UPDATE PROGRESS (TUO METODO ORIGINALE)
-                done += 1
-                progress = done / total
-                self._view.update_progress(progress)
-                self._view._page.update()
-
-        # ---- COMPLETATO ----
-
-        self._view.update_progress(1.0)
-        self._view._page.update()
-
-        # chiudi dialog e mostra messaggio finale
+        # ---- Completed! ----
+        self._view.dlg_uploader.open = False
+        self._view.update_page()
         self._view.create_alert("Upload completed successfully!")
 
     def _set_level(self, level):
@@ -380,7 +362,3 @@ class ControllerUploader:
         self.folder_path_selected = node_path
         self.file_path_selected = None
 
-    def _on_treeview_file_selected(self, file_path):
-        """Handle a file selection in the treeview."""
-        self.file_path_selected = file_path
-        self.folder_path_selected = None

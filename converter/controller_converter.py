@@ -73,12 +73,6 @@ class ControllerConverter:
         self._model.input_root = path
         self._treeview_controller.populate_tree(Path(path), TreeType.RAW)
 
-    def on_file_selected(self, e, file_path):
-        """Handle a file selection in the treeview."""
-        self._view.set_selected_control(e.control)
-        print(f"[SELECTED FILE] {file_path}")
-        self._view.update_page()
-
     # -------------------------------------------------------
     # DICOM CONVERTER
     # -------------------------------------------------------
