@@ -1,6 +1,9 @@
 import flet as ft
 
+from enums.dicom_modality import DicomModality
 from enums.tree_type import TreeType
+from shared_ui.ui.buttons import Buttons
+from shared_ui.ui.palette import Palette
 
 
 class ViewUploader(ft.Control):
@@ -14,14 +17,14 @@ class ViewUploader(ft.Control):
         # graphical elements
         self.title = None
         # top level
+        self.file_picker = None
         self.btn_project = None
         self.btn_subject = None
         self.btn_experiment = None
         self.btn_file = None
-        # file selection group
-        self.file_picker = None
-        self.btn_select_folder = None
+        # preview group
         self.tree_view_dcm = None
+        self.tree_view_dcm_list = None
         self.img_preview = None
         self.btn_show_tags = None
         self.cnt_modify_modality = None
@@ -36,6 +39,8 @@ class ViewUploader(ft.Control):
         self.btn_new_experiment = None
         # button home/back upload
         self.btn_home_back = None
+        self.txt_home_back = None
+        self.icon_home_back = None
         self.btn_upload = None
         # progressbar
         self.pb_upload = None
@@ -46,13 +51,12 @@ class ViewUploader(ft.Control):
         # layout
         self._main_layout = None
 
+        # palette
+        self.palette = self._create_default_palette()
+
         # map enum → container
         self._tree_map: dict[TreeType, ft.Container] = {}
-        self._selected_control = None
 
-    # ------------------------------------------------------
-    # AUTH DIALOG
-    # ------------------------------------------------------
     def open_auth_dialog(self, dlg):
         self._dlg_auth = dlg
         self._page.open(dlg)
@@ -64,87 +68,296 @@ class ViewUploader(ft.Control):
             self._dlg_auth = None
             self._page.update()
 
-    # ------------------------------------------------------
-    # BUILD UPLOADER INTERFACE
-    # -----------------------------------------------------
     def build_interface(self):
+        """Create and return the main layout for the uploader view.
+
+        This method instantiates all UI controls, binds events to the
+        controller, defines the page layout, and resets the initial state
+        so the view is ready for user interaction.
+        """
         self._build_controls()
         self._bind_events()
         self._define_layout()
         self.set_initial_state()
         return self._main_layout
 
+    def set_initial_state(self):
+        """Reset the UI to the default idle state."""
+        # Enable top-level
+        self.btn_project.disabled = False
+        self.btn_subject.disabled = False
+        self.btn_experiment.disabled = False
+        self.btn_file.disabled = False
+
+        # Disable the other controls
+        for c in [
+            self.btn_show_tags,
+            self.btn_modify_modality,
+            self.dd_xnat_project,
+            self.dd_xnat_subject,
+            self.dd_xnat_experiment,
+            self.btn_new_project,
+            self.btn_new_subject,
+            self.btn_new_experiment,
+            self.btn_upload,
+        ]:
+            c.disabled = True
+
+        # Reset home/back
+        if self.txt_home_back:
+            self.txt_home_back.value = "Home"
+        if self.icon_home_back:
+            self.icon_home_back.name = ft.Icons.HOME
+        self.btn_home_back.disabled = False
+
+        # Reset dropdowns
+        for dd in [
+            self.dd_xnat_project,
+            self.dd_xnat_subject,
+            self.dd_xnat_experiment
+        ]:
+            dd.options = []
+            dd.key = "Select"
+            dd.value = None
+
+        # Reset preview & tree
+        if self.tree_view_dcm_list:
+            self.tree_view_dcm_list.controls.clear()
+        self._controller.preview_cache.clear()
+        self.img_preview.src_base64 = None
+        self.img_preview.src_bytes = None
+        self.img_preview.src = None
+        self.img_preview.src = "assets/images/ImagePreview.png"
+
+        # Modality dropdown reset
+        self.cnt_modify_modality.controls.clear()
+        self.cnt_modify_modality.controls.append(self.btn_modify_modality)
+        self.dd_modify_modality.value = None
+
+        self._page.update()
+
+    def set_mode(self, xnat_subject, xnat_experiment):
+        """Switch the UI to the active conversion mode."""
+        # enable/disable top-level
+        for c in [
+            self.btn_project,
+            self.btn_subject,
+            self.btn_experiment,
+            self.btn_file,
+        ]:
+            c.disabled = True
+
+        # show tags/modify modality
+        for c in [
+            self.btn_show_tags,
+            self.btn_modify_modality,
+        ]:
+            c.disabled = False
+
+        # dropdown project, subject, experiment in xnat
+        self.dd_xnat_project.disabled = False
+        self.dd_xnat_subject.disabled = not xnat_subject
+        self.dd_xnat_experiment.disabled = not xnat_experiment
+
+        # new project, subject, experiment buttons
+        self.btn_new_project.disabled = False
+        self.btn_new_subject.disabled = not xnat_subject
+        self.btn_new_experiment.disabled = xnat_experiment
+
+        # upload
+        self.btn_upload.disabled = False
+
+        # home/back
+        if self.txt_home_back:
+            self.txt_home_back.value = "Back"
+        if self.icon_home_back:
+            self.icon_home_back.name = ft.Icons.ARROW_BACK
+
+        self._page.update()
+
+    def open_directory_picker(self):
+        """Open the directory picker dialog."""
+        self.file_picker.get_directory_path()
+
+    def update_tree(self, new_widget: ft.ListView, tree_type: TreeType):
+        """Replace the list view for the given tree type and refresh the UI."""
+        container = self._tree_map.get(tree_type)
+        container.content = new_widget
+        if tree_type == TreeType.DICOM:
+            self.tree_view_dcm_list = new_widget
+        self._page.update()
+
+    def show_progress_bar_dialog(self):
+        """Display the modal progress dialog."""
+        self._page.open(self.dlg_upload)
+        self._page.update()
+
+    def update_progress_bar(self, value: float):
+        """Update the progress bar value and refresh the page."""
+        self.pb_upload.value = value
+        self._page.update()
+
+    def create_alert(self, message):
+        """Show a simple alert dialog with the given message."""
+        dlg = ft.AlertDialog(title=ft.Text(message))
+        self._page.open(dlg)
+        self._page.update()
+
+    def update_page(self):
+        """Force a UI refresh on the current page."""
+        self._page.update()
+
+    def file_picker_result(self, e: ft.FilePickerResultEvent):
+        """
+        Handle file picker results and delegate processing to the controller.
+
+        If a folder is selected, the controller is asked to process it;
+        otherwise, the user is alerted and the view resets to the initial
+        state.
+        """
+        if e.path:
+            self._controller.get_directory_to_upload(e.path)
+        else:
+            self.create_alert("No folder selected.")
+            self.set_initial_state()
+
+    @property
+    def controller(self):
+        return self._controller
+
+    @controller.setter
+    def controller(self, controller):
+        self._controller = controller
+
+    @property
+    def page(self):
+        return self._page
+
+    @page.setter
+    def page(self, page):
+        self._page = page
+
+    def set_controller(self, controller):
+        self._controller = controller
+
     def _build_controls(self):
-        """Graphical elements"""
-        # button style
-        btn_style = ft.ButtonStyle(
-            bgcolor=ft.Colors.BLUE_200,
-            color=ft.Colors.BLUE_900,
-            shape=ft.RoundedRectangleBorder(radius=10),
-            padding=15,
-        )
+        """Instantiate and configure all UI controls used by the view."""
+        btn_style = Buttons().create_button_style(self.palette)
 
         # title
-        self.title = ft.Row(
-            [
-                ft.Icon(
-                    ft.Icons.CLOUD_UPLOAD,
-                    size=36,
-                    color=ft.Colors.BLUE_700
-                ),
-                ft.Text(
-                    "XNAT-PIC Uploader",
-                    size=30,
-                    weight=ft.FontWeight.BOLD,
-                    color=ft.Colors.BLUE_700,
-                ),
-            ],
-            alignment=ft.MainAxisAlignment.CENTER,
-            spacing=12,
+        self.title = ft.Container(
+            content=ft.Row(
+                [
+                    ft.Container(
+                        width=52,
+                        height=52,
+                        border_radius=16,
+                        bgcolor=self.palette.surface_stronger,
+                        alignment=ft.alignment.center,
+                        content=ft.Icon(
+                            ft.Icons.CLOUD_UPLOAD,
+                            size=30,
+                            color=self.palette.primary,
+                        ),
+                    ),
+                    ft.Text(
+                        value="XNAT-PIC Uploader",
+                        size=32,
+                        weight=ft.FontWeight.W_700,
+                        color=self.palette.primary_text,
+                        font_family="Inter",
+                    ),
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=16,
+            ),
+            bgcolor=self.palette.surface,
+            padding=ft.padding.symmetric(horizontal=18, vertical=12),
+            border_radius=20,
         )
 
         # level buttons: project, subject, experiment, file
         self.btn_project = ft.ElevatedButton(
-            text="Project",
-            width=200,
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Text(value="Upload Project",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
+            style=btn_style,
+            expand=True,
             tooltip="Select the project to upload",
-            style=btn_style
         )
         self.btn_subject = ft.ElevatedButton(
-            text="Subject",
-            width=200,
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Text(value="Upload Subject",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
+            style=btn_style,
+            expand=True,
             tooltip="Select the subject to upload",
-            style=btn_style
         )
         self.btn_experiment = ft.ElevatedButton(
-            text="Experiment",
-            width=200,
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Text(value="Upload Experiment",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
+            style=btn_style,
+            expand=True,
             tooltip="Select the experiment to upload",
-            style=btn_style
         )
         self.btn_file = ft.ElevatedButton(
-            text="File",
-            width=200,
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Text(value="Upload File",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
+            style=btn_style,
+            expand=True,
             tooltip="Select the file to upload",
-            style=btn_style
         )
 
-        # button select folder
+        # file picker
         self.file_picker = ft.FilePicker()
         self._page.overlay.append(self.file_picker)
-        self.btn_select_folder = ft.ElevatedButton(
-            text="Select folder",
-            icon=ft.Icons.FOLDER_OPEN,
-            style=btn_style,
-        )
 
         # treeview dicom
-        self.tree_view_dcm = ft.Container(
-            width=250,
-            height=320,
-            content=ft.ListView(controls=[], expand=True, spacing=4),
+        self.tree_view_dcm_list = ft.ListView(
+            controls=[],
+            expand=True,
+            spacing=4,
         )
-        self.map_tree_container(TreeType.DICOM, self.tree_view_dcm)
+        dcm_list_container = ft.Container(
+            expand=True,
+            content=self.tree_view_dcm_list,
+        )
+        self._map_tree_container(TreeType.DICOM, dcm_list_container)
+        self.tree_view_dcm = self._build_tree_panel(
+            title="DICOM",
+            icon=ft.Icons.DOCUMENT_SCANNER,
+            list_container=dcm_list_container,
+        )
 
         # image preview
         self.img_preview = ft.Image(
@@ -170,12 +383,7 @@ class ViewUploader(ft.Control):
             style=btn_style,
         )
         self.dd_modify_modality = ft.Dropdown(
-            options=[
-                ft.dropdown.Option("MR"),
-                ft.dropdown.Option("US"),
-                ft.dropdown.Option("OI"),
-                ft.dropdown.Option("OA"),
-            ],
+            options=[ft.dropdown.Option(ct.value) for ct in DicomModality],
             hint_text="New Modality",
             width=200,
         )
@@ -184,48 +392,111 @@ class ViewUploader(ft.Control):
         # xnat dropdowns project, subject, experiment
         self.dd_xnat_project = ft.Dropdown(
             hint_text="Project",
-            width=200,
+            expand=True,
+            filled=True,
+            bgcolor=self.palette.surface,
+            border_radius=12,
         )
         self.dd_xnat_subject = ft.Dropdown(
             hint_text="Subject",
-            width=200,
+            expand=True,
+            filled=True,
+            bgcolor=self.palette.surface,
+            border_radius=12,
         )
         self.dd_xnat_experiment = ft.Dropdown(
             hint_text="Experiment",
-            width=200,
+            expand=True,
+            filled=True,
+            bgcolor=self.palette.surface,
+            border_radius=12,
         )
 
         # xnat new project, subject, experiment
         self.btn_new_project = ft.ElevatedButton(
-            "New Project",
-            icon=ft.Icons.ADD_BOX,
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Text(value="New Project",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
             style=btn_style,
+            expand=True,
+            tooltip="Create a new project on XNAT",
         )
         self.btn_new_subject = ft.ElevatedButton(
-            "New Subject",
-            icon=ft.Icons.PERSON_ADD,
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Text(value="New Subject",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
             style=btn_style,
+            expand=True,
+            tooltip="Create a new subject on XNAT",
         )
         self.btn_new_experiment = ft.ElevatedButton(
-            "New Experiment",
-            icon=ft.Icons.ADD_CHART,
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Text(value="New experiment",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
             style=btn_style,
+            expand=True,
+            tooltip="Create a new experiment on XNAT",
         )
 
         # button home/back and upload
+        self.txt_home_back = ft.Text(
+            value="Go home",
+            size=16,
+            weight=ft.FontWeight.W_600,
+            font_family="Inter",
+        )
+        self.icon_home_back = ft.Icon(ft.Icons.HOME, size=26)
         self.btn_home_back = ft.ElevatedButton(
-            "Home",
-            icon=ft.Icons.ARROW_BACK,
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    self.icon_home_back,
+                    self.txt_home_back,
+                ],
+            ),
             style=btn_style,
+            expand=True,
         )
         self.btn_upload = ft.ElevatedButton(
-            "Upload",
-            icon=ft.Icons.CLOUD_UPLOAD,
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Icon(ft.Icons.CLOUD_UPLOAD, size=26),
+                    ft.Text(value="Upload",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
             style=btn_style,
+            expand=True,
         )
 
         # progressbar dialog
-        self.pb_upload = ft.ProgressBar(width=250)
+        self.pb_upload = ft.ProgressBar(width=300)
         self.dlg_upload = ft.AlertDialog(
             modal=True,
             title=ft.Text("Loading..."),
@@ -239,8 +510,6 @@ class ViewUploader(ft.Control):
         self.btn_experiment.on_click = self._controller.upload_experiment
         self.btn_file.on_click = self._controller.upload_file
         self.file_picker.on_result = self.file_picker_result
-        self.btn_select_folder.on_click = lambda \
-                e: self.file_picker.get_directory_path()
         self.btn_show_tags.on_click = self._controller.on_show_tags_clicked
         self.btn_modify_modality.on_click = self._controller.modify_modality
         self.dd_modify_modality.on_change = self._controller.on_select_modality
@@ -284,7 +553,6 @@ class ViewUploader(ft.Control):
 
         row_file = ft.Row(
             [
-                self.btn_select_folder,
                 self.tree_view_dcm,
                 ft.Container(col_preview, expand=True),
             ],
@@ -398,195 +666,47 @@ class ViewUploader(ft.Control):
             expand=True,
         )
 
-    # ------------------------------------------------------
-    # INITIAL STATE
-    # ------------------------------------------------------
-    def set_initial_state(self):
-        # Enable top-level
-        self.btn_project.disabled = False
-        self.btn_subject.disabled = False
-        self.btn_experiment.disabled = False
-        self.btn_file.disabled = False
-
-        # Disable the other controls
-        for c in [
-            self.btn_select_folder,
-            self.btn_show_tags,
-            self.btn_modify_modality,
-            self.dd_xnat_project,
-            self.dd_xnat_subject,
-            self.dd_xnat_experiment,
-            self.btn_new_project,
-            self.btn_new_subject,
-            self.btn_new_experiment,
-            self.btn_upload,
-        ]:
-            c.disabled = True
-
-        # Reset home/back
-        self.btn_home_back.text = "Home"
-        self.btn_home_back.disabled = False
-
-        # Reset dropdowns
-        for dd in [
-            self.dd_xnat_project,
-            self.dd_xnat_subject,
-            self.dd_xnat_experiment
-        ]:
-            dd.options = []
-            dd.key = "Select"
-            dd.value = None
-
-        # Reset preview & tree
-        self.tree_view_dcm.content.controls.clear()
-        self._controller.preview_cache.clear()
-        self.img_preview.src_base64 = None
-        self.img_preview.src_bytes = None
-        self.img_preview.src = None
-        self.img_preview.src = "assets/images/ImagePreview.png"
-
-        # Modality dropdown reset
-        self.cnt_modify_modality.controls.clear()
-        self.cnt_modify_modality.controls.append(self.btn_modify_modality)
-        self.dd_modify_modality.value = None
-
-        self._page.update()
-
-    # ------------------------------------------------------
-    # LEVEL MODE
-    # ------------------------------------------------------
-    def set_mode(
+    def _build_tree_panel(
             self,
-            level_buttons_enabled,
-            select_group_enabled,
-            upload_enabled,
-            dd_project,
-            dd_subject,
-            dd_experiment,
-            new_project,
-            new_subject,
-            new_experiment,
-    ):
-        # enable/disable top-level
-        for c in [
-            self.btn_project,
-            self.btn_subject,
-            self.btn_experiment,
-            self.btn_file,
-        ]:
-            c.disabled = not level_buttons_enabled
-
-        # select folder / tree / preview / show tags
-        for c in [
-            self.btn_select_folder,
-            self.btn_show_tags,
-            self.btn_modify_modality,
-        ]:
-            c.disabled = not select_group_enabled
-
-        # dropdown project, subject, experiment in xnat
-        self.dd_xnat_project.disabled = not dd_project
-        self.dd_xnat_subject.disabled = not dd_subject
-        self.dd_xnat_experiment.disabled = not dd_experiment
-
-        # new project, subject, experiment buttons
-        self.btn_new_project.disabled = not new_project
-        self.btn_new_subject.disabled = not new_subject
-        self.btn_new_experiment.disabled = not new_experiment
-
-        # upload
-        self.btn_upload.disabled = not upload_enabled
-
-        # home/back
-        if self.btn_home_back:
-            self.btn_home_back.text = "Back"
-
-        self._page.update()
-
-    # ------------------------------------------------------
-    # FILE PICKER
-    # ------------------------------------------------------
-    def file_picker_result(self, e):
-        if e.path:
-            self._controller.get_directory_to_upload(e.path)
-        else:
-            self.create_alert("No folder selected.")
-
-    # -------------------------------------------------------
-    # TREEVIEW RAW DATA/DICOM FILES
-    # -------------------------------------------------------
-    def map_tree_container(self, tree_type: TreeType,
-                           container: ft.Container):
-        """The container is placed in the tree map and contains the ListView inside."""
-        self._tree_map[tree_type] = container
-
-    def update_tree(self, new_widget: ft.ListView, tree_type: TreeType):
-        """Update the content of the existing container"""
-        container = self._tree_map.get(tree_type)
-        container.content = new_widget
-        self._page.update()
-
-    # ----- Lazy tree builder -----
-    def build_lazy_tree(self, items, expand_callback, file_selected_callback):
-        tiles = [
-            self._build_node(item, expand_callback, file_selected_callback)
-            for item in items
-        ]
-        return ft.ListView(controls=tiles, expand=True)
-
-    def _build_node(self, item, expand_callback, file_selected_callback):
-        if item["is_dir"]:
-            return self._make_lazy_folder(item, expand_callback)
-        return self._make_file_tile(item, file_selected_callback)
-
-    def _make_lazy_folder(self, item, expand_callback):
-        return ft.ExpansionTile(
-            leading=ft.Icon(ft.Icons.FOLDER),
-            title=ft.Text(item["name"]),
-            controls=[ft.Text("Loading...")],
-            on_change=lambda e, path=item["path"]: expand_callback(
-                e, path, e.control
+            title: str,
+            icon: str,
+            list_container: ft.Container,
+    ) -> ft.Control:
+        return ft.Container(
+            padding=12,
+            bgcolor=self.palette.surface,
+            border_radius=16,
+            border=ft.border.all(1, self.palette.surface_stronger),
+            height=280,
+            content=ft.Column(
+                spacing=8,
+                controls=[
+                    ft.Row(
+                        spacing=8,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                        controls=[
+                            ft.Icon(icon, size=18, color=self.palette.primary),
+                            ft.Text(
+                                title,
+                                size=13,
+                                weight=ft.FontWeight.W_600,
+                                color=self.palette.primary_text,
+                                font_family="Inter",
+                            ),
+                        ],
+                    ),
+                    ft.Divider(height=1, color=self.palette.surface_stronger),
+                    list_container,
+                ],
             ),
-            data=item["path"],
         )
 
-    def _make_file_tile(self, item, file_selected_callback):
-        return ft.ListTile(
-            leading=ft.Icon(ft.Icons.DESCRIPTION),
-            title=ft.Text(item["name"]),
-            on_click=lambda e, path=item["path"]: file_selected_callback(e,
-                                                                         path)
-        )
-
-    def update_expansion_tile(self, tile, children, expand_callback,
-                              file_selected_callback):
-        """ExpansionTile update already opened"""
-        tile.controls.clear()
-
-        if not children:
-            tile.controls.append(ft.Text("Empty folder"))
-        else:
-            for item in children:
-                node = self._build_node(item, expand_callback,
-                                        file_selected_callback)
-                tile.controls.append(node)
-
-    def set_selected_control(self, control: ft.Control):
-        """Highlight selected item"""
-        if self._selected_control:
-            self._clear_selection(self._selected_control)
-
-        self._apply_selection(control)
-        self._selected_control = control
-
-    def get_selected_control(self):
-        return self._selected_control
-
-    def _apply_selection(self, control: ft.Control):
-        control.bgcolor = ft.Colors.AMBER_100
-
-    def _clear_selection(self, control: ft.Control):
-        control.bgcolor = None
+    def _map_tree_container(self, tree_type: TreeType,
+                            container: ft.Container):
+        """
+        Register the container that hosts a tree ListView for updates.
+        """
+        self._tree_map[tree_type] = container
 
     # ------------------------------------------------------
     # PREVIEW IMAGE
@@ -661,39 +781,14 @@ class ViewUploader(ft.Control):
         self.dd_xnat_experiment.value = None
         self._page.update()
 
-    # ------------------------------------------------------
-    # PROGRESSBAR / ALERT
-    # ------------------------------------------------------
-    def show_progress_dialog(self):
-        self._page.open(self.dlg_upload)
-        self._page.update()
-
-    def update_progress(self, value):
-        self.pb_upload.value = value
-        self._page.update()
-
-    def create_alert(self, message):
-        dlg = ft.AlertDialog(title=ft.Text(message))
-        self._page.open(dlg)
-        self._page.update()
-
-    # ------------------------------------------------------
-    # UTILITY
-    # ------------------------------------------------------
-    def update_page(self):
-        self._page.update()
-
-    @property
-    def page(self):
-        return self._page
-
-    @property
-    def controller(self):
-        return self._controller
-
-    @controller.setter
-    def controller(self, controller):
-        self._controller = controller
-
-    def set_controller(self, controller):
-        self._controller = controller
+    @staticmethod
+    def _create_default_palette() -> Palette:
+        return Palette(
+            primary=ft.Colors.BLUE_600,
+            primary_hover=ft.Colors.BLUE_700,
+            primary_pressed=ft.Colors.BLUE_800,
+            primary_text=ft.Colors.BLUE_900,
+            surface=ft.Colors.BLUE_50,
+            surface_stronger=ft.Colors.BLUE_100,
+            subtle_text="#475569",
+        )

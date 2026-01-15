@@ -84,7 +84,7 @@ class ControllerConverter:
     # -------------------------------------------------------
     def on_convert_clicked(self, e):
         """Start the conversion and show the progress dialog."""
-        self._view.show_progress_dialog()
+        self._view.show_progress_bar_dialog()
         # threading.Thread(target=self.run_conversion, daemon=True).start()
         self._run_conversion()
 
@@ -113,8 +113,6 @@ class ControllerConverter:
                 zip(self._model.input_scans, self._model.output_scans)
         ):
             self._model.dicom_converter([str(src), str(dst)])
-
-            self._view.update_progress((idx + 1) / total_scans)
 
     def _finalize_conversion(self):
         """Update the UI after the conversion completes."""

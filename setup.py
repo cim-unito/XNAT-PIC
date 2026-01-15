@@ -1,4 +1,6 @@
+import os
 import sys
+from importlib.util import find_spec
 from cx_Freeze import setup, Executable
 
 # python setup.py bdist_msi
@@ -46,9 +48,32 @@ bdist_msi_options = {
     'data': msi_data
 }
 
+include_files = [
+    ("app_modules", "app_modules"),
+    ("assets", "assets"),
+    ("converter", "converter"),
+    ("custom_form", "custom_form"),
+    ("database", "database"),
+    ("enums", "enums"),
+    ("main_interface", "main_interface"),
+    ("route", "route"),
+    ("shared_ui", "shared_ui"),
+    ("uploader", "uploader"),
+    ("xnat_auth", "xnat_auth"),
+    ("xnat_client", "xnat_client"),
+]
+
+xnat_spec = find_spec("xnat")
+if xnat_spec and xnat_spec.submodule_search_locations:
+    xnat_pkg_dir = next(iter(xnat_spec.submodule_search_locations), None)
+    if xnat_pkg_dir:
+        header_path = os.path.join(xnat_pkg_dir, "header.py")
+        if os.path.exists(header_path):
+            include_files.append((header_path, os.path.join("lib", "xnat", "header.py")))
+
 build_exe_options = {
-    #"packages": ['ttkbootstrap'],
-    'include_files': [("controllers", ""), ("database", ""), ("models", ""), ("views", ""), ("services", "")]
+    "packages": ["flet"],
+    "include_files": include_files,
 }
 
 

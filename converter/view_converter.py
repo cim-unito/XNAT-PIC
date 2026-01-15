@@ -481,6 +481,7 @@ class ViewConverter(ft.Control):
                 controls=[
                     header_section,
                     setup_card,
+                    ft.Container(expand=True),
                     action_row,
                 ],
             ),

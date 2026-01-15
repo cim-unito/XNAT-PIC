@@ -355,6 +355,7 @@ class ViewCustomForm(ft.Control):
                     header_section,
                     setup_card,
                     form_card,
+                    ft.Container(expand=True),
                     row_home_upload,
                 ],
             ),
