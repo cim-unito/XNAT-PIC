@@ -63,54 +63,21 @@ class ControllerCustomForm:
             self._view.set_initial_state()
 
     # ==========================================================
-    # SET MODE
-    # ==========================================================
-    def _set_mode_for_level(self, level):
-        if level == CustomFormLevel.PROJECT:
-            self._view.set_mode(
-                level_buttons_enabled=False,
-                save_enabled=True,
-                dd_project=True,
-                dd_subject=False,
-                dd_experiment=False,
-                custom_field_text=True,
-            )
-        elif level == CustomFormLevel.SUBJECT:
-            self._view.set_mode(
-                level_buttons_enabled=False,
-                save_enabled=True,
-                dd_project=True,
-                dd_subject=True,
-                dd_experiment=False,
-                custom_field_text=True,
-            )
-        elif level == CustomFormLevel.EXPERIMENT:
-            self._view.set_mode(
-                level_buttons_enabled=False,
-                save_enabled=True,
-                dd_project=True,
-                dd_subject=True,
-                dd_experiment=True,
-                custom_field_text=True,
-            )
-
-        self.load_projects()
-
-    # -------------------------------------------------------
     # SET LEVEL (PROJECT / SUBJECT / EXPERIMENT)
-    # -------------------------------------------------------
-    def set_level(self, level):
-        self._model.level = level
-        self._set_mode_for_level(level)
-
-    def custom_forms_project(self, e):
-        self.set_level(CustomFormLevel.PROJECT)
+    # ==========================================================
+    def custom_forms_project(self, level):
+        """Add/edit custom form at project-level."""
+        self._set_level(CustomFormLevel.PROJECT)
 
     def custom_forms_subject(self, e):
-        self.set_level(CustomFormLevel.SUBJECT)
+        """Add/edit custom form at subject-level."""
+        self._set_level(CustomFormLevel.SUBJECT)
 
     def custom_forms_experiment(self, e):
-        self.set_level(CustomFormLevel.EXPERIMENT)
+        """Add/edit custom form at experiment-level."""
+        self._set_level(CustomFormLevel.EXPERIMENT)
+
+        self.load_projects()
 
     # ==========================================================
     # DROPDOWN PROJECT / SUBJECT / EXPERIMENT XNAT
@@ -230,3 +197,15 @@ class ControllerCustomForm:
             self._view.create_alert("Custom fields saved successfully.")
         except Exception as exc:
             self._view.create_alert(f"Cannot save custom fields: {exc}")
+
+    def _set_level(self, level):
+        self._model.level = level
+        """Set the custom forms level and update the view mode."""
+        if level == CustomFormLevel.PROJECT:
+            self._view.set_mode(xnat_subject=False, xnat_experiment=False)
+        elif level == CustomFormLevel.SUBJECT:
+            self._view.set_mode(xnat_subject=True, xnat_experiment=False)
+        elif level == CustomFormLevel.EXPERIMENT:
+            self._view.set_mode(xnat_subject=True, xnat_experiment=True)
+
+        self.load_projects()

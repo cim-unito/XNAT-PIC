@@ -27,3 +27,35 @@ class Buttons:
             elevation=2,
             animation_duration=250,
         )
+
+    @staticmethod
+    def build_text_button(
+            label: str,
+            style: ft.ButtonStyle,
+            *,
+            tooltip: str | None = None,
+            expand: bool = True,
+            icon: ft.Control | None = None,
+            text_control: ft.Text | None = None,
+    ) -> ft.ElevatedButton:
+        controls = []
+        if icon is not None:
+            controls.append(icon)
+        if text_control is None:
+            text_control = ft.Text(
+                value=label,
+                size=16,
+                weight=ft.FontWeight.W_600,
+                font_family="Inter",
+            )
+        controls.append(text_control)
+        return ft.ElevatedButton(
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=controls,
+            ),
+            tooltip=tooltip,
+            style=style,
+            expand=expand,
+        )
