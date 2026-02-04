@@ -28,23 +28,14 @@ class Button:
         color: dict[ft.ControlState | str, str] | None = None,
     ) -> ft.ButtonStyle:
         if bgcolor is None:
-            bgcolor = {
-                ft.ControlState.DEFAULT: palette.primary,
-                ft.ControlState.HOVERED: palette.primary_hover,
-                ft.ControlState.FOCUSED: palette.primary_hover,
-                ft.ControlState.PRESSED: palette.primary_pressed,
-                ft.ControlState.DISABLED: palette.surface_stronger,
-            }
+            bgcolor = Button._default_bgcolor(palette)
         if color is None:
-            color = {
-                ft.ControlState.DEFAULT: text_color,
-                ft.ControlState.HOVERED: text_color,
-                ft.ControlState.FOCUSED: text_color,
-                ft.ControlState.PRESSED: text_color,
-                ft.ControlState.DISABLED: disabled_text_color,
-            }
-            bgcolor = Button._normalize_state_colors(bgcolor)
-            color = Button._normalize_state_colors(color)
+            color = Button._default_text_colors(
+                text_color=text_color,
+                disabled_text_color=disabled_text_color,
+            )
+        bgcolor = Button._normalize_state_colors(bgcolor)
+        color = Button._normalize_state_colors(color)
         return ft.ButtonStyle(
             bgcolor=bgcolor,
             color=color,
@@ -123,9 +114,41 @@ class Button:
     @staticmethod
     def _normalize_state_colors(
         state_colors: dict[ft.ControlState | str, str],
-    ) -> dict[str, str]:
-        normalized: dict[str, str] = {}
+    ) -> dict[ft.ControlState, str]:
+        normalized: dict[ft.ControlState, str] = {}
         for state, value in state_colors.items():
-            key = state.value if isinstance(state, ft.ControlState) else str(state)
+            if isinstance(state, ft.ControlState):
+                key = state
+            else:
+                try:
+                    key = ft.ControlState(state)
+                except ValueError as exc:
+                    raise ValueError(
+                        f"Unknown control state key: {state!r}"
+                    ) from exc
             normalized[key] = value
         return normalized
+
+    @staticmethod
+    def _default_bgcolor(palette: Palette) -> dict[ft.ControlState, str]:
+        return {
+            ft.ControlState.DEFAULT: palette.primary,
+            ft.ControlState.HOVERED: palette.primary_hover,
+            ft.ControlState.FOCUSED: palette.primary_hover,
+            ft.ControlState.PRESSED: palette.primary_pressed,
+            ft.ControlState.DISABLED: palette.surface_stronger,
+        }
+
+    @staticmethod
+    def _default_text_colors(
+        *,
+        text_color: str,
+        disabled_text_color: str,
+    ) -> dict[ft.ControlState, str]:
+        return {
+            ft.ControlState.DEFAULT: text_color,
+            ft.ControlState.HOVERED: text_color,
+            ft.ControlState.FOCUSED: text_color,
+            ft.ControlState.PRESSED: text_color,
+            ft.ControlState.DISABLED: disabled_text_color,
+        }

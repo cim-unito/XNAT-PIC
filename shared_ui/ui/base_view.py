@@ -7,6 +7,11 @@ class BaseView(ft.Control):
         self._page = page
         self._controller = None
 
+        self.file_picker = None
+        self.btn_home_back = None
+        self.icon_home_back = None
+        self.txt_home_back = None
+
     def create_alert(self, message):
         dlg = ft.AlertDialog(title=ft.Text(message))
         self._page.open(dlg)
@@ -27,13 +32,6 @@ class BaseView(ft.Control):
         if getattr(self, "btn_home_back", None):
             self.btn_home_back.disabled = not enabled
 
-    def reset_dropdowns(self, dropdowns, reset_options=True):
-        for dd in dropdowns:
-            if reset_options:
-                dd.options = []
-            dd.key = "Select"
-            dd.value = None
-
     @property
     def controller(self):
         return self._controller
@@ -53,8 +51,19 @@ class BaseView(ft.Control):
     def set_controller(self, controller):
         self._controller = controller
 
+    @staticmethod
+    def reset_dropdowns(dropdowns, reset_options=True):
+        for dd in dropdowns:
+            if reset_options:
+                dd.options = []
+            dd.key = "Select"
+            dd.value = None
 
 class AuthDialogMixin:
+    def __init__(self):
+        self._page = None
+        self._dlg_auth = None
+
     def open_auth_dialog(self, dlg):
         self._dlg_auth = dlg
         self._page.open(dlg)
@@ -68,6 +77,12 @@ class AuthDialogMixin:
 
 
 class XnatDropdownMixin:
+    def __init__(self):
+        self._page = None
+        self.dd_xnat_project = None
+        self.dd_xnat_subject = None
+        self.dd_xnat_experiment = None
+
     def populate_projects(self, projects):
         self.dd_xnat_project.options = [
             ft.dropdown.Option(key=p["id"], text=p["label"]) for p in projects
