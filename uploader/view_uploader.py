@@ -2,9 +2,11 @@ import flet as ft
 
 from enums.dicom_modality import DicomModality
 from enums.tree_type import TreeType
-from shared_ui.ui.button import Button
-from shared_ui.ui.palette import Palette
 from shared_ui.ui.base_view import BaseView, AuthDialogMixin, XnatDropdownMixin
+from shared_ui.ui.button import Button
+from shared_ui.ui.header import build_header
+from shared_ui.ui.palette import Palette, default_palette
+from shared_ui.ui.section_card import build_section_card
 
 
 class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
@@ -43,11 +45,9 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         # progressbar
         self.pb_upload = None
         self.dlg_upload = None
-        # dialog
-        self._dlg_auth = None
 
         # palette
-        self.palette = self._create_default_palette()
+        self.palette = default_palette()
 
         # map enum → container
         self._tree_map: dict[TreeType, ft.Container] = {}
@@ -88,18 +88,14 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
             c.disabled = True
 
         # Reset home/back
-        self.set_home_back_state(is_home=True)
-        self.btn_home_back.disabled = False
+        self.set_home_back_state("Home", ft.Icons.HOME, enabled=True)
 
         # Reset dropdowns
-        for dd in [
+        self.reset_dropdowns([
             self.dd_xnat_project,
             self.dd_xnat_subject,
-            self.dd_xnat_experiment
-        ]:
-            dd.options = []
-            dd.key = "Select"
-            dd.value = None
+            self.dd_xnat_experiment,
+        ])
 
         # Reset preview & tree
         if self.tree_view_dcm_list:
@@ -146,7 +142,7 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         self.btn_upload.disabled = False
 
         # home/back
-        self.set_home_back_state(is_home=False)
+        self.set_home_back_state("Back", ft.Icons.ARROW_BACK, enabled=True)
 
         self._page.update()
 
@@ -156,10 +152,6 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         self.img_preview.src_bytes = None
         self.img_preview.src = None
         self.img_preview.src = "assets/images/ImagePreview.png"
-
-    def open_directory_picker(self):
-        """Open the directory picker dialog."""
-        self.file_picker.get_directory_path()
 
     def update_tree(self, new_widget: ft.ListView, tree_type: TreeType):
         """Replace the list view for the given tree type and refresh the UI."""
@@ -198,96 +190,31 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         btn_style = Button().create_button_style(self.palette)
 
         # title
-        self.title = ft.Container(
-            content=ft.Row(
-                [
-                    ft.Container(
-                        width=52,
-                        height=52,
-                        border_radius=16,
-                        bgcolor=self.palette.surface_stronger,
-                        alignment=ft.alignment.center,
-                        content=ft.Icon(
-                            ft.Icons.CLOUD_UPLOAD,
-                            size=30,
-                            color=self.palette.primary,
-                        ),
-                    ),
-                    ft.Text(
-                        value="XNAT-PIC Uploader",
-                        size=32,
-                        weight=ft.FontWeight.W_700,
-                        color=self.palette.primary_text,
-                        font_family="Inter",
-                    ),
-                ],
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=16,
-            ),
-            bgcolor=self.palette.surface,
-            padding=ft.padding.symmetric(horizontal=18, vertical=12),
-            border_radius=20,
+        self.title = build_header(
+            title="XNAT-PIC Uploader",
+            icon=ft.Icons.CLOUD_UPLOAD,
+            palette=self.palette,
         )
 
         # level buttons: project, subject, experiment, file
-        self.btn_project = ft.ElevatedButton(
-            content=ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=10,
-                controls=[
-                    ft.Text(value="Upload Project",
-                            size=16,
-                            weight=ft.FontWeight.W_600,
-                            font_family="Inter"),
-                ],
-            ),
-            style=btn_style,
-            expand=True,
+        self.btn_project = Button.build_text_button(
+            "Upload Project",
+            btn_style,
             tooltip="Select the project to upload",
         )
-        self.btn_subject = ft.ElevatedButton(
-            content=ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=10,
-                controls=[
-                    ft.Text(value="Upload Subject",
-                            size=16,
-                            weight=ft.FontWeight.W_600,
-                            font_family="Inter"),
-                ],
-            ),
-            style=btn_style,
-            expand=True,
+        self.btn_subject = Button.build_text_button(
+            "Upload Subject",
+            btn_style,
             tooltip="Select the subject to upload",
         )
-        self.btn_experiment = ft.ElevatedButton(
-            content=ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=10,
-                controls=[
-                    ft.Text(value="Upload Experiment",
-                            size=16,
-                            weight=ft.FontWeight.W_600,
-                            font_family="Inter"),
-                ],
-            ),
-            style=btn_style,
-            expand=True,
+        self.btn_experiment = Button.build_text_button(
+            "Upload Experiment",
+            btn_style,
             tooltip="Select the experiment to upload",
         )
-        self.btn_file = ft.ElevatedButton(
-            content=ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=10,
-                controls=[
-                    ft.Text(value="Upload File",
-                            size=16,
-                            weight=ft.FontWeight.W_600,
-                            font_family="Inter"),
-                ],
-            ),
-            style=btn_style,
-            expand=True,
+        self.btn_file = Button.build_text_button(
+            "Upload File",
+            btn_style,
             tooltip="Select the file to upload",
         )
 
@@ -435,49 +362,19 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         )
 
         # xnat new project, subject, experiment
-        self.btn_new_project = ft.ElevatedButton(
-            content=ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=10,
-                controls=[
-                    ft.Text(value="New Project",
-                            size=16,
-                            weight=ft.FontWeight.W_600,
-                            font_family="Inter"),
-                ],
-            ),
-            style=btn_style,
-            expand=True,
+        self.btn_new_project = Button.build_text_button(
+            "New Project",
+            btn_style,
             tooltip="Create a new project on XNAT",
         )
-        self.btn_new_subject = ft.ElevatedButton(
-            content=ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=10,
-                controls=[
-                    ft.Text(value="New Subject",
-                            size=16,
-                            weight=ft.FontWeight.W_600,
-                            font_family="Inter"),
-                ],
-            ),
-            style=btn_style,
-            expand=True,
+        self.btn_new_subject = Button.build_text_button(
+            "New Subject",
+            btn_style,
             tooltip="Create a new subject on XNAT",
         )
-        self.btn_new_experiment = ft.ElevatedButton(
-            content=ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=10,
-                controls=[
-                    ft.Text(value="New experiment",
-                            size=16,
-                            weight=ft.FontWeight.W_600,
-                            font_family="Inter"),
-                ],
-            ),
-            style=btn_style,
-            expand=True,
+        self.btn_new_experiment = Button.build_text_button(
+            "New Experiment",
+            btn_style,
             tooltip="Create a new experiment on XNAT",
         )
 
@@ -489,32 +386,16 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
             font_family="Inter",
         )
         self.icon_home_back = ft.Icon(ft.Icons.HOME, size=26)
-        self.btn_home_back = ft.ElevatedButton(
-            content=ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=10,
-                controls=[
-                    self.icon_home_back,
-                    self.txt_home_back,
-                ],
-            ),
-            style=btn_style,
-            expand=True,
+        self.btn_home_back = Button.build_text_button(
+            "Go home",
+            btn_style,
+            icon=self.icon_home_back,
+            text_control=self.txt_home_back,
         )
-        self.btn_upload = ft.ElevatedButton(
-            content=ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=10,
-                controls=[
-                    ft.Icon(ft.Icons.CLOUD_UPLOAD, size=26),
-                    ft.Text(value="Upload",
-                            size=16,
-                            weight=ft.FontWeight.W_600,
-                            font_family="Inter"),
-                ],
-            ),
-            style=btn_style,
-            expand=True,
+        self.btn_upload = Button.build_text_button(
+            "Upload",
+            btn_style,
+            icon=ft.Icon(ft.Icons.CLOUD_UPLOAD, size=26),
         )
 
         # progressbar dialog
@@ -634,7 +515,7 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         )
 
-        local_section = self._build_section_card(
+        local_section = build_section_card(
             title="Upload from your PC",
             description=(
                 "Choose the source level and review the DICOM preview before "
@@ -648,9 +529,10 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
                     row_file,
                 ],
             ),
+            palette=self.palette,
         )
 
-        xnat_section = self._build_section_card(
+        xnat_section = build_section_card(
             title="To XNAT",
             description=(
                 "Select the destination project, subject, and experiment or "
@@ -664,6 +546,7 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
                     row_new,
                 ],
             ),
+            palette=self.palette,
         )
 
         self._main_layout = ft.Container(
@@ -680,67 +563,6 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
                     ft.Container(expand=True),
                     row_home_upload,
                 ],
-            ),
-        )
-
-    def _build_section_card(
-            self,
-            title: str,
-            description: str,
-            icon: str,
-            content: ft.Control,
-    ) -> ft.Control:
-        return ft.Container(
-            content=ft.Card(
-                color=self.palette.surface,
-                surface_tint_color=self.palette.primary,
-                elevation=3,
-                shape=ft.RoundedRectangleBorder(radius=18),
-                content=ft.Container(
-                    padding=18,
-                    content=ft.Column(
-                        spacing=12,
-                        controls=[
-                            ft.Row(
-                                spacing=12,
-                                vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                                controls=[
-                                    ft.Container(
-                                        width=36,
-                                        height=36,
-                                        border_radius=10,
-                                        bgcolor=self.palette.surface_stronger,
-                                        alignment=ft.alignment.center,
-                                        content=ft.Icon(
-                                            icon,
-                                            size=20,
-                                            color=self.palette.primary,
-                                        ),
-                                    ),
-                                    ft.Column(
-                                        spacing=2,
-                                        controls=[
-                                            ft.Text(
-                                                title,
-                                                size=16,
-                                                weight=ft.FontWeight.W_600,
-                                                color=self.palette.primary_text,
-                                                font_family="Inter",
-                                            ),
-                                            ft.Text(
-                                                description,
-                                                size=12,
-                                                color=self.palette.subtle_text,
-                                                font_family="Inter",
-                                            ),
-                                        ],
-                                    ),
-                                ],
-                            ),
-                            content,
-                        ],
-                    ),
-                ),
             ),
         )
 
@@ -825,12 +647,4 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
 
     @staticmethod
     def _create_default_palette() -> Palette:
-        return Palette(
-            primary=ft.Colors.BLUE_600,
-            primary_hover=ft.Colors.BLUE_700,
-            primary_pressed=ft.Colors.BLUE_800,
-            primary_text=ft.Colors.BLUE_900,
-            surface=ft.Colors.BLUE_50,
-            surface_stronger=ft.Colors.BLUE_100,
-            subtle_text="#475569",
-        )
+        return default_palette()

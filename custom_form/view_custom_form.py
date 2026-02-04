@@ -1,8 +1,11 @@
 import flet as ft
 
-from shared_ui.ui.button import Button
-from shared_ui.ui.palette import Palette
 from shared_ui.ui.base_view import BaseView, AuthDialogMixin, XnatDropdownMixin
+from shared_ui.ui.button import Button
+from shared_ui.ui.header import build_header
+from shared_ui.ui.palette import Palette, default_palette
+from shared_ui.ui.section_card import build_section_card
+
 
 class ViewCustomForm(BaseView, AuthDialogMixin, XnatDropdownMixin):
     def __init__(self, page: ft.Page):
@@ -34,11 +37,9 @@ class ViewCustomForm(BaseView, AuthDialogMixin, XnatDropdownMixin):
         # progressbar
         self.pb_custom_form = None
         self.dlg_custom_form = None
-        # dialog
-        self._dlg_auth = None
 
         # palette
-        self.palette = self._create_default_palette()
+        self.palette = default_palette()
 
     # ------------------------------------------------------
     # BUILD CUSTOM FORM
@@ -53,91 +54,31 @@ class ViewCustomForm(BaseView, AuthDialogMixin, XnatDropdownMixin):
     def _build_controls(self):
         """Graphical elements"""
         # button style
-        btn_style = Buttons().create_button_style(self.palette)
+        btn_style = Button.create_button_style(self.palette)
 
         # title
-        self.title = ft.Container(
-            content=ft.Row(
-                [
-                    ft.Container(
-                        width=52,
-                        height=52,
-                        border_radius=16,
-                        bgcolor=self.palette.surface_stronger,
-                        alignment=ft.alignment.center,
-                        content=ft.Icon(
-                            ft.Icons.DATASET,
-                            size=30,
-                            color=self.palette.primary,
-                        ),
-                    ),
-                    ft.Text(
-                        value="XNAT-PIC Custom Form",
-                        size=32,
-                        weight=ft.FontWeight.W_700,
-                        color=self.palette.primary_text,
-                        font_family="Inter",
-                    ),
-                ],
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=16,
-            ),
-            bgcolor=self.palette.surface,
-            padding=ft.padding.symmetric(horizontal=18, vertical=12),
-            border_radius=20,
+        self.title = build_header(
+            title="XNAT-PIC Custom Form",
+            icon=ft.Icons.DATASET,
+            palette=self.palette,
         )
 
         # level buttons: project, subject, experiment
-        self.btn_project = ft.ElevatedButton(
-            content=ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=10,
-                controls=[
-                    ft.Text(
-                        value="Project",
-                        size=16,
-                        weight=ft.FontWeight.W_600,
-                        font_family="Inter",
-                    ),
-                ],
-            ),
+        self.btn_project = Button.build_text_button(
+            "Project",
+            btn_style,
             tooltip="Select the project where to save the custom forms",
-            style=btn_style,
-            expand=True,
         )
-        self.btn_subject = ft.ElevatedButton(
-            content=ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=10,
-                controls=[
-                    ft.Text(
-                        value="Subject",
-                        size=16,
-                        weight=ft.FontWeight.W_600,
-                        font_family="Inter",
-                    ),
-                ],
-            ),
+        self.btn_subject = Button.build_text_button(
+            "Subject",
+            btn_style,
             tooltip="Select the subject where to save the custom forms",
-            style=btn_style,
-            expand=True,
+
         )
-        self.btn_experiment = ft.ElevatedButton(
-            content=ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=10,
-                controls=[
-                    ft.Text(
-                        value="Experiment",
-                        size=16,
-                        weight=ft.FontWeight.W_600,
-                        font_family="Inter",
-                    ),
-                ],
-            ),
+        self.btn_experiment = Button.build_text_button(
+            "Experiment",
+            btn_style,
             tooltip="Select the experiment where to save the custom forms",
-            style=btn_style,
-            expand=True,
         )
 
         # xnat dropdowns project, subject, experiment
@@ -200,34 +141,16 @@ class ViewCustomForm(BaseView, AuthDialogMixin, XnatDropdownMixin):
             font_family="Inter",
         )
         self.icon_home_back = ft.Icon(ft.Icons.HOME, size=26)
-        self.btn_home_back = ft.ElevatedButton(
-            content=ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=10,
-                controls=[
-                    self.icon_home_back,
-                    self.txt_home_back,
-                ],
-            ),
-            style=btn_style,
-            expand=True,
+        self.btn_home_back = Button.build_text_button(
+            "Home",
+            btn_style,
+            icon=self.icon_home_back,
+            text_control=self.txt_home_back,
         )
-        self.btn_save = ft.ElevatedButton(
-            content=ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=10,
-                controls=[
-                    ft.Icon(ft.Icons.DATASET, size=26),
-                    ft.Text(
-                        value="Save",
-                        size=16,
-                        weight=ft.FontWeight.W_600,
-                        font_family="Inter",
-                    ),
-                ],
-            ),
-            style=btn_style,
-            expand=True,
+        self.btn_save = Button.build_text_button(
+            "Save",
+            btn_style,
+            icon=ft.Icon(ft.Icons.DATASET, size=26),
         )
 
     def _bind_events(self):
@@ -300,7 +223,7 @@ class ViewCustomForm(BaseView, AuthDialogMixin, XnatDropdownMixin):
             ],
         )
 
-        setup_card = self._build_section_card(
+        setup_card = build_section_card(
             title="XNAT selection",
             description=(
                 "Choose the level and select the project, subject, and "
@@ -314,13 +237,15 @@ class ViewCustomForm(BaseView, AuthDialogMixin, XnatDropdownMixin):
                     row_dd,
                 ],
             ),
+            palette=self.palette,
         )
 
-        form_card = self._build_section_card(
+        form_card = build_section_card(
             title="Custom form data",
             description="Fill in the group, timepoint, and dose values.",
             icon=ft.Icons.TEXT_FIELDS,
             content=row_custom_form,
+            palette=self.palette,
         )
 
         row_home_upload = ft.Row(
@@ -367,18 +292,14 @@ class ViewCustomForm(BaseView, AuthDialogMixin, XnatDropdownMixin):
             c.disabled = True
 
         # Reset home/back
-        self.set_home_back_state(is_home=True)
-        self.btn_home_back.disabled = False
+        self.set_home_back_state("Home", ft.Icons.HOME, enabled=True)
 
         # Reset dropdowns
-        for dd in [
+        self.reset_dropdowns([
             self.dd_xnat_project,
             self.dd_xnat_subject,
-            self.dd_xnat_experiment
-        ]:
-            dd.options = []
-            dd.key = "Select"
-            dd.value = None
+            self.dd_xnat_experiment,
+        ])
 
         # Reset custom forms
         self.txt_group.value = ""
@@ -424,7 +345,7 @@ class ViewCustomForm(BaseView, AuthDialogMixin, XnatDropdownMixin):
         self.btn_save.disabled = not save_enabled
 
         # home/back
-        self.set_home_back_state(is_home=False)
+        self.set_home_back_state("Back", ft.Icons.ARROW_BACK, enabled=True)
 
         self._page.update()
 
@@ -437,75 +358,7 @@ class ViewCustomForm(BaseView, AuthDialogMixin, XnatDropdownMixin):
         self.txt_dose.value = dose or ""
         self._page.update()
 
-    def _build_section_card(
-            self,
-            title: str,
-            description: str,
-            icon: str,
-            content: ft.Control,
-    ) -> ft.Control:
-        return ft.Container(
-            content=ft.Card(
-                color=self.palette.surface,
-                surface_tint_color=self.palette.primary,
-                elevation=3,
-                shape=ft.RoundedRectangleBorder(radius=18),
-                content=ft.Container(
-                    padding=18,
-                    content=ft.Column(
-                        spacing=12,
-                        controls=[
-                            ft.Row(
-                                spacing=12,
-                                vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                                controls=[
-                                    ft.Container(
-                                        width=36,
-                                        height=36,
-                                        border_radius=10,
-                                        bgcolor=self.palette.surface_stronger,
-                                        alignment=ft.alignment.center,
-                                        content=ft.Icon(
-                                            icon,
-                                            size=20,
-                                            color=self.palette.primary,
-                                        ),
-                                    ),
-                                    ft.Column(
-                                        spacing=2,
-                                        controls=[
-                                            ft.Text(
-                                                title,
-                                                size=16,
-                                                weight=ft.FontWeight.W_600,
-                                                color=self.palette.primary_text,
-                                                font_family="Inter",
-                                            ),
-                                            ft.Text(
-                                                description,
-                                                size=12,
-                                                color=self.palette.subtle_text,
-                                                font_family="Inter",
-                                            ),
-                                        ],
-                                    ),
-                                ],
-                            ),
-                            content,
-                        ],
-                    ),
-                ),
-            ),
-        )
 
     @staticmethod
     def _create_default_palette() -> Palette:
-        return Palette(
-            primary=ft.Colors.BLUE_600,
-            primary_hover=ft.Colors.BLUE_700,
-            primary_pressed=ft.Colors.BLUE_800,
-            primary_text=ft.Colors.BLUE_900,
-            surface=ft.Colors.BLUE_50,
-            surface_stronger=ft.Colors.BLUE_100,
-            subtle_text="#475569",
-        )
+        return default_palette()

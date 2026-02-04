@@ -36,9 +36,6 @@ class ViewConverter(BaseView):
         self.pb_conversion = None
         self.dlg_conversion = None
 
-        # layout
-        self._main_layout = None
-
         # palette
         self.palette = default_palette()
 
@@ -155,8 +152,7 @@ class ViewConverter(BaseView):
 
     def _build_controls(self):
         """Instantiate and configure all UI controls used by the view."""
-        xnat_pic_button = Button()
-        btn_style = xnat_pic_button.create_button_style(self.palette)
+        btn_style = Button.create_button_style(self.palette)
         # title
         self.title = build_header(
             title="XNAT-PIC Converter",
@@ -175,17 +171,17 @@ class ViewConverter(BaseView):
         )
 
         # level buttons: project, subject, experiment
-        self.btn_project = xnat_pic_button.build_text_button(
+        self.btn_project = Button.build_text_button(
             "Convert Project",
             btn_style,
             tooltip="Select the project to convert",
         )
-        self.btn_subject = xnat_pic_button.build_text_button(
+        self.btn_subject = Button.build_text_button(
             "Convert Subject",
             btn_style,
             tooltip="Select the subject to convert",
         )
-        self.btn_experiment = xnat_pic_button.build_text_button(
+        self.btn_experiment = Button.build_text_button(
             "Convert Experiment",
             btn_style,
             tooltip="Select the experiment to convert",
@@ -241,13 +237,13 @@ class ViewConverter(BaseView):
             font_family="Inter",
         )
         self.icon_home_back = ft.Icon(ft.Icons.HOME, size=26)
-        self.btn_home_back = xnat_pic_button.build_text_button(
+        self.btn_home_back = Button.build_text_button(
             "Go home",
             btn_style,
             icon=self.icon_home_back,
             text_control=self.txt_home_back,
         )
-        self.btn_convert = xnat_pic_button.build_text_button(
+        self.btn_convert = Button.build_text_button(
             "Convert",
             btn_style,
             icon=ft.Icon(ft.Icons.CHANGE_CIRCLE, size=26),

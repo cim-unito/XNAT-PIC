@@ -1,7 +1,4 @@
-from __future__ import annotations
-
 import flet as ft
-from typing import Optional
 
 
 class BaseView(ft.Control):
@@ -9,18 +6,7 @@ class BaseView(ft.Control):
         super().__init__()
         self._page = page
         self._controller = None
-        self._dlg_auth = None
-
-    def open_auth_dialog(self, dlg):
-        self._dlg_auth = dlg
-        self._page.open(dlg)
-        self._page.update()
-
-    def close_auth_dialog(self):
-        if self._dlg_auth:
-            self._page.close(self._dlg_auth)
-            self._dlg_auth = None
-            self._page.update()
+        self._main_layout = None
 
     def create_alert(self, message):
         dlg = ft.AlertDialog(title=ft.Text(message))
@@ -70,9 +56,6 @@ class BaseView(ft.Control):
 
 
 class AuthDialogMixin:
-    _dlg_auth: Optional[ft.AlertDialog]
-    _page: ft.Page
-
     def open_auth_dialog(self, dlg):
         self._dlg_auth = dlg
         self._page.open(dlg)
@@ -86,11 +69,6 @@ class AuthDialogMixin:
 
 
 class XnatDropdownMixin:
-    dd_xnat_project: ft.Dropdown
-    dd_xnat_subject: ft.Dropdown
-    dd_xnat_experiment: ft.Dropdown
-    _page: ft.Page
-
     def populate_projects(self, projects):
         self.dd_xnat_project.options = [
             ft.dropdown.Option(key=p["id"], text=p["label"]) for p in projects

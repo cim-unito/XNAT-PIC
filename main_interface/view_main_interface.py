@@ -1,6 +1,6 @@
 import flet as ft
 
-from shared_ui.ui.buttons import Buttons
+from shared_ui.ui.button import Button
 from shared_ui.ui.palette import Palette
 
 
@@ -71,7 +71,7 @@ class ViewMainInterface(ft.Control):
 
     def _build_controls(self):
         """Instantiate and configure all UI controls used by the view."""
-        btn_style = Buttons().create_button_style(self.palette)
+        btn_style = Button.create_button_style(self.palette)
 
         # logo euro-bioimaging
         self.img_euro_bioimaging = ft.Image(
