@@ -2,17 +2,14 @@ import flet as ft
 
 from enums.dicom_modality import DicomModality
 from enums.tree_type import TreeType
-from shared_ui.ui.buttons import Buttons
+from shared_ui.ui.button import Button
 from shared_ui.ui.palette import Palette
+from shared_ui.ui.base_view import BaseView, AuthDialogMixin, XnatDropdownMixin
 
 
-class ViewUploader(ft.Control):
+class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
     def __init__(self, page: ft.Page):
-        super().__init__()
-        self._page = page
-        # controller (it is not initialized. Must be initialized in the main,
-        # after the controller is created)
-        self._controller = None
+        super().__init__(page)
 
         # graphical elements
         self.title = None
@@ -49,25 +46,11 @@ class ViewUploader(ft.Control):
         # dialog
         self._dlg_auth = None
 
-        # layout
-        self._main_layout = None
-
         # palette
         self.palette = self._create_default_palette()
 
         # map enum → container
         self._tree_map: dict[TreeType, ft.Container] = {}
-
-    def open_auth_dialog(self, dlg):
-        self._dlg_auth = dlg
-        self._page.open(dlg)
-        self._page.update()
-
-    def close_auth_dialog(self):
-        if self._dlg_auth:
-            self._page.close(self._dlg_auth)
-            self._dlg_auth = None
-            self._page.update()
 
     def build_interface(self):
         """Create and return the main layout for the uploader view.
@@ -105,10 +88,7 @@ class ViewUploader(ft.Control):
             c.disabled = True
 
         # Reset home/back
-        if self.txt_home_back:
-            self.txt_home_back.value = "Home"
-        if self.icon_home_back:
-            self.icon_home_back.name = ft.Icons.HOME
+        self.set_home_back_state(is_home=True)
         self.btn_home_back.disabled = False
 
         # Reset dropdowns
@@ -166,10 +146,7 @@ class ViewUploader(ft.Control):
         self.btn_upload.disabled = False
 
         # home/back
-        if self.txt_home_back:
-            self.txt_home_back.value = "Back"
-        if self.icon_home_back:
-            self.icon_home_back.name = ft.Icons.ARROW_BACK
+        self.set_home_back_state(is_home=False)
 
         self._page.update()
 
@@ -202,16 +179,6 @@ class ViewUploader(ft.Control):
         self.pb_upload.value = value
         self._page.update()
 
-    def create_alert(self, message):
-        """Show a simple alert dialog with the given message."""
-        dlg = ft.AlertDialog(title=ft.Text(message))
-        self._page.open(dlg)
-        self._page.update()
-
-    def update_page(self):
-        """Force a UI refresh on the current page."""
-        self._page.update()
-
     def file_picker_result(self, e: ft.FilePickerResultEvent):
         """
         Handle file picker results and delegate processing to the controller.
@@ -226,28 +193,9 @@ class ViewUploader(ft.Control):
             self.create_alert("No folder selected.")
             self.set_initial_state()
 
-    @property
-    def controller(self):
-        return self._controller
-
-    @controller.setter
-    def controller(self, controller):
-        self._controller = controller
-
-    @property
-    def page(self):
-        return self._page
-
-    @page.setter
-    def page(self, page):
-        self._page = page
-
-    def set_controller(self, controller):
-        self._controller = controller
-
     def _build_controls(self):
         """Instantiate and configure all UI controls used by the view."""
-        btn_style = Buttons().create_button_style(self.palette)
+        btn_style = Button().create_button_style(self.palette)
 
         # title
         self.title = ft.Container(
@@ -873,42 +821,6 @@ class ViewUploader(ft.Control):
             modal=True,
         )
         self._page.open(dlg)
-        self._page.update()
-
-    # ------------------------------------------------------
-    # FILL DROPDOWN WITH VALUES READ IN XNAT
-    # ------------------------------------------------------
-    def reset_dropdown(self, dd):
-        dd.options = []
-        dd.value = None
-
-    def populate_projects(self, projects):
-        self.dd_xnat_project.options = [
-            ft.dropdown.Option(key=p["id"], text=p["label"]) for p in projects
-        ]
-        self.dd_xnat_project.value = None
-
-        self.reset_dropdown(self.dd_xnat_subject)
-        self.reset_dropdown(self.dd_xnat_experiment)
-
-        self._page.update()
-
-    def populate_subjects(self, subjects):
-        self.dd_xnat_subject.options = [
-            ft.dropdown.Option(key=s["id"], text=s["label"]) for s in subjects
-        ]
-        self.dd_xnat_subject.value = None
-
-        self.reset_dropdown(self.dd_xnat_experiment)
-
-        self._page.update()
-
-    def populate_experiments(self, experiments):
-        self.dd_xnat_experiment.options = [
-            ft.dropdown.Option(key=e["id"], text=e["label"]) for e in
-            experiments
-        ]
-        self.dd_xnat_experiment.value = None
         self._page.update()
 
     @staticmethod

@@ -1,11 +1,12 @@
 import flet as ft
 
-from shared_ui.ui.buttons import Buttons
+from shared_ui.ui.button import Button
 from shared_ui.ui.palette import Palette
+from shared_ui.ui.base_view import BaseView, AuthDialogMixin, XnatDropdownMixin
 
-class ViewCustomForm(ft.Control):
+class ViewCustomForm(BaseView, AuthDialogMixin, XnatDropdownMixin):
     def __init__(self, page: ft.Page):
-        super().__init__()
+        super().__init__(page)
         self._page = page
         # controller (it is not initialized. Must be initialized in the main,
         # after the controller is created)
@@ -36,25 +37,8 @@ class ViewCustomForm(ft.Control):
         # dialog
         self._dlg_auth = None
 
-        # layout
-        self._main_layout = None
-
         # palette
         self.palette = self._create_default_palette()
-
-    # ------------------------------------------------------
-    # AUTH DIALOG
-    # ------------------------------------------------------
-    def open_auth_dialog(self, dlg):
-        self._dlg_auth = dlg
-        self._page.open(dlg)
-        self._page.update()
-
-    def close_auth_dialog(self):
-        if self._dlg_auth:
-            self._page.close(self._dlg_auth)
-            self._dlg_auth = None
-            self._page.update()
 
     # ------------------------------------------------------
     # BUILD CUSTOM FORM
@@ -383,10 +367,7 @@ class ViewCustomForm(ft.Control):
             c.disabled = True
 
         # Reset home/back
-        if self.txt_home_back:
-            self.txt_home_back.value = "Home"
-        if self.icon_home_back:
-            self.icon_home_back.name = ft.Icons.HOME
+        self.set_home_back_state(is_home=True)
         self.btn_home_back.disabled = False
 
         # Reset dropdowns
@@ -443,47 +424,8 @@ class ViewCustomForm(ft.Control):
         self.btn_save.disabled = not save_enabled
 
         # home/back
-        if self.txt_home_back:
-            self.txt_home_back.value = "Back"
-        if self.icon_home_back:
-            self.icon_home_back.name = ft.Icons.ARROW_BACK
+        self.set_home_back_state(is_home=False)
 
-        self._page.update()
-
-    # ------------------------------------------------------
-    # FILL DROPDOWN WITH VALUES READ IN XNAT
-    # ------------------------------------------------------
-    def reset_dropdown(self, dd):
-        dd.options = []
-        dd.value = None
-
-    def populate_projects(self, projects):
-        self.dd_xnat_project.options = [
-            ft.dropdown.Option(key=p["id"], text=p["label"]) for p in projects
-        ]
-        self.dd_xnat_project.value = None
-
-        self.reset_dropdown(self.dd_xnat_subject)
-        self.reset_dropdown(self.dd_xnat_experiment)
-
-        self._page.update()
-
-    def populate_subjects(self, subjects):
-        self.dd_xnat_subject.options = [
-            ft.dropdown.Option(key=s["id"], text=s["label"]) for s in subjects
-        ]
-        self.dd_xnat_subject.value = None
-
-        self.reset_dropdown(self.dd_xnat_experiment)
-
-        self._page.update()
-
-    def populate_experiments(self, experiments):
-        self.dd_xnat_experiment.options = [
-            ft.dropdown.Option(key=e["id"], text=e["label"]) for e in
-            experiments
-        ]
-        self.dd_xnat_experiment.value = None
         self._page.update()
 
     # ------------------------------------------------------
@@ -494,32 +436,6 @@ class ViewCustomForm(ft.Control):
         self.txt_timepoint.value = timepoint or ""
         self.txt_dose.value = dose or ""
         self._page.update()
-
-    # ------------------------------------------------------
-    # UTILITY
-    # ------------------------------------------------------
-    def create_alert(self, message):
-        dlg = ft.AlertDialog(title=ft.Text(message))
-        self._page.open(dlg)
-        self._page.update()
-
-    def update_page(self):
-        self._page.update()
-
-    @property
-    def page(self):
-        return self._page
-
-    @property
-    def controller(self):
-        return self._controller
-
-    @controller.setter
-    def controller(self, controller):
-        self._controller = controller
-
-    def set_controller(self, controller):
-        self._controller = controller
 
     def _build_section_card(
             self,
