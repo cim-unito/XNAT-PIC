@@ -24,8 +24,8 @@ class Button:
         animation_duration: int = DEFAULT_ANIMATION_DURATION,
         text_color: str = ft.Colors.WHITE,
         disabled_text_color: str = ft.Colors.BLUE_300,
-        bgcolor: dict[ft.ControlState, str] | None = None,
-        color: dict[ft.ControlState, str] | None = None,
+        bgcolor: dict[ft.ControlState | str, str] | None = None,
+        color: dict[ft.ControlState | str, str] | None = None,
     ) -> ft.ButtonStyle:
         if bgcolor is None:
             bgcolor = {
@@ -34,7 +34,7 @@ class Button:
                 ft.ControlState.FOCUSED: palette.primary_hover,
                 ft.ControlState.PRESSED: palette.primary_pressed,
                 ft.ControlState.DISABLED: palette.surface_stronger,
-            },
+            }
         if color is None:
             color = {
                 ft.ControlState.DEFAULT: text_color,
@@ -43,6 +43,8 @@ class Button:
                 ft.ControlState.PRESSED: text_color,
                 ft.ControlState.DISABLED: disabled_text_color,
             }
+            bgcolor = Button._normalize_state_colors(bgcolor)
+            color = Button._normalize_state_colors(color)
         return ft.ButtonStyle(
             bgcolor=bgcolor,
             color=color,
@@ -118,3 +120,12 @@ class Button:
             spacing=spacing,
             controls=controls,
         )
+    @staticmethod
+    def _normalize_state_colors(
+        state_colors: dict[ft.ControlState | str, str],
+    ) -> dict[str, str]:
+        normalized: dict[str, str] = {}
+        for state, value in state_colors.items():
+            key = state.value if isinstance(state, ft.ControlState) else str(state)
+            normalized[key] = value
+        return normalized

@@ -6,7 +6,6 @@ class BaseView(ft.Control):
         super().__init__()
         self._page = page
         self._controller = None
-        self._main_layout = None
 
     def create_alert(self, message):
         dlg = ft.AlertDialog(title=ft.Text(message))

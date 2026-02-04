@@ -38,6 +38,9 @@ class ViewCustomForm(BaseView, AuthDialogMixin, XnatDropdownMixin):
         self.pb_custom_form = None
         self.dlg_custom_form = None
 
+        # layout
+        self._main_layout = None
+
         # palette
         self.palette = default_palette()
 

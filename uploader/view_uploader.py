@@ -46,6 +46,9 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         self.pb_upload = None
         self.dlg_upload = None
 
+        # layout
+        self._main_layout = None
+
         # palette
         self.palette = default_palette()
 

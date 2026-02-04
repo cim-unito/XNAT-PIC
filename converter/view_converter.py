@@ -36,6 +36,9 @@ class ViewConverter(BaseView):
         self.pb_conversion = None
         self.dlg_conversion = None
 
+        # layout
+        self._main_layout = None
+
         # palette
         self.palette = default_palette()
 
