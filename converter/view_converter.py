@@ -2,17 +2,13 @@ import flet as ft
 
 from enums.converter_type import ConverterType
 from enums.tree_type import TreeType
-from shared_ui.ui.base_view import BaseView
 from shared_ui.ui.buttons import Buttons
-from shared_ui.ui.header import build_header
 from shared_ui.ui.palette import Palette
-from shared_ui.ui.section_card import build_section_card
-from shared_ui.ui.theme import default_palette
 
 
-class ViewConverter(BaseView):
+class ViewConverter(ft.Control):
     def __init__(self, page: ft.Page):
-        super().__init__(page)
+        super().__init__()
         self._page = page
         # controller (it is not initialized. Must be initialized in the main,
         # after the controller is created)
@@ -45,7 +41,7 @@ class ViewConverter(BaseView):
         self._main_layout = None
 
         # palette
-        self.palette = default_palette()
+        self.palette = self._create_default_palette()
 
         # map enum → container
         self._tree_map: dict[TreeType, ft.Container] = {}
@@ -84,10 +80,15 @@ class ViewConverter(BaseView):
         self.btn_convert.disabled = True
 
         # reset home/back
-        self.set_home_back_state("Home", ft.Icons.HOME, enabled=True)
+        if self.txt_home_back:
+            self.txt_home_back.value = "Home"
+        if self.icon_home_back:
+            self.icon_home_back.name = ft.Icons.HOME
+        self.btn_home_back.disabled = False
 
         # reset dropdown
-        self.reset_dropdowns([self.dd_conversion_type], reset_options=False)
+        self.dd_conversion_type.key = "Select"
+        self.dd_conversion_type.value = None
 
         # reset switch
         self.sw_overwrite.value = False
@@ -120,9 +121,16 @@ class ViewConverter(BaseView):
         self.btn_convert.disabled = False
 
         # enable/disable home/back
-        self.set_home_back_state("Back", ft.Icons.ARROW_BACK, enabled=True)
+        if self.txt_home_back:
+            self.txt_home_back.value = "Back"
+        if self.icon_home_back:
+            self.icon_home_back.name = ft.Icons.ARROW_BACK
 
         self._page.update()
+
+    def open_directory_picker(self):
+        """Open the directory picker dialog."""
+        self.file_picker.get_directory_path()
 
     def update_tree(self, new_widget: ft.ListView, tree_type: TreeType):
         """Replace the list view for the given tree type and refresh the UI."""
@@ -144,6 +152,16 @@ class ViewConverter(BaseView):
         self.pb_conversion.value = value
         self._page.update()
 
+    def create_alert(self, message):
+        """Show a simple alert dialog with the given message."""
+        dlg = ft.AlertDialog(title=ft.Text(message))
+        self._page.open(dlg)
+        self._page.update()
+
+    def update_page(self):
+        """Force a UI refresh on the current page."""
+        self._page.update()
+
     def file_picker_result(self, e: ft.FilePickerResultEvent):
         """
         Handle file picker results and delegate processing to the controller.
@@ -158,15 +176,59 @@ class ViewConverter(BaseView):
             self.create_alert("No folder selected!")
             self.set_initial_state()
 
+    @property
+    def controller(self):
+        return self._controller
+
+    @controller.setter
+    def controller(self, controller):
+        self._controller = controller
+
+    @property
+    def page(self):
+        return self._page
+
+    @page.setter
+    def page(self, page):
+        self._page = page
+
+    def set_controller(self, controller):
+        self._controller = controller
+
     def _build_controls(self):
         """Instantiate and configure all UI controls used by the view."""
         btn_style = Buttons().create_button_style(self.palette)
 
         # title
-        self.title = build_header(
-            title="XNAT-PIC Converter",
-            icon=ft.Icons.CHANGE_CIRCLE,
-            palette=self.palette,
+        self.title = ft.Container(
+            content=ft.Row(
+                [
+                    ft.Container(
+                        width=52,
+                        height=52,
+                        border_radius=16,
+                        bgcolor=self.palette.surface_stronger,
+                        alignment=ft.alignment.center,
+                        content=ft.Icon(
+                            ft.Icons.CHANGE_CIRCLE,
+                            size=30,
+                            color=self.palette.primary,
+                        ),
+                    ),
+                    ft.Text(
+                        value="XNAT-PIC Converter",
+                        size=32,
+                        weight=ft.FontWeight.W_700,
+                        color=self.palette.primary_text,
+                        font_family="Inter",
+                    ),
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=16,
+            ),
+            bgcolor=self.palette.surface,
+            padding=ft.padding.symmetric(horizontal=18, vertical=12),
+            border_radius=20,
         )
 
         # dropdown conversion type
@@ -180,19 +242,49 @@ class ViewConverter(BaseView):
         )
 
         # level buttons: project, subject, experiment
-        self.btn_project = Buttons().build_text_button(
-            "Convert Project",
-            btn_style,
+        self.btn_project = ft.ElevatedButton(
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Text(value="Convert Project",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
+            style=btn_style,
+            expand=True,
             tooltip="Select the project to convert",
         )
-        self.btn_subject = Buttons().build_text_button(
-            "Convert Subject",
-            btn_style,
+        self.btn_subject = ft.ElevatedButton(
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Text(value="Convert Subject",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
+            style=btn_style,
+            expand=True,
             tooltip="Select the subject to convert",
         )
-        self.btn_experiment = Buttons().build_text_button(
-            "Convert Experiment",
-            btn_style,
+        self.btn_experiment = ft.ElevatedButton(
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Text(value="Convert Experiment",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
+            style=btn_style,
+            expand=True,
             tooltip="Select the experiment to convert",
         )
 
@@ -246,16 +338,32 @@ class ViewConverter(BaseView):
             font_family="Inter",
         )
         self.icon_home_back = ft.Icon(ft.Icons.HOME, size=26)
-        self.btn_home_back = Buttons().build_text_button(
-            "Go home",
-            btn_style,
-            icon=self.icon_home_back,
-            text_control=self.txt_home_back,
+        self.btn_home_back = ft.ElevatedButton(
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    self.icon_home_back,
+                    self.txt_home_back,
+                ],
+            ),
+            style=btn_style,
+            expand=True,
         )
-        self.btn_convert = Buttons().build_text_button(
-            "Convert",
-            btn_style,
-            icon=ft.Icon(ft.Icons.CHANGE_CIRCLE, size=26),
+        self.btn_convert = ft.ElevatedButton(
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
+                controls=[
+                    ft.Icon(ft.Icons.CHANGE_CIRCLE, size=26),
+                    ft.Text(value="Convert",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            font_family="Inter"),
+                ],
+            ),
+            style=btn_style,
+            expand=True,
         )
         # progressbar dialog
         self.pb_conversion = ft.ProgressBar(width=300)
@@ -338,7 +446,7 @@ class ViewConverter(BaseView):
             ],
         )
 
-        setup_card = build_section_card(
+        setup_card = self._build_section_card(
             title="Conversion setup",
             description=(
                 "Select the conversion type, choose the folder to process, "
@@ -353,7 +461,6 @@ class ViewConverter(BaseView):
                     row_mid,
                 ],
             ),
-            palette=self.palette,
         )
 
         action_row = ft.Row(
@@ -377,6 +484,67 @@ class ViewConverter(BaseView):
                     ft.Container(expand=True),
                     action_row,
                 ],
+            ),
+        )
+
+    def _build_section_card(
+            self,
+            title: str,
+            description: str,
+            icon: str,
+            content: ft.Control,
+    ) -> ft.Control:
+        return ft.Container(
+            content=ft.Card(
+                color=self.palette.surface,
+                surface_tint_color=self.palette.primary,
+                elevation=3,
+                shape=ft.RoundedRectangleBorder(radius=18),
+                content=ft.Container(
+                    padding=18,
+                    content=ft.Column(
+                        spacing=12,
+                        controls=[
+                            ft.Row(
+                                spacing=12,
+                                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                                controls=[
+                                    ft.Container(
+                                        width=36,
+                                        height=36,
+                                        border_radius=10,
+                                        bgcolor=self.palette.surface_stronger,
+                                        alignment=ft.alignment.center,
+                                        content=ft.Icon(
+                                            icon,
+                                            size=20,
+                                            color=self.palette.primary,
+                                        ),
+                                    ),
+                                    ft.Column(
+                                        spacing=2,
+                                        controls=[
+                                            ft.Text(
+                                                title,
+                                                size=16,
+                                                weight=ft.FontWeight.W_600,
+                                                color=self.palette.primary_text,
+                                                font_family="Inter",
+                                            ),
+                                            ft.Text(
+                                                description,
+                                                size=12,
+                                                color=self.palette.subtle_text,
+                                                font_family="Inter",
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                            content,
+                        ],
+                    ),
+                ),
             ),
         )
 
@@ -424,5 +592,13 @@ class ViewConverter(BaseView):
 
     @staticmethod
     def _create_default_palette() -> Palette:
-        return default_palette()
+        return Palette(
+            primary=ft.Colors.BLUE_600,
+            primary_hover=ft.Colors.BLUE_700,
+            primary_pressed=ft.Colors.BLUE_800,
+            primary_text=ft.Colors.BLUE_900,
+            surface=ft.Colors.BLUE_50,
+            surface_stronger=ft.Colors.BLUE_100,
+            subtle_text="#475569",
+        )
 
