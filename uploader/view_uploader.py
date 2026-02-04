@@ -139,7 +139,7 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         # new project, subject, experiment buttons
         self.btn_new_project.disabled = False
         self.btn_new_subject.disabled = not xnat_subject
-        self.btn_new_experiment.disabled = xnat_experiment
+        self.btn_new_experiment.disabled = not xnat_experiment
 
         # upload
         self.btn_upload.disabled = False
@@ -155,6 +155,37 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         self.img_preview.src_bytes = None
         self.img_preview.src = None
         self.img_preview.src = "assets/images/ImagePreview.png"
+
+    def set_image_preview(self, b64: str):
+        self.img_preview.src_base64 = b64
+        self.img_preview.update()
+
+    def show_dicom_tags_dialog(self, tags):
+        rows = []
+        for elem in tags:
+            rows.append(
+                ft.Row(
+                    controls=[
+                        ft.Text(str(elem["tag"]), width=140),
+                        ft.Text(elem["name"], width=260, no_wrap=True),
+                        ft.Text(elem["value"], width=760, no_wrap=True),
+                    ]
+                )
+            )
+
+        dlg = ft.AlertDialog(
+            title=ft.Text("DICOM Tags"),
+            content=ft.Container(
+                ft.ListView(rows, expand=True),
+                width=1200,
+                height=650,
+            ),
+            actions=[ft.TextButton("Close",
+                                   on_click=lambda e: self._page.close(dlg))],
+            modal=True,
+        )
+        self._page.open(dlg)
+        self._page.update()
 
     def update_tree(self, new_widget: ft.ListView, tree_type: TreeType):
         """Replace the list view for the given tree type and refresh the UI."""
@@ -610,43 +641,6 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         Register the container that hosts a tree ListView for updates.
         """
         self._tree_map[tree_type] = container
-
-    # ------------------------------------------------------
-    # PREVIEW IMAGE
-    # ------------------------------------------------------
-    def set_image_preview(self, b64: str):
-        self.img_preview.src_base64 = b64
-        self.img_preview.update()
-
-    # ------------------------------------------------------
-    # SHOW DICOM TAGS
-    # ------------------------------------------------------
-    def show_dicom_tags_dialog(self, tags):
-        rows = []
-        for elem in tags:
-            rows.append(
-                ft.Row(
-                    controls=[
-                        ft.Text(str(elem["tag"]), width=140),
-                        ft.Text(elem["name"], width=260, no_wrap=True),
-                        ft.Text(elem["value"], width=760, no_wrap=True),
-                    ]
-                )
-            )
-
-        dlg = ft.AlertDialog(
-            title=ft.Text("DICOM Tags"),
-            content=ft.Container(
-                ft.ListView(rows, expand=True),
-                width=1200,
-                height=650,
-            ),
-            actions=[ft.TextButton("Close",
-                                   on_click=lambda e: self._page.close(dlg))],
-            modal=True,
-        )
-        self._page.open(dlg)
-        self._page.update()
 
     @staticmethod
     def _create_default_palette() -> Palette:

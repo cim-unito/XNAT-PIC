@@ -44,18 +44,94 @@ class ViewCustomForm(BaseView, AuthDialogMixin, XnatDropdownMixin):
         # palette
         self.palette = default_palette()
 
-    # ------------------------------------------------------
-    # BUILD CUSTOM FORM
-    # -----------------------------------------------------
     def build_interface(self):
+        """Create and return the main layout for the custom form view.
+
+        This method instantiates all UI controls, binds events to the
+        controller, defines the page layout, and resets the initial state
+        so the view is ready for user interaction.
+        """
         self._build_controls()
         self._bind_events()
         self._define_layout()
         self.set_initial_state()
         return self._main_layout
 
+    def set_initial_state(self):
+        """Reset the UI to the default idle state."""
+        # Enable top-level
+        self.btn_project.disabled = False
+        self.btn_subject.disabled = False
+        self.btn_experiment.disabled = False
+
+        # Disable the other controls
+        for c in [
+            self.dd_xnat_project,
+            self.dd_xnat_subject,
+            self.dd_xnat_experiment,
+            self.txt_group,
+            self.txt_timepoint,
+            self.txt_dose,
+            self.btn_save,
+        ]:
+            c.disabled = True
+
+        # Reset home/back
+        self.set_home_back_state("Home", ft.Icons.HOME, enabled=True)
+
+        # Reset dropdowns
+        self.reset_dropdowns([
+            self.dd_xnat_project,
+            self.dd_xnat_subject,
+            self.dd_xnat_experiment,
+        ])
+
+        # Reset custom forms
+        self.txt_group.value = ""
+        self.txt_timepoint.value = ""
+        self.txt_dose.value = ""
+
+        self._page.update()
+
+    def set_mode(self, xnat_subject, xnat_experiment):
+        """Switch the UI to the active conversion mode."""
+        # enable/disable top-level
+        for c in [
+            self.btn_project,
+            self.btn_subject,
+            self.btn_experiment,
+        ]:
+            c.disabled = True
+
+        # dropdown project, subject, experiment in xnat
+        self.dd_xnat_project.disabled = False
+        self.dd_xnat_subject.disabled = not xnat_subject
+        self.dd_xnat_experiment.disabled = not xnat_experiment
+
+        # enable/disable custom form text
+        for c in [
+            self.txt_group,
+            self.txt_timepoint,
+            self.txt_dose,
+        ]:
+            c.disabled = False
+
+        # save
+        self.btn_save.disabled = False
+
+        # home/back
+        self.set_home_back_state("Back", ft.Icons.ARROW_BACK, enabled=True)
+
+        self._page.update()
+
+    def set_custom_fields(self, group="", timepoint="", dose=""):
+        self.txt_group.value = group or ""
+        self.txt_timepoint.value = timepoint or ""
+        self.txt_dose.value = dose or ""
+        self._page.update()
+
     def _build_controls(self):
-        """Graphical elements"""
+        """Instantiate and configure all UI controls used by the view."""
         # button style
         btn_style = Button.create_button_style(self.palette)
 
@@ -272,95 +348,6 @@ class ViewCustomForm(BaseView, AuthDialogMixin, XnatDropdownMixin):
                 ],
             ),
         )
-
-    # ------------------------------------------------------
-    # INITIAL STATE
-    # ------------------------------------------------------
-    def set_initial_state(self):
-        # Enable top-level
-        self.btn_project.disabled = False
-        self.btn_subject.disabled = False
-        self.btn_experiment.disabled = False
-
-        # Disable the other controls
-        for c in [
-            self.dd_xnat_project,
-            self.dd_xnat_subject,
-            self.dd_xnat_experiment,
-            self.txt_group,
-            self.txt_timepoint,
-            self.txt_dose,
-            self.btn_save,
-        ]:
-            c.disabled = True
-
-        # Reset home/back
-        self.set_home_back_state("Home", ft.Icons.HOME, enabled=True)
-
-        # Reset dropdowns
-        self.reset_dropdowns([
-            self.dd_xnat_project,
-            self.dd_xnat_subject,
-            self.dd_xnat_experiment,
-        ])
-
-        # Reset custom forms
-        self.txt_group.value = ""
-        self.txt_timepoint.value = ""
-        self.txt_dose.value = ""
-
-        self._page.update()
-
-    # ------------------------------------------------------
-    # LEVEL MODE
-    # ------------------------------------------------------
-    def set_mode(
-            self,
-            level_buttons_enabled,
-            save_enabled,
-            dd_project,
-            dd_subject,
-            dd_experiment,
-            custom_field_text,
-    ):
-        # enable/disable top-level
-        for c in [
-            self.btn_project,
-            self.btn_subject,
-            self.btn_experiment,
-        ]:
-            c.disabled = not level_buttons_enabled
-
-        # dropdown project, subject, experiment in xnat
-        self.dd_xnat_project.disabled = not dd_project
-        self.dd_xnat_subject.disabled = not dd_subject
-        self.dd_xnat_experiment.disabled = not dd_experiment
-
-        # enable/disable custom form text
-        for c in [
-            self.txt_group,
-            self.txt_timepoint,
-            self.txt_dose,
-        ]:
-            c.disabled = not custom_field_text
-
-        # save
-        self.btn_save.disabled = not save_enabled
-
-        # home/back
-        self.set_home_back_state("Back", ft.Icons.ARROW_BACK, enabled=True)
-
-        self._page.update()
-
-    # ------------------------------------------------------
-    # SET CUSTOM FIELDS
-    # ------------------------------------------------------
-    def set_custom_fields(self, group="", timepoint="", dose=""):
-        self.txt_group.value = group or ""
-        self.txt_timepoint.value = timepoint or ""
-        self.txt_dose.value = dose or ""
-        self._page.update()
-
 
     @staticmethod
     def _create_default_palette() -> Palette:
