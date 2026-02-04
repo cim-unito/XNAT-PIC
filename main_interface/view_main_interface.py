@@ -32,9 +32,6 @@ class ViewMainInterface(ft.Control):
         # palette
         self.palette = self._create_default_palette()
 
-    # ------------------------------------------------------
-    # BUILD MAIN INTERFACE
-    # -----------------------------------------------------
     def build_interface(self):
         """Create and return the main layout for the main interface view.
 

@@ -14,16 +14,10 @@ class ControllerXnatAuth:
         self._on_success = None
         self._on_cancel = None
 
-    # -------------------------------
-    # CALLBACK
-    # -------------------------------
     def set_callbacks(self, on_success, on_cancel):
         self._on_success = on_success
         self._on_cancel = on_cancel
 
-    # -------------------------------
-    # LOGIN
-    # -------------------------------
     def auth(self, e):
         self._update_fields_from_view()
 
@@ -64,12 +58,6 @@ class ControllerXnatAuth:
             self._password = None
             self._remember = None
 
-    def _update_fields_from_view(self):
-        self._address = self._view.txt_address.value
-        self._username = self._view.txt_username.value
-        self._password = self._view.txt_password.value
-        self._remember = self._view.ck_remember_user.value
-
     @property
     def address(self):
         return self._address
@@ -85,3 +73,9 @@ class ControllerXnatAuth:
     @property
     def remember(self):
         return self._remember
+
+    def _update_fields_from_view(self):
+        self._address = self._view.txt_address.value
+        self._username = self._view.txt_username.value
+        self._password = self._view.txt_password.value
+        self._remember = self._view.ck_remember_user.value
