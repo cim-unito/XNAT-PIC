@@ -55,25 +55,25 @@ class ViewCustomForm(BaseView):
 
     def set_initial_state(self):
         """Reset the UI to the default idle state."""
-        self.apply_view_state(
-            enable_controls=[
-                self.btn_project,
-                self.btn_subject,
-                self.btn_experiment,
-            ],
-            disable_controls=[
-                self.dd_xnat_project,
-                self.dd_xnat_subject,
-                self.dd_xnat_experiment,
-                self.txt_group,
-                self.txt_timepoint,
-                self.txt_dose,
-                self.btn_save,
-            ],
-            home_back_label="Home",
-            home_back_icon=ft.Icons.HOME,
-            home_back_enabled=True,
-        )
+        # Enable top-level
+        self.btn_project.disabled = False
+        self.btn_subject.disabled = False
+        self.btn_experiment.disabled = False
+
+        # Disable the other controls
+        for c in [
+            self.dd_xnat_project,
+            self.dd_xnat_subject,
+            self.dd_xnat_experiment,
+            self.txt_group,
+            self.txt_timepoint,
+            self.txt_dose,
+            self.btn_save,
+        ]:
+            c.disabled = True
+
+        # Reset home/back
+        self.set_home_back_state("Home", ft.Icons.HOME, enabled=True)
 
         # Reset dropdowns
         self.reset_dropdowns([
@@ -92,16 +92,12 @@ class ViewCustomForm(BaseView):
     def set_mode(self, xnat_subject, xnat_experiment):
         """Switch the UI to the active conversion mode."""
         # enable/disable top-level
-        self.apply_view_state(
-            disable_controls=[
-                self.btn_project,
-                self.btn_subject,
-                self.btn_experiment,
-            ],
-            home_back_label="Back",
-            home_back_icon=ft.Icons.ARROW_BACK,
-            home_back_enabled=True,
-        )
+        for c in [
+            self.btn_project,
+            self.btn_subject,
+            self.btn_experiment,
+        ]:
+            c.disabled = True
 
         # dropdown project, subject, experiment in xnat
         self.dd_xnat_project.disabled = False
@@ -118,6 +114,9 @@ class ViewCustomForm(BaseView):
 
         # save
         self.btn_save.disabled = False
+
+        # home/back
+        self.set_home_back_state("Back", ft.Icons.ARROW_BACK, enabled=True)
 
         self._page.update()
 
@@ -348,8 +347,15 @@ class ViewCustomForm(BaseView):
     # ------------------------------------------------------
     # FILL DROPDOWN WITH VALUES READ IN XNAT
     # ------------------------------------------------------
+    def reset_dropdown(self, dd):
+        dd.options = []
+        dd.value = None
+
     def populate_projects(self, projects):
-        self.populate_dropdown(self.dd_xnat_project, projects)
+        self.dd_xnat_project.options = [
+            ft.dropdown.Option(key=p["id"], text=p["label"]) for p in projects
+        ]
+        self.dd_xnat_project.value = None
 
         self.reset_dropdown(self.dd_xnat_subject)
         self.reset_dropdown(self.dd_xnat_experiment)
@@ -357,14 +363,21 @@ class ViewCustomForm(BaseView):
         self._page.update()
 
     def populate_subjects(self, subjects):
-        self.populate_dropdown(self.dd_xnat_subject, subjects)
+        self.dd_xnat_subject.options = [
+            ft.dropdown.Option(key=s["id"], text=s["label"]) for s in subjects
+        ]
+        self.dd_xnat_subject.value = None
 
         self.reset_dropdown(self.dd_xnat_experiment)
 
         self._page.update()
 
     def populate_experiments(self, experiments):
-        self.populate_dropdown(self.dd_xnat_experiment, experiments)
+        self.dd_xnat_experiment.options = [
+            ft.dropdown.Option(key=e["id"], text=e["label"]) for e in
+            experiments
+        ]
+        self.dd_xnat_experiment.value = None
         self._page.update()
 
 

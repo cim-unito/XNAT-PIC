@@ -71,28 +71,28 @@ class ViewUploader(BaseView):
 
     def set_initial_state(self):
         """Reset the UI to the default idle state."""
-        self.apply_view_state(
-            enable_controls=[
-                self.btn_project,
-                self.btn_subject,
-                self.btn_experiment,
-                self.btn_file,
-            ],
-            disable_controls=[
-                self.btn_show_tags,
-                self.btn_modify_modality,
-                self.dd_xnat_project,
-                self.dd_xnat_subject,
-                self.dd_xnat_experiment,
-                self.btn_new_project,
-                self.btn_new_subject,
-                self.btn_new_experiment,
-                self.btn_upload,
-            ],
-            home_back_label="Home",
-            home_back_icon=ft.Icons.HOME,
-            home_back_enabled=True,
-        )
+        # Enable top-level
+        self.btn_project.disabled = False
+        self.btn_subject.disabled = False
+        self.btn_experiment.disabled = False
+        self.btn_file.disabled = False
+
+        # Disable the other controls
+        for c in [
+            self.btn_show_tags,
+            self.btn_modify_modality,
+            self.dd_xnat_project,
+            self.dd_xnat_subject,
+            self.dd_xnat_experiment,
+            self.btn_new_project,
+            self.btn_new_subject,
+            self.btn_new_experiment,
+            self.btn_upload,
+        ]:
+            c.disabled = True
+
+        # Reset home/back
+        self.set_home_back_state("Home", ft.Icons.HOME, enabled=True)
 
         # Reset dropdowns
         self.reset_dropdowns([
@@ -116,21 +116,21 @@ class ViewUploader(BaseView):
 
     def set_mode(self, xnat_subject, xnat_experiment):
         """Switch the UI to the active conversion mode."""
-        self.apply_view_state(
-            enable_controls=[
-                self.btn_show_tags,
-                self.btn_modify_modality,
-            ],
-            disable_controls=[
-                self.btn_project,
-                self.btn_subject,
-                self.btn_experiment,
-                self.btn_file,
-            ],
-            home_back_label="Back",
-            home_back_icon=ft.Icons.ARROW_BACK,
-            home_back_enabled=True,
-        )
+        # enable/disable top-level
+        for c in [
+            self.btn_project,
+            self.btn_subject,
+            self.btn_experiment,
+            self.btn_file,
+        ]:
+            c.disabled = True
+
+        # show tags/modify modality
+        for c in [
+            self.btn_show_tags,
+            self.btn_modify_modality,
+        ]:
+            c.disabled = False
 
         # dropdown project, subject, experiment in xnat
         self.dd_xnat_project.disabled = False
@@ -144,6 +144,9 @@ class ViewUploader(BaseView):
 
         # upload
         self.btn_upload.disabled = False
+
+        # home/back
+        self.set_home_back_state("Back", ft.Icons.ARROW_BACK, enabled=True)
 
         self._page.update()
 
@@ -650,8 +653,15 @@ class ViewUploader(BaseView):
     # ------------------------------------------------------
     # FILL DROPDOWN WITH VALUES READ IN XNAT
     # ------------------------------------------------------
+    def reset_dropdown(self, dd):
+        dd.options = []
+        dd.value = None
+
     def populate_projects(self, projects):
-        self.populate_dropdown(self.dd_xnat_project, projects)
+        self.dd_xnat_project.options = [
+            ft.dropdown.Option(key=p["id"], text=p["label"]) for p in projects
+        ]
+        self.dd_xnat_project.value = None
 
         self.reset_dropdown(self.dd_xnat_subject)
         self.reset_dropdown(self.dd_xnat_experiment)
@@ -659,14 +669,21 @@ class ViewUploader(BaseView):
         self._page.update()
 
     def populate_subjects(self, subjects):
-        self.populate_dropdown(self.dd_xnat_subject, subjects)
+        self.dd_xnat_subject.options = [
+            ft.dropdown.Option(key=s["id"], text=s["label"]) for s in subjects
+        ]
+        self.dd_xnat_subject.value = None
 
         self.reset_dropdown(self.dd_xnat_experiment)
 
         self._page.update()
 
     def populate_experiments(self, experiments):
-        self.populate_dropdown(self.dd_xnat_experiment, experiments)
+        self.dd_xnat_experiment.options = [
+            ft.dropdown.Option(key=e["id"], text=e["label"]) for e in
+            experiments
+        ]
+        self.dd_xnat_experiment.value = None
         self._page.update()
 
     @staticmethod
