@@ -70,21 +70,19 @@ class ViewConverter(BaseView):
         the home/back label and icon, clears tree views, and restores default
         dropdown/switch values.
         """
-        # enable top-level
-        for c in [
-            self.dd_conversion_type,
-            self.sw_overwrite,
-            self.btn_project,
-            self.btn_subject,
-            self.btn_experiment,
-        ]:
-            c.disabled = False
-
-        # disable the other controls
-        self.btn_convert.disabled = True
-
-        # reset home/back
-        self.set_home_back_state("Home", ft.Icons.HOME, enabled=True)
+        self.apply_view_state(
+            enable_controls=[
+                self.dd_conversion_type,
+                self.sw_overwrite,
+                self.btn_project,
+                self.btn_subject,
+                self.btn_experiment,
+            ],
+            disable_controls=[self.btn_convert],
+            home_back_label="Home",
+            home_back_icon=ft.Icons.HOME,
+            home_back_enabled=True,
+        )
 
         # reset dropdown
         self.reset_dropdowns([self.dd_conversion_type], reset_options=False)
@@ -106,21 +104,19 @@ class ViewConverter(BaseView):
         Disables top-level selection controls and enables conversion actions
         while toggling the home/back label to indicate a back navigation.
         """
-        # disable top-level
-        for c in [
-            self.dd_conversion_type,
-            self.sw_overwrite,
-            self.btn_project,
-            self.btn_subject,
-            self.btn_experiment,
-        ]:
-            c.disabled = True
-
-        # enable the other controls
-        self.btn_convert.disabled = False
-
-        # enable/disable home/back
-        self.set_home_back_state("Back", ft.Icons.ARROW_BACK, enabled=True)
+        self.apply_view_state(
+            enable_controls=[self.btn_convert],
+            disable_controls=[
+                self.dd_conversion_type,
+                self.sw_overwrite,
+                self.btn_project,
+                self.btn_subject,
+                self.btn_experiment,
+            ],
+            home_back_label="Back",
+            home_back_icon=ft.Icons.ARROW_BACK,
+            home_back_enabled=True,
+        )
 
         self._page.update()
 
