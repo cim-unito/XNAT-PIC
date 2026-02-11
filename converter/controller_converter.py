@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import flet as ft
+
 from enums.converter_level import ConverterLevel
 from enums.converter_type import ConverterType
 from enums.tree_type import TreeType
@@ -33,7 +35,7 @@ class ControllerConverter:
         """Navigate the application back to the home page."""
         self._view.page.go("/")
 
-    def on_home_back_clicked(self, e):
+    def on_home_back_clicked(self, e: ft.ControlEvent):
         """Handle the home/back click by restoring the initial UI state."""
         if self._model.level is None:
             self._model.reset_level()
@@ -46,22 +48,22 @@ class ControllerConverter:
     # -------------------------------------------------------
     # SET LEVEL (PROJECT / SUBJECT / EXPERIMENT)
     # -------------------------------------------------------
-    def convert_project(self, e):
+    def convert_project(self, e: ft.ControlEvent):
         """Start a project-level conversion and open the directory picker."""
         self._set_level(ConverterLevel.PROJECT)
         self._view.open_directory_picker()
 
-    def convert_subject(self, e):
+    def convert_subject(self, e: ft.ControlEvent):
         """Start a subject-level conversion and open the directory picker."""
         self._set_level(ConverterLevel.SUBJECT)
         self._view.open_directory_picker()
 
-    def convert_experiment(self, e):
+    def convert_experiment(self, e: ft.ControlEvent):
         """Start an experiment-level conversion and open the directory picker."""
         self._set_level(ConverterLevel.EXPERIMENT)
         self._view.open_directory_picker()
 
-    def conversion_type(self, e):
+    def conversion_type(self, e: ft.ControlEvent):
         """Update the conversion type selected by the user."""
         self._model.conversion_type = ConverterType(e.control.value)
 

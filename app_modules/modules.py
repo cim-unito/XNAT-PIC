@@ -14,9 +14,9 @@ from custom_form.controller_custom_form import ControllerCustomForm
 from custom_form.model_custom_form import ModelCustomForm
 from custom_form.view_custom_form import ViewCustomForm
 
-from xnat_auth.controller_xnat_auth import ControllerXnatAuth
-from xnat_auth.model_xnat_auth import ModelXnatAuth
-from xnat_auth.view_xnat_auth import ViewXnatAuth
+from shared_ui.ui.xnat_auth.controller_xnat_auth import ControllerXnatAuth
+from shared_ui.ui.xnat_auth.model_xnat_auth import ModelXnatAuth
+from shared_ui.ui.xnat_auth.view_xnat_auth import ViewXnatAuth
 
 
 class AppModules:
