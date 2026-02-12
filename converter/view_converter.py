@@ -16,7 +16,8 @@ class ViewConverter(BaseView):
         # graphical elements
         self.title = None
         # top level
-        self.dd_conversion_type = None
+        self.btn_conversion_type = None
+        self.txt_conversion_type = None
         self.sw_overwrite = None
         self.file_picker = None
         self.btn_project = None
@@ -67,7 +68,7 @@ class ViewConverter(BaseView):
         """
         # enable top-level
         for c in [
-            self.dd_conversion_type,
+            self.btn_conversion_type,
             self.sw_overwrite,
             self.btn_project,
             self.btn_subject,
@@ -81,8 +82,8 @@ class ViewConverter(BaseView):
         # reset home/back
         self.set_home_back_state("Home", ft.Icons.HOME, enabled=True)
 
-        # reset dropdown
-        self.reset_dropdowns([self.dd_conversion_type], reset_options=False)
+        # reset conversion type selector
+        self.txt_conversion_type.value = "Conversion type"
 
         # reset switch
         self.sw_overwrite.value = False
@@ -103,7 +104,7 @@ class ViewConverter(BaseView):
         """
         # disable top-level
         for c in [
-            self.dd_conversion_type,
+            self.btn_conversion_type,
             self.sw_overwrite,
             self.btn_project,
             self.btn_subject,
@@ -163,14 +164,60 @@ class ViewConverter(BaseView):
             palette=self.palette,
         )
 
-        # dropdown conversion type
-        self.dd_conversion_type = ft.Dropdown(
-            options=[ft.dropdown.Option(ct.value) for ct in ConverterType],
-            hint_text="Conversion type",
+        # cascading conversion menu (MR / OI)
+        self.txt_conversion_type = ft.Text(
+            "Conversion type",
+            weight=ft.FontWeight.W_600,
+        )
+        self.btn_conversion_type = ft.MenuBar(
             expand=True,
-            filled=True,
-            bgcolor=self.palette.surface,
-            border_radius=12,
+            controls=[
+                ft.SubmenuButton(
+                    content=ft.Row(
+                        [
+                            self.txt_conversion_type,
+                            ft.Icon(ft.Icons.ARROW_DROP_DOWN),
+                        ],
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    ),
+                    controls=[
+                        ft.SubmenuButton(
+                            content=ft.Text("MR"),
+                            controls=[
+                                ft.MenuItemButton(
+                                    content=ft.Text(
+                                        ConverterType.BRUKER2DICOM.value),
+                                    on_click=lambda _: self
+                                    ._controller.set_conversion_type(
+                                        ConverterType.BRUKER2DICOM
+                                    ),
+                                )
+                            ],
+                        ),
+                        ft.SubmenuButton(
+                            content=ft.Text("OI"),
+                            controls=[
+                                ft.MenuItemButton(
+                                    content=ft.Text(
+                                        ConverterType.IVIS2DICOM.value),
+                                    on_click=lambda _: self
+                                    ._controller.set_conversion_type(
+                                        ConverterType.IVIS2DICOM
+                                    ),
+                                ),
+                                ft.MenuItemButton(
+                                    content=ft.Text(
+                                        ConverterType.MILABS2DICOM.value),
+                                    on_click=lambda _: self
+                                    ._controller.set_conversion_type(
+                                        ConverterType.MILABS2DICOM
+                                    ),
+                                ),
+                            ],
+                        ),
+                    ],
+                )
+            ],
         )
 
         # level buttons: project, subject, experiment
@@ -261,7 +308,6 @@ class ViewConverter(BaseView):
 
     def _bind_events(self):
         """Wire UI events to the controller callbacks."""
-        self.dd_conversion_type.on_change = self._controller.conversion_type
         self.btn_project.on_click = self._controller.convert_project
         self.btn_subject.on_click = self._controller.convert_subject
         self.btn_experiment.on_click = self._controller.convert_experiment
@@ -286,7 +332,7 @@ class ViewConverter(BaseView):
             controls=[
                 ft.Container(
                     col={"xs": 12, "sm": 4},
-                    content=self.dd_conversion_type,
+                    content=self.btn_conversion_type,
                 ),
                 ft.Container(
                     col={"xs": 12, "sm": 4},

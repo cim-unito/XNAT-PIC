@@ -63,9 +63,10 @@ class ControllerConverter:
         self._set_level(ConverterLevel.EXPERIMENT)
         self._view.open_directory_picker()
 
-    def conversion_type(self, e: ft.ControlEvent):
+    def set_conversion_type(self, conversion_type: ConverterType):
         """Update the conversion type selected by the user."""
-        self._model.conversion_type = ConverterType(e.control.value)
+        self._view.txt_conversion_type.value = conversion_type.value
+        self._view.update_page()
 
     # -------------------------------------------------------
     # TREEVIEW RAW DATA/DICOM FILES
@@ -91,10 +92,14 @@ class ControllerConverter:
             self._perform_conversion()
             self._finalize_conversion()
         except Exception as e:
-            print(str(e))
+            self._view.dlg_conversion.open = False
+            self._view.create_alert(str(e))
+            self._view.update_page()
 
     def _prepare_conversion(self):
         """Prepare the model for conversion and load scans."""
+        if self._model.conversion_type is None:
+            raise ValueError("Please select a conversion type.")
         overwrite = self._view.sw_overwrite.value
         self._model.output_root = self._model.input_root
         self._model.create_dicom_output_folder(overwrite)
