@@ -49,7 +49,7 @@ class ControllerUploader:
         # New subject
         self._model_xnat_new_subject = ModelXnatNewSubject()
         self._view_xnat_new_subject = ViewXnatNewSubject(self._view.page,
-                                                         on_submit=self.on_data_project_collected)
+                                                         on_submit=self.on_data_subject_collected)
         self._controller_xnat_new_subject = ControllerXnatNewSubject(
             self._view_xnat_new_subject,
             self._model_xnat_new_subject,
@@ -273,12 +273,24 @@ class ControllerUploader:
     # NEW XNAT SUBJECT
     # ==========================================================
     def create_new_subject(self, e):
+        if not self._xnat_repo:
+            self._view.create_alert("You must login to XNAT first.")
+            return
+
+        try:
+            projects = self._xnat_repo.list_projects()
+            project_ids = [project["id"] for project in projects]
+            self._controller_xnat_new_subject.configure_context(project_ids)
+        except Exception as ex:
+            self._view.create_alert(f"Cannot load projects for new subject: {ex}")
+            return
+
         self._controller_xnat_new_subject.reset_form()
         self._view_xnat_new_subject.open()
 
     def on_data_subject_collected(self, data):
         self._xnat_repo.create_subject(data)
-        project_id = data["project_id"]
+        project_id = data["parent_project"]
         exists = False
 
         for opt in self._view.dd_xnat_project.options:

@@ -34,13 +34,14 @@ class ViewXnatNewSubject(BaseView):
         return self.dlg
 
     def _build_controls(self):
-        self.dd_project = ft.Dropdown(label="Parent project *", options=[])
+        self.dd_project = ft.Dropdown(label="Parent project *", options=[], width=600)
 
-        self.txt_title = ft.TextField(label="subject title *")
+        self.txt_title = ft.TextField(label="Subject title *", width=600)
 
         self.txt_subject_id = ft.TextField(
-            label="subject ID *",
+            label="Subject ID *",
             disabled=True,
+            expand=True,
         )
 
         self.chk_edit_id = ft.Checkbox(label="Edit ID")
@@ -73,7 +74,7 @@ class ViewXnatNewSubject(BaseView):
         )
 
         self.txt_description = ft.TextField(
-            label="subject description",
+            label="Subject description",
             multiline=True,
             min_lines=1,
             max_lines=6
@@ -95,10 +96,10 @@ class ViewXnatNewSubject(BaseView):
 
         content = ft.Column(
             width=600,
-            spacing=10,
+            spacing=16,
             controls=[
-                self.txt_title,
                 self.dd_project,
+                self.txt_title,
                 self.id_row,
                 self.dd_gender,
                 self.txt_date_of_birth,
@@ -112,7 +113,9 @@ class ViewXnatNewSubject(BaseView):
             modal=True,
             title=ft.Text("New XNAT subject"),
             content=content,
-            actions=[self.btn_cancel, self.btn_submit]
+            actions=[self.btn_cancel, self.btn_submit],
+            content_padding=ft.Padding(20, 12, 20, 16),
+            actions_padding=ft.Padding(12, 0, 12, 12),
         )
 
     def set_initial_state(self):

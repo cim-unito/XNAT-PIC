@@ -38,10 +38,7 @@ class ControllerXnatNewSubject:
     def on_project_changed(self, e):
         self._model.data.parent_project = e.control.value or ""
 
-        if self._model.data.parent_project:
-            self._view.set_subject_id_editable(self._model.data.editable_id)
-        else:
-            self._view.set_subject_id_editable(False)
+        self._view.set_subject_id_editable(self._model.data.editable_id)
 
         self._update_submit()
 
@@ -77,7 +74,13 @@ class ControllerXnatNewSubject:
     def on_toggle_edit_id(self, e):
         d = self._model.data
         d.editable_id = e.control.value
-        self._view.set_subject_id_editable(d.editable_id and bool(d.parent_project))
+
+        if not d.editable_id:
+            d.subject_id = d.title.lower().replace(" ", "_")
+            self._view.set_subject_id_value(d.subject_id)
+
+        self._view.set_subject_id_editable(d.editable_id)
+        self._update_submit()
 
     def reset_form(self):
         self._model.reset()

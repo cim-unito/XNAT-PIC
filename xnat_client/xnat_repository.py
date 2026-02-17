@@ -48,6 +48,20 @@ class XnatRepository:
 
         session.put(f"/data/projects/{project_id}/accessibility/{access}")
 
+    def create_subject(self, data):
+        session = self._session
+
+        project_id = data["parent_project"]
+        subject_id = data["subject_id"]
+        subject_label = data.get("subject_name", "")
+
+        session.put(f"/data/projects/{project_id}/subjects/{subject_id}")
+
+        if subject_label:
+            session.put(
+                f"/data/projects/{project_id}/subjects/{subject_id}?label={subject_label}"
+            )
+
     def upload_dicom(self, exp_folder, project_id, subject_id,
                      experiment_id):
 
