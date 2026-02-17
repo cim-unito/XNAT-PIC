@@ -3,6 +3,9 @@ import flet as ft
 
 from enums.tree_type import TreeType
 from enums.uploader_level import UploaderLevel
+from shared_ui.ui.xnat_new_subject.controller_xnat_new_subject import ControllerXnatNewSubject
+from shared_ui.ui.xnat_new_subject.model_xnat_new_subject import ModelXnatNewSubject
+from shared_ui.ui.xnat_new_subject.view_xnat_new_subject import ViewXnatNewSubject
 from uploader.services.dicom.dicom_preview_service import DicomPreviewService
 from uploader.services.dicom.dicom_tag_reader_service import \
     DicomTagReaderService
@@ -32,6 +35,7 @@ class ControllerUploader:
         self._view_xnat_auth = None
         self._controller_xnat_auth = None
 
+        # New project
         self._model_xnat_new_project = ModelXnatNewProject()
         self._view_xnat_new_project = ViewXnatNewProject(self._view.page,
                                                          on_submit=self.on_data_project_collected)
@@ -41,6 +45,17 @@ class ControllerUploader:
         )
         self._view_xnat_new_project.set_controller(
             self._controller_xnat_new_project)
+
+        # New subject
+        self._model_xnat_new_subject = ModelXnatNewSubject()
+        self._view_xnat_new_subject = ViewXnatNewSubject(self._view.page,
+                                                         on_submit=self.on_data_project_collected)
+        self._controller_xnat_new_subject = ControllerXnatNewSubject(
+            self._view_xnat_new_subject,
+            self._model_xnat_new_subject,
+        )
+        self._view_xnat_new_subject.set_controller(
+            self._controller_xnat_new_subject)
 
         self._xnat_session = None
         self._xnat_repo = None
@@ -237,6 +252,32 @@ class ControllerUploader:
 
     def on_data_project_collected(self, data):
         self._xnat_repo.create_project(data)
+        project_id = data["project_id"]
+        exists = False
+
+        for opt in self._view.dd_xnat_project.options:
+            if opt.key == project_id:
+                exists = True
+                break
+
+        if not exists:
+            print("Add new project:", project_id)
+            self._view.dd_xnat_project.options.append(
+                ft.dropdown.Option(key=project_id, text=project_id)
+            )
+
+        self._view.dd_xnat_project.value = project_id
+        self._view.dd_xnat_project.update()
+
+    # ==========================================================
+    # NEW XNAT SUBJECT
+    # ==========================================================
+    def create_new_subject(self, e):
+        self._controller_xnat_new_subject.reset_form()
+        self._view_xnat_new_subject.open()
+
+    def on_data_subject_collected(self, data):
+        self._xnat_repo.create_subject(data)
         project_id = data["project_id"]
         exists = False
 

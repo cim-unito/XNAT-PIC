@@ -1,4 +1,5 @@
 import flet as ft
+from datetime import datetime
 
 from shared_ui.ui.base_view import BaseView
 
@@ -10,10 +11,15 @@ class ViewXnatNewSubject(BaseView):
 
         self.dlg = None
         self.txt_title = None
+        self.dd_project = None
         self.txt_subject_id = None
         self.chk_edit_id = None
-        self.rb_access = None
+        self.dd_gender = None
+        self.txt_date_of_birth = None
+        self.txt_weight = None
+        self.dd_weight_unit = None
         self.txt_description = None
+        self.txt_error = None
         self.btn_submit = None
         self.btn_cancel = None
         self.id_row = None
@@ -28,6 +34,8 @@ class ViewXnatNewSubject(BaseView):
         return self.dlg
 
     def _build_controls(self):
+        self.dd_project = ft.Dropdown(label="Parent project *", options=[])
+
         self.txt_title = ft.TextField(label="subject title *")
 
         self.txt_subject_id = ft.TextField(
@@ -42,15 +50,26 @@ class ViewXnatNewSubject(BaseView):
             spacing=10
         )
 
-        self.rb_access = ft.RadioGroup(
-            value="private",
-            content=ft.Row(
-                controls=[
-                    ft.Radio(value="private", label="Private"),
-                    ft.Radio(value="protected", label="Protected"),
-                    ft.Radio(value="public", label="Public")
-                ]
-            )
+        self.dd_gender = ft.Dropdown(
+            label="Gender",
+            options=[
+                ft.dropdown.Option("Male"),
+                ft.dropdown.Option("Female"),
+                ft.dropdown.Option("Other"),
+            ],
+        )
+
+        self.txt_date_of_birth = ft.TextField(label="Date of birth (MM/DD/YYYY)")
+
+        self.txt_weight = ft.TextField(label="Weight", width=240)
+        self.dd_weight_unit = ft.Dropdown(
+            label="Unit",
+            value="g",
+            width=120,
+            options=[
+                ft.dropdown.Option("g"),
+                ft.dropdown.Option("lbs"),
+            ],
         )
 
         self.txt_description = ft.TextField(
@@ -59,6 +78,8 @@ class ViewXnatNewSubject(BaseView):
             min_lines=1,
             max_lines=6
         )
+
+        self.txt_error = ft.Text(value="", color=ft.Colors.RED_600)
 
         self.btn_cancel = ft.TextButton("Close")
         self.btn_submit = ft.ElevatedButton(
@@ -77,10 +98,13 @@ class ViewXnatNewSubject(BaseView):
             spacing=10,
             controls=[
                 self.txt_title,
+                self.dd_project,
                 self.id_row,
-                ft.Text("Accessibility"),
-                self.rb_access,
-                self.txt_description
+                self.dd_gender,
+                self.txt_date_of_birth,
+                ft.Row([self.txt_weight, self.dd_weight_unit], spacing=10),
+                self.txt_description,
+                self.txt_error,
             ]
         )
 
@@ -93,11 +117,16 @@ class ViewXnatNewSubject(BaseView):
 
     def set_initial_state(self):
         self.txt_title.value = ""
+        self.dd_project.value = None
         self.txt_subject_id.value = ""
         self.txt_subject_id.disabled = True
         self.chk_edit_id.value = False
-        self.rb_access.value = "private"
+        self.dd_gender.value = None
+        self.txt_date_of_birth.value = datetime.now().strftime("%m/%d/%Y")
+        self.txt_weight.value = "0"
+        self.dd_weight_unit.value = "g"
         self.txt_description.value = ""
+        self.txt_error.value = ""
         self.btn_submit.disabled = True
 
     def open(self):
@@ -126,6 +155,18 @@ class ViewXnatNewSubject(BaseView):
         self.btn_submit.disabled = not enabled
         self._page.update()
 
+    def set_project_options(self, projects):
+        self.dd_project.options = [ft.dropdown.Option(project) for project in projects]
+        self.update_page()
+
+    def set_error_message(self, message):
+        self.txt_error.value = message or ""
+        self.update_page()
+
+    def set_date_of_birth_value(self, value):
+        self.txt_date_of_birth.value = value
+        self.update_page()
+
     def set_subject_id_editable(self, editable):
         self.txt_subject_id.disabled = not editable
         self.update_page()
@@ -135,10 +176,15 @@ class ViewXnatNewSubject(BaseView):
 
     def _on_submit(self, e):
         data = {
+            "parent_project": self.dd_project.value,
             "subject_name": self.txt_title.value,
             "subject_id": self.txt_subject_id.value,
-            "accessibility": self.rb_access.value,
+            "gender": self.dd_gender.value,
+            "date_of_birth": self.txt_date_of_birth.value,
+            "weight": self.txt_weight.value,
+            "weight_unit": self.dd_weight_unit.value,
             "description": self.txt_description.value,
+            "notes": self.txt_description.value,
         }
 
         if self.on_submit_callback:
