@@ -84,6 +84,16 @@ class ViewXnatNewProject:
         self._page.open(self.dlg)
         self._page.update()
 
+    def reset_form(self):
+        self.txt_title.value = ""
+        self.txt_project_id.value = ""
+        self.txt_project_id.disabled = True
+        self.chk_edit_id.value = False
+        self.rb_access.value = "private"
+        self.txt_description.value = ""
+        self.btn_submit.disabled = True
+        self._page.update()
+
     def close(self):
         self._page.close(self.dlg)
         self._page.update()
@@ -99,9 +109,6 @@ class ViewXnatNewProject:
     def set_controller(self, controller):
         self._controller = controller
 
-    # ------------------------------------------------------------
-    # EVENT HANDLERS → callback al parent
-    # ------------------------------------------------------------
     def _on_submit(self, e):
         data = {
             "project_name": self.txt_title.value,

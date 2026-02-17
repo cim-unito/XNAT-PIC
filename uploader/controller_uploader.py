@@ -1,5 +1,4 @@
 from pathlib import Path
-import threading
 import flet as ft
 
 from enums.tree_type import TreeType
@@ -11,10 +10,10 @@ from shared_ui.ui.treeview.controller_treeview import ControllerTreeview
 from shared_ui.ui.treeview.model_treeview import ModelTreeview
 from shared_ui.ui.treeview.view_treeview import ViewTreeview
 from xnat_client.xnat_repository import XnatRepository
-from uploader.xnat_new_project.model_xnat_new_project import \
+from shared_ui.ui.xnat_new_project.model_xnat_new_project import \
     ModelXnatNewProject
-from uploader.xnat_new_project.view_xnat_new_project import ViewXnatNewProject
-from uploader.xnat_new_project.controller_xnat_new_project import \
+from shared_ui.ui.xnat_new_project.view_xnat_new_project import ViewXnatNewProject
+from shared_ui.ui.xnat_new_project.controller_xnat_new_project import \
     ControllerXnatNewProject
 
 class ControllerUploader:
@@ -95,22 +94,22 @@ class ControllerUploader:
     # ==========================================================
     # SET LEVEL (PROJECT / SUBJECT / EXPERIMENT / FILE)
     # ==========================================================
-    def upload_project(self, e):
+    def upload_project(self, e: ft.ControlEvent):
         """Start a project-level uploader and open the directory picker."""
         self._set_level(UploaderLevel.PROJECT)
         self._view.open_directory_picker()
 
-    def upload_subject(self, e):
+    def upload_subject(self, e: ft.ControlEvent):
         """Start a subject-level uploader and open the directory picker."""
         self._set_level(UploaderLevel.SUBJECT)
         self._view.open_directory_picker()
 
-    def upload_experiment(self, e):
+    def upload_experiment(self, e: ft.ControlEvent):
         """Start a experiment-level uploader and open the directory picker."""
         self._set_level(UploaderLevel.EXPERIMENT)
         self._view.open_directory_picker()
 
-    def upload_file(self, e):
+    def upload_file(self, e: ft.ControlEvent):
         """Start a file-level uploader and open the directory picker."""
         self._set_level(UploaderLevel.FILE)
         self._view.open_directory_picker()
@@ -233,6 +232,7 @@ class ControllerUploader:
     # NEW XNAT PROJECT
     # ==========================================================
     def create_new_project(self, e):
+        self._controller_xnat_new_project.reset_form()
         self._view_xnat_new_project.open()
 
     def on_data_project_collected(self, data):

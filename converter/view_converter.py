@@ -16,7 +16,10 @@ class ViewConverter(BaseView):
         # graphical elements
         self.title = None
         # top level
-        self.btn_conversion_type = None
+        self.mbar__conversion_type = None
+        self.mitem_milabs_2_dicom = None
+        self.mitem_ivis_2_dicom = None
+        self.mi_milabs_2_dicom = None
         self.txt_conversion_type = None
         self.sw_overwrite = None
         self.file_picker = None
@@ -63,12 +66,11 @@ class ViewConverter(BaseView):
         """Reset the UI to the default idle state.
 
         Enables the top-level controls, disables the convert button, resets
-        the home/back label and icon, clears tree views, and restores default
-        dropdown/switch values.
+        the home/back label and icon, clears tree views, ...
         """
         # enable top-level
         for c in [
-            self.btn_conversion_type,
+            self.mbar__conversion_type,
             self.sw_overwrite,
             self.btn_project,
             self.btn_subject,
@@ -104,7 +106,7 @@ class ViewConverter(BaseView):
         """
         # disable top-level
         for c in [
-            self.btn_conversion_type,
+            self.mbar__conversion_type,
             self.sw_overwrite,
             self.btn_project,
             self.btn_subject,
@@ -169,7 +171,16 @@ class ViewConverter(BaseView):
             "Conversion type",
             weight=ft.FontWeight.W_600,
         )
-        self.btn_conversion_type = ft.MenuBar(
+        self.mitem_milabs_2_dicom = ft.MenuItemButton(
+            content=ft.Text(ConverterType.BRUKER2DICOM.value),
+        )
+        self.mitem_ivis_2_dicom = ft.MenuItemButton(
+            content=ft.Text(ConverterType.IVIS2DICOM.value),
+        )
+        self.mi_milabs_2_dicom = ft.MenuItemButton(
+            content=ft.Text(ConverterType.MILABS2DICOM.value),
+        )
+        self.mbar__conversion_type = ft.MenuBar(
             expand=True,
             controls=[
                 ft.SubmenuButton(
@@ -184,35 +195,14 @@ class ViewConverter(BaseView):
                         ft.SubmenuButton(
                             content=ft.Text("MR"),
                             controls=[
-                                ft.MenuItemButton(
-                                    content=ft.Text(
-                                        ConverterType.BRUKER2DICOM.value),
-                                    on_click=lambda _: self
-                                    ._controller.set_conversion_type(
-                                        ConverterType.BRUKER2DICOM
-                                    ),
-                                )
+                                self.mitem_milabs_2_dicom,
                             ],
                         ),
                         ft.SubmenuButton(
                             content=ft.Text("OI"),
                             controls=[
-                                ft.MenuItemButton(
-                                    content=ft.Text(
-                                        ConverterType.IVIS2DICOM.value),
-                                    on_click=lambda _: self
-                                    ._controller.set_conversion_type(
-                                        ConverterType.IVIS2DICOM
-                                    ),
-                                ),
-                                ft.MenuItemButton(
-                                    content=ft.Text(
-                                        ConverterType.MILABS2DICOM.value),
-                                    on_click=lambda _: self
-                                    ._controller.set_conversion_type(
-                                        ConverterType.MILABS2DICOM
-                                    ),
-                                ),
+                                self.mitem_ivis_2_dicom,
+                                self.mi_milabs_2_dicom,
                             ],
                         ),
                     ],
@@ -311,6 +301,9 @@ class ViewConverter(BaseView):
         self.btn_project.on_click = self._controller.convert_project
         self.btn_subject.on_click = self._controller.convert_subject
         self.btn_experiment.on_click = self._controller.convert_experiment
+        self.mitem_milabs_2_dicom.on_click = self._on_bruker_2_dicom_selected
+        self.mitem_ivis_2_dicom.on_click = self._on_ivis_2_dicom_selected
+        self.mi_milabs_2_dicom.on_click = self._on_milabs_2_dicom_selected
         self.file_picker.on_result = self.file_picker_result
         self.btn_home_back.on_click = self._controller.on_home_back_clicked
         self.btn_convert.on_click = self._controller.on_convert_clicked
@@ -332,7 +325,7 @@ class ViewConverter(BaseView):
             controls=[
                 ft.Container(
                     col={"xs": 12, "sm": 4},
-                    content=self.btn_conversion_type,
+                    content=self.mbar__conversion_type,
                 ),
                 ft.Container(
                     col={"xs": 12, "sm": 4},
@@ -419,6 +412,16 @@ class ViewConverter(BaseView):
                 ],
             ),
         )
+
+    def _on_bruker_2_dicom_selected(self, _event: ft.ControlEvent):
+        self._controller.set_conversion_type(ConverterType.BRUKER2DICOM)
+
+    def _on_ivis_2_dicom_selected(self, _event: ft.ControlEvent):
+        self._controller.set_conversion_type(ConverterType.IVIS2DICOM)
+
+    def _on_milabs_2_dicom_selected(self, _event: ft.ControlEvent):
+        self._controller.set_conversion_type(ConverterType.MILABS2DICOM)
+
 
     def _build_tree_panel(
             self,

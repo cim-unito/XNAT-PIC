@@ -27,6 +27,10 @@ class ControllerXnatNewProject:
         self._view.txt_project_id.disabled = not d.editable_id
         self._view._page.update()
 
+    def reset_form(self):
+        self._model.reset()
+        self._view.reset_form()
+
     def _update_submit(self):
         d = self._model.data
         can = bool(d.title.strip()) and bool(d.project_id.strip())
