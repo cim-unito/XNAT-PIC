@@ -66,6 +66,7 @@ class ControllerConverter:
     def set_conversion_type(self, conversion_type: ConverterType):
         """Update the conversion type selected by the user."""
         self._view.txt_conversion_type.value = conversion_type.value
+        self._model.conversion_type = conversion_type
         self._view.update_page()
 
     # -------------------------------------------------------
