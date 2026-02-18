@@ -15,7 +15,6 @@ class XnatNewSubjectData:
         self.height_inches = ""
         self.weight_lbs = ""
         self.recruitment_source = ""
-        self.description = ""
         self.editable_id = False
         self.error_message = ""
 
@@ -35,7 +34,6 @@ class XnatNewSubjectData:
         self.height_inches = ""
         self.weight_lbs = ""
         self.recruitment_source = ""
-        self.description = ""
         self.editable_id = False
         self.error_message = ""
 

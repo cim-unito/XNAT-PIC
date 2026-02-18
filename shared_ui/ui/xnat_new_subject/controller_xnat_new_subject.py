@@ -22,7 +22,6 @@ class ControllerXnatNewSubject:
         self._view.txt_height_inches.on_change = self.on_height_inches_changed
         self._view.txt_weight_lbs.on_change = self.on_weight_lbs_changed
         self._view.txt_recruitment_source.on_change = self.on_recruitment_source_changed
-        self._view.txt_description.on_change = self.on_description_changed
 
     def configure_context(self, projects, existing_subject_ids_by_project=None):
         self._model.set_projects_context(projects, existing_subject_ids_by_project)
@@ -107,9 +106,6 @@ class ControllerXnatNewSubject:
 
     def on_recruitment_source_changed(self, e):
         self._model.data.recruitment_source = (e.control.value or "").strip()
-
-    def on_description_changed(self, e):
-        self._model.data.description = e.control.value or ""
 
     def on_toggle_edit_id(self, e):
         d = self._model.data

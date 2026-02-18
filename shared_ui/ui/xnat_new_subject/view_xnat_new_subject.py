@@ -29,7 +29,6 @@ class ViewXnatNewSubject(BaseView):
         self.txt_height_inches = None
         self.txt_weight_lbs = None
         self.txt_recruitment_source = None
-        self.txt_description = None
         self.txt_error = None
         self.btn_submit = None
         self.btn_cancel = None
@@ -92,14 +91,27 @@ class ViewXnatNewSubject(BaseView):
         self.dp_date_of_birth = ft.DatePicker(on_change=self._on_date_selected)
         self._page.overlay.append(self.dp_date_of_birth)
 
-        self.txt_date_of_birth = ft.TextField(label="MM/DD/YYYY", width=180)
+        self.txt_date_of_birth = ft.TextField(label="MM/DD/YYYY", width=180, read_only=True)
         self.btn_pick_date = ft.OutlinedButton("select date", width=130)
         self.row_dob = ft.Row([self.txt_date_of_birth, self.btn_pick_date], spacing=8)
 
-        self.txt_year_of_birth = ft.TextField(label="YYYY", width=180, visible=False)
+        self.txt_year_of_birth = ft.TextField(
+            label="YYYY",
+            width=180,
+            visible=False,
+            keyboard_type=ft.KeyboardType.NUMBER,
+            input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9]*"),
+        )
         self.row_yob = ft.Row([self.txt_year_of_birth], visible=False)
 
-        self.txt_age = ft.TextField(label="Age", width=180, visible=False)
+        self.txt_age = ft.TextField(
+            label="Age",
+            width=180,
+            visible=False,
+            keyboard_type=ft.KeyboardType.NUMBER,
+            input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9]*"),
+        )
+
         self.row_age = ft.Row([self.txt_age], visible=False)
 
         self.dd_gender = ft.Dropdown(
@@ -130,13 +142,6 @@ class ViewXnatNewSubject(BaseView):
         self.txt_weight_lbs = ft.TextField(label="Weight (lbs)")
         self.txt_recruitment_source = ft.TextField(label="Recruitment Source")
 
-        self.txt_description = ft.TextField(
-            label="Subject description",
-            multiline=True,
-            min_lines=1,
-            max_lines=6,
-        )
-
         self.txt_error = ft.Text(value="", color=ft.Colors.RED_600)
 
         self.btn_cancel = ft.TextButton("Close")
@@ -149,6 +154,7 @@ class ViewXnatNewSubject(BaseView):
         self.btn_cancel.on_click = self._on_cancel
         self.btn_submit.on_click = self._on_submit
         self.btn_pick_date.on_click = lambda e: self.dp_date_of_birth.pick_date()
+        self.txt_date_of_birth.on_focus = lambda e: self.dp_date_of_birth.pick_date()
 
     def _define_layout(self):
         yob_dob_age_box = ft.Container(
@@ -186,7 +192,6 @@ class ViewXnatNewSubject(BaseView):
                 self.id_row,
                 yob_dob_age_box,
                 self.dd_gender,
-                self.txt_date_of_birth,
                 self.dd_handedness,
                 self.txt_education,
                 self.txt_race,
@@ -194,7 +199,6 @@ class ViewXnatNewSubject(BaseView):
                 self.txt_height_inches,
                 self.txt_weight_lbs,
                 self.txt_recruitment_source,
-                self.txt_description,
                 self.txt_error,
             ],
             scroll=ft.ScrollMode.AUTO,
@@ -228,7 +232,6 @@ class ViewXnatNewSubject(BaseView):
         self.txt_height_inches.value = ""
         self.txt_weight_lbs.value = ""
         self.txt_recruitment_source.value = ""
-        self.txt_description.value = ""
         self.txt_error.value = ""
         self.btn_submit.disabled = True
 
@@ -312,8 +315,6 @@ class ViewXnatNewSubject(BaseView):
             "height_inches": self.txt_height_inches.value,
             "weight_lbs": self.txt_weight_lbs.value,
             "recruitment_source": self.txt_recruitment_source.value,
-            "description": self.txt_description.value,
-            "notes": self.txt_description.value,
         }
 
         if self.on_submit_callback:
