@@ -91,25 +91,32 @@ class ViewXnatNewSubject(BaseView):
         self.dp_date_of_birth = ft.DatePicker(on_change=self._on_date_selected)
         self._page.overlay.append(self.dp_date_of_birth)
 
-        self.txt_date_of_birth = ft.TextField(label="MM/DD/YYYY", width=180, read_only=True)
+        self.txt_date_of_birth = ft.TextField(
+            label="Date of birth",
+            hint_text="MM/DD/YYYY",
+            width=180,
+            keyboard_type=ft.KeyboardType.DATETIME,
+            input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9/]*"),
+            max_length=10,
+        )
         self.btn_pick_date = ft.OutlinedButton("select date", width=130)
         self.row_dob = ft.Row([self.txt_date_of_birth, self.btn_pick_date], spacing=8)
 
         self.txt_year_of_birth = ft.TextField(
             label="YYYY",
             width=180,
-            visible=False,
             keyboard_type=ft.KeyboardType.NUMBER,
             input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9]*"),
+            max_length=4,
         )
         self.row_yob = ft.Row([self.txt_year_of_birth], visible=False)
 
         self.txt_age = ft.TextField(
             label="Age",
             width=180,
-            visible=False,
             keyboard_type=ft.KeyboardType.NUMBER,
             input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9]*"),
+            max_length=4,
         )
 
         self.row_age = ft.Row([self.txt_age], visible=False)
@@ -154,7 +161,7 @@ class ViewXnatNewSubject(BaseView):
         self.btn_cancel.on_click = self._on_cancel
         self.btn_submit.on_click = self._on_submit
         self.btn_pick_date.on_click = lambda e: self.dp_date_of_birth.pick_date()
-        self.txt_date_of_birth.on_focus = lambda e: self.dp_date_of_birth.pick_date()
+        self.txt_date_of_birth.on_blur = self._on_date_text_blur
 
     def _define_layout(self):
         yob_dob_age_box = ft.Container(
@@ -285,7 +292,8 @@ class ViewXnatNewSubject(BaseView):
     def _apply_yob_dob_age_visibility(self, mode):
         self.row_dob.visible = mode == "dob"
         self.row_yob.visible = mode == "yob"
-        self.row_age.visible = mode == "age"
+        self.txt_year_of_birth.visible = mode == "yob"
+        self.txt_age.visible = mode == "age"
 
     def set_controller(self, controller):
         self._controller = controller
@@ -296,6 +304,10 @@ class ViewXnatNewSubject(BaseView):
             if getattr(self, "_controller", None):
                 self._controller.set_date_of_birth_value(self.txt_date_of_birth.value)
             self.update_page()
+
+    def _on_date_text_blur(self, e):
+        if getattr(self, "_controller", None):
+            self._controller.set_date_of_birth_value(self.txt_date_of_birth.value)
 
     def _on_submit(self, e):
         data = {
