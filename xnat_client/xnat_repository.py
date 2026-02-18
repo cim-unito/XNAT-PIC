@@ -1,6 +1,8 @@
 import shutil
 import tempfile
+from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote_plus
 
 from xnat_client.xnat_session import XnatSession
 
@@ -37,30 +39,31 @@ class XnatRepository:
         session = self._session
 
         project_id = data["project_id"]
-        project_name = data["project_name"]
-        description = data["description"]
-        access = data["accessibility"]
+        project_name = data.get("project_name", "")
+        project_description = data.get("description", "")
+        project_access = data.get("accessibility", "")
 
         session.put(f"/data/projects/{project_id}")
 
         session.put(f"/data/projects/{project_id}?label={project_name}")
-        session.put(f"/data/projects/{project_id}?description={description}")
+        session.put(f"/data/projects/{project_id}?description={project_description}")
 
-        session.put(f"/data/projects/{project_id}/accessibility/{access}")
+        session.put(f"/data/projects/{project_id}/accessibility/{project_access}")
 
     def create_subject(self, data):
         session = self._session
 
         project_id = data["parent_project"]
         subject_id = data["subject_id"]
-        subject_label = data.get("subject_name", "")
+        subject_name = data.get("subject_name", "")
+        subject_description = data.get("description", "")
+        subject_gender = "Male"
 
         session.put(f"/data/projects/{project_id}/subjects/{subject_id}")
+        session.put(f"/data/projects/{project_id}/subjects/{subject_id}?label={subject_name}")
+        session.put(f"/data/projects/{project_id}/subjects/{subject_id}?description={subject_description}")
+        session.put(f"/data/projects/{project_id}/subjects/{subject_id}?gender={subject_gender}")
 
-        if subject_label:
-            session.put(
-                f"/data/projects/{project_id}/subjects/{subject_id}?label={subject_label}"
-            )
 
     def upload_dicom(self, exp_folder, project_id, subject_id,
                      experiment_id):
