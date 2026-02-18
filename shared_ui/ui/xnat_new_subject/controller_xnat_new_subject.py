@@ -59,7 +59,11 @@ class ControllerXnatNewSubject:
         self._model.data.gender = e.control.value or ""
 
     def on_date_of_birth_changed(self, e):
-        self.set_date_of_birth_value(e.control.value or "")
+        formatted_value = self._format_date_of_birth_input(e.control.value or "")
+        if formatted_value != (e.control.value or ""):
+            self._view.set_date_of_birth_value(formatted_value)
+
+        self.set_date_of_birth_value(formatted_value)
 
     def set_date_of_birth_value(self, raw_value):
         date_txt = (raw_value or "").strip()
@@ -77,6 +81,16 @@ class ControllerXnatNewSubject:
             self._model.data.date_of_birth = ""
 
         self._update_submit()
+
+    def _format_date_of_birth_input(self, raw_value):
+        digits = "".join(ch for ch in (raw_value or "") if ch.isdigit())[:8]
+
+        if len(digits) <= 2:
+            return digits
+        if len(digits) <= 4:
+            return f"{digits[:2]}/{digits[2:]}"
+
+        return f"{digits[:2]}/{digits[2:4]}/{digits[4:]}"
 
     def on_year_of_birth_changed(self, e):
         self._model.data.year_of_birth = (e.control.value or "").strip()

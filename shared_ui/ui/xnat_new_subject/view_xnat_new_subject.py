@@ -17,8 +17,6 @@ class ViewXnatNewSubject(BaseView):
         self.chk_edit_id = None
         self.rg_yob_dob_age = None
         self.txt_date_of_birth = None
-        self.btn_pick_date = None
-        self.dp_date_of_birth = None
         self.txt_year_of_birth = None
         self.txt_age = None
         self.dd_gender = None
@@ -88,19 +86,15 @@ class ViewXnatNewSubject(BaseView):
             ),
         )
 
-        self.dp_date_of_birth = ft.DatePicker(on_change=self._on_date_selected)
-        self._page.overlay.append(self.dp_date_of_birth)
-
         self.txt_date_of_birth = ft.TextField(
             label="Date of birth",
             hint_text="MM/DD/YYYY",
             width=180,
             keyboard_type=ft.KeyboardType.DATETIME,
-            input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9/]*"),
+            input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9]*"),
             max_length=10,
         )
-        self.btn_pick_date = ft.OutlinedButton("select date", width=130)
-        self.row_dob = ft.Row([self.txt_date_of_birth, self.btn_pick_date], spacing=8)
+        self.row_dob = ft.Row([self.txt_date_of_birth], spacing=8)
 
         self.txt_year_of_birth = ft.TextField(
             label="YYYY",
@@ -160,7 +154,6 @@ class ViewXnatNewSubject(BaseView):
     def _bind_events(self):
         self.btn_cancel.on_click = self._on_cancel
         self.btn_submit.on_click = self._on_submit
-        self.btn_pick_date.on_click = lambda e: self.dp_date_of_birth.pick_date()
         self.txt_date_of_birth.on_blur = self._on_date_text_blur
 
     def _define_layout(self):
@@ -292,18 +285,10 @@ class ViewXnatNewSubject(BaseView):
     def _apply_yob_dob_age_visibility(self, mode):
         self.row_dob.visible = mode == "dob"
         self.row_yob.visible = mode == "yob"
-        self.txt_year_of_birth.visible = mode == "yob"
-        self.txt_age.visible = mode == "age"
+        self.row_age.visible = mode == "age"
 
     def set_controller(self, controller):
         self._controller = controller
-
-    def _on_date_selected(self, e):
-        if self.dp_date_of_birth.value:
-            self.txt_date_of_birth.value = self.dp_date_of_birth.value.strftime("%m/%d/%Y")
-            if getattr(self, "_controller", None):
-                self._controller.set_date_of_birth_value(self.txt_date_of_birth.value)
-            self.update_page()
 
     def _on_date_text_blur(self, e):
         if getattr(self, "_controller", None):
