@@ -1,4 +1,5 @@
 class XnatNewSubjectData:
+    DEFAULT_YOB_DOB_AGE_MODE = "dob"
     def __init__(self):
         self.title = ""
         self.subject_id = ""
@@ -22,7 +23,7 @@ class XnatNewSubjectData:
         self.title = ""
         self.subject_id = ""
         self.parent_project = ""
-        self.yob_dob_age_mode = "dob"
+        self.yob_dob_age_mode = self.DEFAULT_YOB_DOB_AGE_MODE
         self.gender = ""
         self.date_of_birth = ""
         self.year_of_birth = ""

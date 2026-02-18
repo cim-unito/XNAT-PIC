@@ -280,7 +280,17 @@ class ControllerUploader:
         try:
             projects = self._xnat_repo.list_projects()
             project_ids = [project["id"] for project in projects]
-            self._controller_xnat_new_subject.configure_context(project_ids)
+            existing_subject_ids_by_project = {
+                project_id: {
+                    subject["id"]
+                    for subject in self._xnat_repo.list_subjects(project_id)
+                }
+                for project_id in project_ids
+            }
+            self._controller_xnat_new_subject.configure_context(
+                project_ids,
+                existing_subject_ids_by_project,
+            )
         except Exception as ex:
             self._view.create_alert(f"Cannot load projects for new subject: {ex}")
             return

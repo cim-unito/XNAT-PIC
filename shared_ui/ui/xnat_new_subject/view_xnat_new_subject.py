@@ -139,8 +139,16 @@ class ViewXnatNewSubject(BaseView):
         self.txt_education = ft.TextField(label="Education")
         self.txt_race = ft.TextField(label="Race")
         self.txt_ethnicity = ft.TextField(label="Ethnicity")
-        self.txt_height_inches = ft.TextField(label="Height (inches)")
-        self.txt_weight_lbs = ft.TextField(label="Weight (lbs)")
+        self.txt_height_inches = ft.TextField(
+            label="Height (inches)",
+            keyboard_type=ft.KeyboardType.NUMBER,
+            input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9.]*"),
+        )
+        self.txt_weight_lbs = ft.TextField(
+            label="Weight (lbs)",
+            keyboard_type=ft.KeyboardType.NUMBER,
+            input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9.]*"),
+        )
         self.txt_recruitment_source = ft.TextField(label="Recruitment Source")
 
         self.txt_error = ft.Text(value="", color=ft.Colors.RED_600)
@@ -295,23 +303,25 @@ class ViewXnatNewSubject(BaseView):
             self._controller.set_date_of_birth_value(self.txt_date_of_birth.value)
 
     def _on_submit(self, e):
+        title_value = (self.txt_title.value or "").strip()
+
         data = {
-            "parent_project": self.dd_project.value,
-            "title": self.txt_title.value,
-            "subject_name": self.txt_title.value,
-            "subject_id": self.txt_subject_id.value,
+            "parent_project": (self.dd_project.value or "").strip(),
+            "title": title_value,
+            "subject_name": title_value,
+            "subject_id": (self.txt_subject_id.value or "").strip(),
             "yob_dob_age_mode": self.rg_yob_dob_age.value,
-            "date_of_birth": self.txt_date_of_birth.value,
-            "year_of_birth": self.txt_year_of_birth.value,
-            "age": self.txt_age.value,
-            "gender": self.dd_gender.value,
-            "handedness": self.dd_handedness.value,
-            "education": self.txt_education.value,
-            "race": self.txt_race.value,
-            "ethnicity": self.txt_ethnicity.value,
-            "height_inches": self.txt_height_inches.value,
-            "weight_lbs": self.txt_weight_lbs.value,
-            "recruitment_source": self.txt_recruitment_source.value,
+            "date_of_birth": (self.txt_date_of_birth.value or "").strip(),
+            "year_of_birth": (self.txt_year_of_birth.value or "").strip(),
+            "age": (self.txt_age.value or "").strip(),
+            "gender": (self.dd_gender.value or "").strip(),
+            "handedness": (self.dd_handedness.value or "").strip(),
+            "education": (self.txt_education.value or "").strip(),
+            "race": (self.txt_race.value or "").strip(),
+            "ethnicity": (self.txt_ethnicity.value or "").strip(),
+            "height_inches": (self.txt_height_inches.value or "").strip(),
+            "weight_lbs": (self.txt_weight_lbs.value or "").strip(),
+            "recruitment_source": (self.txt_recruitment_source.value or "").strip(),
         }
 
         if self.on_submit_callback:
