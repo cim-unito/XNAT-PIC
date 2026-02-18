@@ -3,6 +3,7 @@ from datetime import datetime
 
 from shared_ui.ui.base_view import BaseView
 
+
 class ViewXnatNewSubject(BaseView):
     def __init__(self, page: ft.Page, on_submit, on_cancel=None):
         super().__init__(page)
@@ -14,15 +15,28 @@ class ViewXnatNewSubject(BaseView):
         self.dd_project = None
         self.txt_subject_id = None
         self.chk_edit_id = None
-        self.dd_gender = None
+        self.rg_yob_dob_age = None
         self.txt_date_of_birth = None
-        self.txt_weight = None
-        self.dd_weight_unit = None
+        self.btn_pick_date = None
+        self.dp_date_of_birth = None
+        self.txt_year_of_birth = None
+        self.txt_age = None
+        self.dd_gender = None
+        self.dd_handedness = None
+        self.txt_education = None
+        self.txt_race = None
+        self.txt_ethnicity = None
+        self.txt_height_inches = None
+        self.txt_weight_lbs = None
+        self.txt_recruitment_source = None
         self.txt_description = None
         self.txt_error = None
         self.btn_submit = None
         self.btn_cancel = None
         self.id_row = None
+        self.row_dob = None
+        self.row_yob = None
+        self.row_age = None
 
         self.build_dialog()
 
@@ -48,36 +62,79 @@ class ViewXnatNewSubject(BaseView):
 
         self.id_row = ft.Row(
             [self.txt_subject_id, self.chk_edit_id],
-            spacing=10
+            spacing=10,
         )
+
+        self.rg_yob_dob_age = ft.RadioGroup(
+            value="dob",
+            content=ft.Column(
+                spacing=8,
+                controls=[
+                    ft.Row(
+                        [
+                            ft.Radio(value="dob", label="Date Of Birth"),
+                        ]
+                    ),
+                    ft.Row(
+                        [
+                            ft.Radio(value="yob", label="Year Of Birth"),
+                        ]
+                    ),
+                    ft.Row(
+                        [
+                            ft.Radio(value="age", label="Age"),
+                        ]
+                    ),
+                ],
+            ),
+        )
+
+        self.dp_date_of_birth = ft.DatePicker(on_change=self._on_date_selected)
+        self._page.overlay.append(self.dp_date_of_birth)
+
+        self.txt_date_of_birth = ft.TextField(label="MM/DD/YYYY", width=180)
+        self.btn_pick_date = ft.OutlinedButton("select date", width=130)
+        self.row_dob = ft.Row([self.txt_date_of_birth, self.btn_pick_date], spacing=8)
+
+        self.txt_year_of_birth = ft.TextField(label="YYYY", width=180, visible=False)
+        self.row_yob = ft.Row([self.txt_year_of_birth], visible=False)
+
+        self.txt_age = ft.TextField(label="Age", width=180, visible=False)
+        self.row_age = ft.Row([self.txt_age], visible=False)
 
         self.dd_gender = ft.Dropdown(
             label="Gender",
+            width=320,
             options=[
                 ft.dropdown.Option("Male"),
                 ft.dropdown.Option("Female"),
-                ft.dropdown.Option("Other"),
+                ft.dropdown.Option("Unknown"),
             ],
         )
 
-        self.txt_date_of_birth = ft.TextField(label="Date of birth (MM/DD/YYYY)")
-
-        self.txt_weight = ft.TextField(label="Weight", width=240)
-        self.dd_weight_unit = ft.Dropdown(
-            label="Unit",
-            value="g",
-            width=120,
+        self.dd_handedness = ft.Dropdown(
+            label="Handedness",
+            width=320,
             options=[
-                ft.dropdown.Option("g"),
-                ft.dropdown.Option("lbs"),
+                ft.dropdown.Option("Right"),
+                ft.dropdown.Option("Left"),
+                ft.dropdown.Option("Ambidextrous"),
+                ft.dropdown.Option("Unknown"),
             ],
         )
+
+        self.txt_education = ft.TextField(label="Education")
+        self.txt_race = ft.TextField(label="Race")
+        self.txt_ethnicity = ft.TextField(label="Ethnicity")
+        self.txt_height_inches = ft.TextField(label="Height (inches)")
+        self.txt_weight_lbs = ft.TextField(label="Weight (lbs)")
+        self.txt_recruitment_source = ft.TextField(label="Recruitment Source")
 
         self.txt_description = ft.TextField(
             label="Subject description",
             multiline=True,
             min_lines=1,
-            max_lines=6
+            max_lines=6,
         )
 
         self.txt_error = ft.Text(value="", color=ft.Colors.RED_600)
@@ -91,22 +148,56 @@ class ViewXnatNewSubject(BaseView):
     def _bind_events(self):
         self.btn_cancel.on_click = self._on_cancel
         self.btn_submit.on_click = self._on_submit
+        self.btn_pick_date.on_click = lambda e: self.dp_date_of_birth.pick_date()
 
     def _define_layout(self):
+        yob_dob_age_box = ft.Container(
+            border=ft.border.all(1, ft.Colors.BLACK26),
+            padding=12,
+            content=ft.Column(
+                spacing=8,
+                controls=[
+                    ft.Text("Please Select One"),
+                    ft.Row(
+                        [
+                            ft.Container(width=180, content=self.rg_yob_dob_age),
+                            ft.Column(
+                                spacing=8,
+                                controls=[
+                                    self.row_dob,
+                                    self.row_yob,
+                                    self.row_age,
+                                ],
+                            ),
+                        ],
+                        alignment=ft.MainAxisAlignment.START,
+                        vertical_alignment=ft.CrossAxisAlignment.START,
+                    ),
+                ],
+            ),
+        )
 
         content = ft.Column(
             width=600,
-            spacing=16,
+            spacing=12,
             controls=[
                 self.dd_project,
                 self.txt_title,
                 self.id_row,
+                yob_dob_age_box,
                 self.dd_gender,
                 self.txt_date_of_birth,
-                ft.Row([self.txt_weight, self.dd_weight_unit], spacing=10),
+                self.dd_handedness,
+                self.txt_education,
+                self.txt_race,
+                self.txt_ethnicity,
+                self.txt_height_inches,
+                self.txt_weight_lbs,
+                self.txt_recruitment_source,
                 self.txt_description,
                 self.txt_error,
-            ]
+            ],
+            scroll=ft.ScrollMode.AUTO,
         )
 
         self.dlg = ft.AlertDialog(
@@ -124,10 +215,19 @@ class ViewXnatNewSubject(BaseView):
         self.txt_subject_id.value = ""
         self.txt_subject_id.disabled = True
         self.chk_edit_id.value = False
-        self.dd_gender.value = None
+        self.rg_yob_dob_age.value = "dob"
         self.txt_date_of_birth.value = datetime.now().strftime("%m/%d/%Y")
-        self.txt_weight.value = "0"
-        self.dd_weight_unit.value = "g"
+        self.txt_year_of_birth.value = ""
+        self.txt_age.value = ""
+        self._apply_yob_dob_age_visibility("dob")
+        self.dd_gender.value = None
+        self.dd_handedness.value = None
+        self.txt_education.value = ""
+        self.txt_race.value = ""
+        self.txt_ethnicity.value = ""
+        self.txt_height_inches.value = ""
+        self.txt_weight_lbs.value = ""
+        self.txt_recruitment_source.value = ""
         self.txt_description.value = ""
         self.txt_error.value = ""
         self.btn_submit.disabled = True
@@ -174,18 +274,44 @@ class ViewXnatNewSubject(BaseView):
         self.txt_subject_id.disabled = not editable
         self.update_page()
 
+    def set_yob_dob_age_mode(self, mode):
+        self.rg_yob_dob_age.value = mode
+        self._apply_yob_dob_age_visibility(mode)
+        self.update_page()
+
+    def _apply_yob_dob_age_visibility(self, mode):
+        self.row_dob.visible = mode == "dob"
+        self.row_yob.visible = mode == "yob"
+        self.row_age.visible = mode == "age"
+
     def set_controller(self, controller):
         self._controller = controller
+
+    def _on_date_selected(self, e):
+        if self.dp_date_of_birth.value:
+            self.txt_date_of_birth.value = self.dp_date_of_birth.value.strftime("%m/%d/%Y")
+            if getattr(self, "_controller", None):
+                self._controller.set_date_of_birth_value(self.txt_date_of_birth.value)
+            self.update_page()
 
     def _on_submit(self, e):
         data = {
             "parent_project": self.dd_project.value,
+            "title": self.txt_title.value,
             "subject_name": self.txt_title.value,
             "subject_id": self.txt_subject_id.value,
-            "gender": self.dd_gender.value,
+            "yob_dob_age_mode": self.rg_yob_dob_age.value,
             "date_of_birth": self.txt_date_of_birth.value,
-            "weight": self.txt_weight.value,
-            "weight_unit": self.dd_weight_unit.value,
+            "year_of_birth": self.txt_year_of_birth.value,
+            "age": self.txt_age.value,
+            "gender": self.dd_gender.value,
+            "handedness": self.dd_handedness.value,
+            "education": self.txt_education.value,
+            "race": self.txt_race.value,
+            "ethnicity": self.txt_ethnicity.value,
+            "height_inches": self.txt_height_inches.value,
+            "weight_lbs": self.txt_weight_lbs.value,
+            "recruitment_source": self.txt_recruitment_source.value,
             "description": self.txt_description.value,
             "notes": self.txt_description.value,
         }

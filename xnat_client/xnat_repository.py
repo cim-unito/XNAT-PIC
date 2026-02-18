@@ -41,7 +41,7 @@ class XnatRepository:
         project_id = data["project_id"]
         project_name = data.get("project_name", "")
         project_description = data.get("description", "")
-        project_access = data.get("accessibility", "")
+        project_access = data.get("accessibility", "private")
 
         session.put(f"/data/projects/{project_id}")
 
