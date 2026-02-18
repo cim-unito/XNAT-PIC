@@ -291,6 +291,8 @@ class ControllerUploader:
     def on_data_subject_collected(self, data):
         self._xnat_repo.create_subject(data)
         project_id = data["parent_project"]
+        subject_id = data["subject_id"]
+        subject_label = data.get("title") or subject_id
         exists = False
 
         for opt in self._view.dd_xnat_project.options:
@@ -305,6 +307,25 @@ class ControllerUploader:
             )
 
         self._view.dd_xnat_project.value = project_id
+        try:
+            subjects = self._xnat_repo.list_subjects(project_id)
+            self._view.populate_subjects(subjects)
+        except Exception as ex:
+            self._view.create_alert(
+                f"Subject created but list refresh failed: {ex}")
+            self._view.dd_xnat_project.update()
+            return
+
+        subject_exists = any(
+            opt.key == subject_id for opt in self._view.dd_xnat_subject.options
+        )
+
+        if not subject_exists:
+            self._view.dd_xnat_subject.options.append(
+                ft.dropdown.Option(key=subject_id, text=subject_label)
+            )
+
+        self._view.dd_xnat_subject.value = subject_id
         self._view.dd_xnat_project.update()
 
     # ==========================================================
