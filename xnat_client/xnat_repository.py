@@ -56,13 +56,29 @@ class XnatRepository:
         project_id = data["parent_project"]
         subject_id = data["subject_id"]
         subject_name = data.get("subject_name", "")
-        subject_description = data.get("description", "")
-        subject_gender = "Male"
+        subject_fields = {
+            "label": subject_name,
+            "description": data.get("description", ""),
+            "gender": data.get("gender", ""),
+            "handedness": data.get("handedness", ""),
+            "education": data.get("education", ""),
+            "race": data.get("race", ""),
+            "ethnicity": data.get("ethnicity", ""),
+            "height_inches": data.get("height_inches", ""),
+            "weight_lbs": data.get("weight_lbs", ""),
+            "recruitment_source": data.get("recruitment_source", ""),
+            "date_of_birth": data.get("date_of_birth", ""),
+            "year_of_birth": data.get("year_of_birth", ""),
+            "age": data.get("age", ""),
+        }
 
         session.put(f"/data/projects/{project_id}/subjects/{subject_id}")
-        session.put(f"/data/projects/{project_id}/subjects/{subject_id}?label={subject_name}")
-        session.put(f"/data/projects/{project_id}/subjects/{subject_id}?description={subject_description}")
-        session.put(f"/data/projects/{project_id}/subjects/{subject_id}?gender={subject_gender}")
+
+        for field_name, field_value in subject_fields.items():
+            if field_value not in (None, ""):
+                session.put(
+                    f"/data/projects/{project_id}/subjects/{subject_id}?{field_name}={field_value}"
+                )
 
 
     def upload_dicom(self, exp_folder, project_id, subject_id,
