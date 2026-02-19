@@ -64,7 +64,7 @@ class ControllerXnatNewSubject:
         self._update_submit()
 
     def on_yob_dob_age_mode_changed(self, e):
-        mode = e.control.value or "dob"
+        mode = e.control.value
         self._model.data.yob_dob_age_mode = mode
         self._view.set_yob_dob_age_mode(mode)
         self._update_submit()

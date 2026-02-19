@@ -1,5 +1,4 @@
 import flet as ft
-from datetime import datetime
 
 from shared_ui.ui.base_view import BaseView
 
@@ -63,7 +62,7 @@ class ViewXnatNewSubject(BaseView):
         )
 
         self.rg_yob_dob_age = ft.RadioGroup(
-            value="dob",
+            value=None,
             content=ft.Column(
                 spacing=8,
                 controls=[
@@ -227,11 +226,11 @@ class ViewXnatNewSubject(BaseView):
         self.txt_subject_id.value = ""
         self.txt_subject_id.disabled = True
         self.chk_edit_id.value = False
-        self.rg_yob_dob_age.value = "dob"
-        self.txt_date_of_birth.value = datetime.now().strftime("%m/%d/%Y")
+        self.rg_yob_dob_age.value = None
+        self.txt_date_of_birth.value = ""
         self.txt_year_of_birth.value = ""
         self.txt_age.value = ""
-        self._apply_yob_dob_age_visibility("dob")
+        self._apply_yob_dob_age_visibility(None)
         self.dd_gender.value = None
         self.dd_handedness.value = None
         self.txt_education.value = ""
@@ -305,15 +304,27 @@ class ViewXnatNewSubject(BaseView):
     def _on_submit(self, e):
         title_value = (self.txt_title.value or "").strip()
 
+        selected_mode = self.rg_yob_dob_age.value
+        date_of_birth = ""
+        year_of_birth = ""
+        age = ""
+
+        if selected_mode == "dob":
+            date_of_birth = (self.txt_date_of_birth.value or "").strip()
+        elif selected_mode == "yob":
+            year_of_birth = (self.txt_year_of_birth.value or "").strip()
+        elif selected_mode == "age":
+            age = (self.txt_age.value or "").strip()
+
         data = {
             "parent_project": (self.dd_project.value or "").strip(),
             "title": title_value,
             "subject_name": title_value,
             "subject_id": (self.txt_subject_id.value or "").strip(),
-            "yob_dob_age_mode": self.rg_yob_dob_age.value,
-            "date_of_birth": (self.txt_date_of_birth.value or "").strip(),
-            "year_of_birth": (self.txt_year_of_birth.value or "").strip(),
-            "age": (self.txt_age.value or "").strip(),
+            "yob_dob_age_mode": selected_mode,
+            "date_of_birth": date_of_birth,
+            "year_of_birth": year_of_birth,
+            "age": age,
             "gender": (self.dd_gender.value or "").strip(),
             "handedness": (self.dd_handedness.value or "").strip(),
             "education": (self.txt_education.value or "").strip(),
