@@ -3,7 +3,7 @@ class ControllerXnatNewProject:
         self._view = view
         self._model = model
 
-        self._view.txt_title.on_change = self.on_title_changed
+        self._view.txt_project_name.on_change = self.on_title_changed
         self._view.txt_project_id.on_change = self.on_project_id_changed
         self._view.chk_edit_id.on_change = self.on_toggle_edit_id
 

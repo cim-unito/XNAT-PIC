@@ -16,7 +16,7 @@ class ViewConverter(BaseView):
         # graphical elements
         self.title = None
         # top level
-        self.mbar__conversion_type = None
+        self.mbar_conversion_type = None
         self.mitem_milabs_2_dicom = None
         self.mitem_ivis_2_dicom = None
         self.mi_milabs_2_dicom = None
@@ -70,7 +70,7 @@ class ViewConverter(BaseView):
         """
         # enable top-level
         for c in [
-            self.mbar__conversion_type,
+            self.mbar_conversion_type,
             self.sw_overwrite,
             self.btn_project,
             self.btn_subject,
@@ -106,7 +106,7 @@ class ViewConverter(BaseView):
         """
         # disable top-level
         for c in [
-            self.mbar__conversion_type,
+            self.mbar_conversion_type,
             self.sw_overwrite,
             self.btn_project,
             self.btn_subject,
@@ -180,7 +180,7 @@ class ViewConverter(BaseView):
         self.mi_milabs_2_dicom = ft.MenuItemButton(
             content=ft.Text(ConverterType.MILABS2DICOM.value),
         )
-        self.mbar__conversion_type = ft.MenuBar(
+        self.mbar_conversion_type = ft.MenuBar(
             expand=True,
             controls=[
                 ft.SubmenuButton(
@@ -325,7 +325,7 @@ class ViewConverter(BaseView):
             controls=[
                 ft.Container(
                     col={"xs": 12, "sm": 4},
-                    content=self.mbar__conversion_type,
+                    content=self.mbar_conversion_type,
                 ),
                 ft.Container(
                     col={"xs": 12, "sm": 4},

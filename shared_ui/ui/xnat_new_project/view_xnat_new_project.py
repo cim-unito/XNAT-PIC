@@ -9,14 +9,13 @@ class ViewXnatNewProject(BaseView):
         self.on_cancel_callback = on_cancel
 
         self.dlg = None
-        self.txt_title = None
+        self.txt_project_name = None
         self.txt_project_id = None
         self.chk_edit_id = None
         self.rb_access = None
         self.txt_description = None
         self.btn_submit = None
         self.btn_cancel = None
-        self.id_row = None
 
         self.build_dialog()
 
@@ -27,8 +26,44 @@ class ViewXnatNewProject(BaseView):
         self.set_initial_state()
         return self.dlg
 
+    def set_initial_state(self):
+        self.txt_project_name.value = ""
+        self.txt_project_id.value = ""
+        self.txt_project_id.disabled = True
+        self.chk_edit_id.value = False
+        self.rb_access.value = "private"
+        self.txt_description.value = ""
+        self.btn_submit.disabled = True
+
+    def set_project_id_value(self, value):
+        self.txt_project_id.value = value
+        self._page.update()
+
+    def set_project_id_editable(self, editable):
+        self.txt_project_id.disabled = not editable
+        self.update_page()
+
+    def set_submit_enabled(self, enabled):
+        self.btn_submit.disabled = not enabled
+        self._page.update()
+
+    def reset_form(self):
+        self.set_initial_state()
+        self._page.update()
+
+    def open(self):
+        if not self.dlg:
+            self.build_dialog()
+
+        self._page.open(self.dlg)
+        self._page.update()
+
+    def close(self):
+        self._page.close(self.dlg)
+        self._page.update()
+
     def _build_controls(self):
-        self.txt_title = ft.TextField(label="Project title *")
+        self.txt_project_name = ft.TextField(label="Project name *")
 
         self.txt_project_id = ft.TextField(
             label="Project ID *",
@@ -36,11 +71,6 @@ class ViewXnatNewProject(BaseView):
         )
 
         self.chk_edit_id = ft.Checkbox(label="Edit ID")
-
-        self.id_row = ft.Row(
-            [self.txt_project_id, self.chk_edit_id],
-            spacing=10
-        )
 
         self.rb_access = ft.RadioGroup(
             value="private",
@@ -72,12 +102,17 @@ class ViewXnatNewProject(BaseView):
 
     def _define_layout(self):
 
+        id_row = ft.Row(
+            [self.txt_project_id, self.chk_edit_id],
+            spacing=10
+        )
+
         content = ft.Column(
             width=600,
             spacing=10,
             controls=[
-                self.txt_title,
-                self.id_row,
+                self.txt_project_name,
+                id_row,
                 ft.Text("Accessibility"),
                 self.rb_access,
                 self.txt_description
@@ -91,51 +126,9 @@ class ViewXnatNewProject(BaseView):
             actions=[self.btn_cancel, self.btn_submit]
         )
 
-    def set_initial_state(self):
-        self.txt_title.value = ""
-        self.txt_project_id.value = ""
-        self.txt_project_id.disabled = True
-        self.chk_edit_id.value = False
-        self.rb_access.value = "private"
-        self.txt_description.value = ""
-        self.btn_submit.disabled = True
-
-    def open(self):
-        if not self.dlg:
-            self.build_dialog()
-
-        self._page.open(self.dlg)
-        self._page.update()
-
-    def reset_form(self):
-        self.set_initial_state()
-        self._page.update()
-
-    def close(self):
-        self._page.close(self.dlg)
-        self._page.update()
-
-    def close_dialog(self):
-        self.close()
-
-    def set_project_id_value(self, value):
-        self.txt_project_id.value = value
-        self._page.update()
-
-    def set_submit_enabled(self, enabled):
-        self.btn_submit.disabled = not enabled
-        self._page.update()
-
-    def set_project_id_editable(self, editable):
-        self.txt_project_id.disabled = not editable
-        self.update_page()
-
-    def set_controller(self, controller):
-        self._controller = controller
-
     def _on_submit(self, e):
         data = {
-            "project_name": self.txt_title.value,
+            "project_name": self.txt_project_name.value,
             "project_id": self.txt_project_id.value,
             "accessibility": self.rb_access.value,
             "description": self.txt_description.value,
