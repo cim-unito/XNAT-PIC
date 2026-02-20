@@ -37,11 +37,11 @@ class ControllerUploader:
 
         # New project
         self._model_xnat_new_project = ModelXnatNewProject()
-        self._view_xnat_new_project = ViewXnatNewProject(self._view.page,
-                                                         on_submit=self.on_data_project_collected)
+        self._view_xnat_new_project = ViewXnatNewProject(self._view.page)
         self._controller_xnat_new_project = ControllerXnatNewProject(
             self._view_xnat_new_project,
             self._model_xnat_new_project,
+            on_submit=self.on_data_project_collected,
         )
         self._view_xnat_new_project.set_controller(
             self._controller_xnat_new_project)
