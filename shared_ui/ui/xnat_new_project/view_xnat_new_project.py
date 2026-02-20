@@ -9,11 +9,13 @@ class ViewXnatNewProject(BaseView):
         self.on_cancel_callback = on_cancel
 
         self.dlg = None
+
         self.txt_project_name = None
         self.txt_project_id = None
         self.chk_edit_id = None
         self.rb_access = None
         self.txt_description = None
+
         self.btn_submit = None
         self.btn_cancel = None
 

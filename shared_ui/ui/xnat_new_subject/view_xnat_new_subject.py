@@ -4,7 +4,7 @@ from shared_ui.ui.base_view import BaseView
 
 
 class ViewXnatNewSubject(BaseView):
-    def __init__(self, page: ft.Page, on_submit, on_cancel=None):
+    def __init__(self, page: ft.Page, on_submit=None, on_cancel=None):
         super().__init__(page)
         self.on_submit_callback = on_submit
         self.on_cancel_callback = on_cancel
@@ -25,8 +25,6 @@ class ViewXnatNewSubject(BaseView):
         self.txt_height_inches = None
         self.txt_weight_lbs = None
         self.txt_recruitment_source = None
-
-        self.txt_error = None
 
         self.btn_submit = None
         self.btn_cancel = None
@@ -54,16 +52,15 @@ class ViewXnatNewSubject(BaseView):
         self.txt_height_inches.value = ""
         self.txt_weight_lbs.value = ""
         self.txt_recruitment_source.value = ""
-        self.txt_error.value = ""
         self.btn_submit.disabled = True
-
-    def reset_form(self):
-        self.set_initial_state()
-        self._page.update()
 
     def set_project_options(self, projects):
         self.dd_project.options = [ft.dropdown.Option(project) for project in projects]
         self.update_page()
+
+    def set_subject_id_value(self, value):
+        self.txt_subject_id.value = value
+        self._page.update()
 
     def set_subject_id_editable(self, editable):
         self.txt_subject_id.disabled = not editable
@@ -71,6 +68,10 @@ class ViewXnatNewSubject(BaseView):
 
     def set_submit_enabled(self, enabled):
         self.btn_submit.disabled = not enabled
+        self._page.update()
+
+    def reset_form(self):
+        self.set_initial_state()
         self._page.update()
 
     def open(self):
@@ -84,14 +85,11 @@ class ViewXnatNewSubject(BaseView):
         self._page.close(self.dlg)
         self._page.update()
 
-    def set_error_message(self, message):
-        self.txt_error.value = message or ""
-        self.update_page()
 
     def _build_controls(self):
         self.dd_project = ft.Dropdown(label="Parent project *", options=[], expand=True)
 
-        self.txt_subject_name = ft.TextField(label="Subject title *", expand=True)
+        self.txt_subject_name = ft.TextField(label="Subject name *", expand=True)
 
         self.txt_subject_id = ft.TextField(
             label="Subject ID *",
@@ -245,36 +243,8 @@ class ViewXnatNewSubject(BaseView):
         )
 
     def _on_submit(self, e):
-        subject_name = (self.txt_subject_name.value or "").strip()
-
-        selected_mode = self.rg_yob_dob_age.value
-        date_of_birth = ""
-        year_of_birth = ""
-        age = ""
-
-        if selected_mode == "dob":
-            date_of_birth = (self.txt_date_of_birth.value or "").strip()
-        elif selected_mode == "yob":
-            year_of_birth = (self.txt_year_of_birth.value or "").strip()
-        elif selected_mode == "age":
-            age = (self.txt_age.value or "").strip()
-
-        data = {
-            "parent_project": (self.dd_project.value or "").strip(),
-            "subject_name": subject_name,
-            "subject_id": (self.txt_subject_id.value or "").strip(),
-            "yob_dob_age_mode": selected_mode,
-            "date_of_birth": date_of_birth,
-            "year_of_birth": year_of_birth,
-            "age": age,
-            "gender": (self.dd_gender.value or "").strip(),
-            "height_inches": (self.txt_height_inches.value or "").strip(),
-            "weight_lbs": (self.txt_weight_lbs.value or "").strip(),
-            "recruitment_source": (self.txt_recruitment_source.value or "").strip(),
-        }
-
         if self.on_submit_callback:
-            self.on_submit_callback(data)
+            self.on_submit_callback()
 
         self.close()
 

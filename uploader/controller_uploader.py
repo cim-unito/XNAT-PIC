@@ -48,11 +48,11 @@ class ControllerUploader:
 
         # New subject
         self._model_xnat_new_subject = ModelXnatNewSubject()
-        self._view_xnat_new_subject = ViewXnatNewSubject(self._view.page,
-                                                         on_submit=self.on_data_subject_collected)
+        self._view_xnat_new_subject = ViewXnatNewSubject(self._view.page)
         self._controller_xnat_new_subject = ControllerXnatNewSubject(
             self._view_xnat_new_subject,
             self._model_xnat_new_subject,
+            on_submit=self.on_data_subject_collected,
         )
         self._view_xnat_new_subject.set_controller(
             self._controller_xnat_new_subject)
@@ -273,28 +273,6 @@ class ControllerUploader:
     # NEW XNAT SUBJECT
     # ==========================================================
     def create_new_subject(self, e):
-        if not self._xnat_repo:
-            self._view.create_alert("You must login to XNAT first.")
-            return
-
-        try:
-            projects = self._xnat_repo.list_projects()
-            project_ids = [project["id"] for project in projects]
-            existing_subject_ids_by_project = {
-                project_id: {
-                    subject["id"]
-                    for subject in self._xnat_repo.list_subjects(project_id)
-                }
-                for project_id in project_ids
-            }
-            self._controller_xnat_new_subject.configure_context(
-                project_ids,
-                existing_subject_ids_by_project,
-            )
-        except Exception as ex:
-            self._view.create_alert(f"Cannot load projects for new subject: {ex}")
-            return
-
         self._controller_xnat_new_subject.reset_form()
         self._view_xnat_new_subject.open()
 
@@ -302,7 +280,7 @@ class ControllerUploader:
         self._xnat_repo.create_subject(data)
         project_id = data["parent_project"]
         subject_id = data["subject_id"]
-        subject_label = data.get("title") or subject_id
+        subject_label = data.get("subject_name") or subject_id
         exists = False
 
         for opt in self._view.dd_xnat_project.options:
