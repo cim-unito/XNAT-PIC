@@ -3,7 +3,7 @@ import flet as ft
 from shared_ui.ui.base_view import BaseView
 
 class ViewXnatNewProject(BaseView):
-    def __init__(self, page: ft.Page, on_submit, on_cancel=None):
+    def __init__(self, page: ft.Page, on_submit=None, on_cancel=None):
         super().__init__(page)
         self.on_submit_callback = on_submit
         self.on_cancel_callback = on_cancel
@@ -127,15 +127,8 @@ class ViewXnatNewProject(BaseView):
         )
 
     def _on_submit(self, e):
-        data = {
-            "project_name": self.txt_project_name.value,
-            "project_id": self.txt_project_id.value,
-            "accessibility": self.rb_access.value,
-            "description": self.txt_description.value,
-        }
-
         if self.on_submit_callback:
-            self.on_submit_callback(data)
+            self.on_submit_callback()
 
         self.close()
 
