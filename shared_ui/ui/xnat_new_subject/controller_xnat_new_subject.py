@@ -18,10 +18,6 @@ class ControllerXnatNewSubject:
         self._view.txt_date_of_birth.on_change = self.on_date_of_birth_changed
         self._view.txt_year_of_birth.on_change = self.on_year_of_birth_changed
         self._view.txt_age.on_change = self.on_age_changed
-        self._view.dd_handedness.on_change = self.on_handedness_changed
-        self._view.txt_education.on_change = self.on_education_changed
-        self._view.txt_race.on_change = self.on_race_changed
-        self._view.txt_ethnicity.on_change = self.on_ethnicity_changed
         self._view.txt_height_inches.on_change = self.on_height_inches_changed
         self._view.txt_weight_lbs.on_change = self.on_weight_lbs_changed
         self._view.txt_recruitment_source.on_change = self.on_recruitment_source_changed
@@ -122,18 +118,6 @@ class ControllerXnatNewSubject:
             self._view.update_page()
         self._model.data.age = sanitized
         self._update_submit()
-
-    def on_handedness_changed(self, e):
-        self._model.data.handedness = (e.control.value or "").strip()
-
-    def on_education_changed(self, e):
-        self._model.data.education = (e.control.value or "").strip()
-
-    def on_race_changed(self, e):
-        self._model.data.race = (e.control.value or "").strip()
-
-    def on_ethnicity_changed(self, e):
-        self._model.data.ethnicity = (e.control.value or "").strip()
 
     def on_height_inches_changed(self, e):
         self._model.data.height_inches = (e.control.value or "").strip()

@@ -36,26 +36,51 @@ class XnatRepository:
         ]
 
     def create_project(self, data):
-        session = self._session
+        project_id = str(data.get("project_id") or "").strip()
+        if not project_id:
+            raise ValueError("Project ID is required.")
+        if "/" in project_id:
+            raise ValueError("Project ID cannot contain '/'.")
 
-        project_id = data["project_id"]
-        project_name = data.get("project_name", "")
-        project_description = data.get("description", "")
-        project_access = data.get("accessibility", "private")
+        project_name = str(data.get("project_name") or project_id).strip()
+        project_description = str(data.get("description") or "").strip()
+        project_access = str(data.get("accessibility") or "private").strip().lower()
 
-        session.put(f"/data/projects/{project_id}")
+        valid_access = {"private", "protected", "public"}
+        if project_access not in valid_access:
+            raise ValueError(
+                f"Invalid accessibility '{project_access}'. "
+                f"Expected one of: {sorted(valid_access)}"
+            )
 
-        session.put(f"/data/projects/{project_id}?label={project_name}")
-        session.put(f"/data/projects/{project_id}?description={project_description}")
+        base_uri = f"/data/projects/{project_id}"
+        creation_params = [
+            "xsiType=xnat:projectData",
+            f"name={quote_plus(project_name)}",
+        ]
 
-        session.put(f"/data/projects/{project_id}/accessibility/{project_access}")
+        if project_description:
+            creation_params.append(f"description={quote_plus(project_description)}")
+
+        try:
+            self._session.put(f"{base_uri}?{'&'.join(creation_params)}")
+            self._session.put(f"{base_uri}/accessibility/{project_access}")
+            self._session.clearcache()
+        except Exception as e:
+            raise RuntimeError(f"Project creation failed for '{project_id}': {e}")
 
     def create_subject(self, data):
         session = self._session
 
-        project_id = data["parent_project"]
-        subject_id = data["subject_id"]
-        subject_name = data.get("subject_name", "")
+        project_id = str(data["parent_project"]).strip()
+        subject_id = str(data["subject_id"]).strip()
+        if not project_id:
+            raise ValueError("parent_project is required.")
+        if not subject_id:
+            raise ValueError("subject_id is required.")
+
+        subject_name = str(data.get("subject_name", "")).strip()
+        subject_label = subject_name or subject_id
         subject_fields = {
             "demographics/gender": data.get("gender", ""),
             "demographics/handedness": data.get("handedness", ""),
@@ -70,18 +95,19 @@ class XnatRepository:
             "demographics/age": data.get("age", ""),
         }
 
-        base_uri = f"/data/projects/{project_id}/subjects/{subject_id}"
+        project = session.projects[project_id]
+        subject = session.classes.SubjectData(
+            name=subject_id,
+            label=subject_label,
+            parent=project
+        )
 
-        creation_params = ["xsiType=xnat:subjectData"]
-        if subject_name:
-            creation_params.append(f"label={quote_plus(str(subject_name))}")
-        session.put(f"{base_uri}?{'&'.join(creation_params)}")
+        subject.demographics.gender = data.get("gender", "").lower()
+        subject.demographics.handedness = data.get("handedness", "").lower()
+        subject.demographics.education = int(data.get("education", ""))
+        subject.demographics.race = data.get("race", "")
+        subject.demographics.height = data.get("height_inches", "")
 
-        for field_name, field_value in subject_fields.items():
-            if field_value in (None, ""):
-                continue
-            encoded_value = quote_plus(str(field_value))
-            session.put(f"{base_uri}?{field_name}={encoded_value}")
 
     def upload_dicom(self, exp_folder, project_id, subject_id,
                      experiment_id):

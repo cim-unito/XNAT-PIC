@@ -19,10 +19,6 @@ class ViewXnatNewSubject(BaseView):
         self.txt_year_of_birth = None
         self.txt_age = None
         self.dd_gender = None
-        self.dd_handedness = None
-        self.txt_education = None
-        self.txt_race = None
-        self.txt_ethnicity = None
         self.txt_height_inches = None
         self.txt_weight_lbs = None
         self.txt_recruitment_source = None
@@ -124,17 +120,6 @@ class ViewXnatNewSubject(BaseView):
             ],
         )
 
-        self.dd_handedness = ft.Dropdown(
-            label="Handedness",
-            width=320,
-            options=[
-                ft.dropdown.Option("Right"),
-                ft.dropdown.Option("Left"),
-                ft.dropdown.Option("Ambidextrous"),
-                ft.dropdown.Option("Unknown"),
-            ],
-        )
-
         self.txt_education = ft.TextField(label="Education")
         self.txt_race = ft.TextField(label="Race")
         self.txt_ethnicity = ft.TextField(label="Ethnicity")
@@ -199,10 +184,6 @@ class ViewXnatNewSubject(BaseView):
                 self.id_row,
                 yob_dob_age_box,
                 self.dd_gender,
-                self.dd_handedness,
-                self.txt_education,
-                self.txt_race,
-                self.txt_ethnicity,
                 self.txt_height_inches,
                 self.txt_weight_lbs,
                 self.txt_recruitment_source,
@@ -232,10 +213,6 @@ class ViewXnatNewSubject(BaseView):
         self.txt_age.value = ""
         self._apply_yob_dob_age_visibility(None)
         self.dd_gender.value = None
-        self.dd_handedness.value = None
-        self.txt_education.value = ""
-        self.txt_race.value = ""
-        self.txt_ethnicity.value = ""
         self.txt_height_inches.value = ""
         self.txt_weight_lbs.value = ""
         self.txt_recruitment_source.value = ""
@@ -326,10 +303,6 @@ class ViewXnatNewSubject(BaseView):
             "year_of_birth": year_of_birth,
             "age": age,
             "gender": (self.dd_gender.value or "").strip(),
-            "handedness": (self.dd_handedness.value or "").strip(),
-            "education": (self.txt_education.value or "").strip(),
-            "race": (self.txt_race.value or "").strip(),
-            "ethnicity": (self.txt_ethnicity.value or "").strip(),
             "height_inches": (self.txt_height_inches.value or "").strip(),
             "weight_lbs": (self.txt_weight_lbs.value or "").strip(),
             "recruitment_source": (self.txt_recruitment_source.value or "").strip(),
