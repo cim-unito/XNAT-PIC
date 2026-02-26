@@ -36,6 +36,8 @@ class XnatRepository:
         ]
 
     def create_project(self, data):
+        session = self._session
+
         project_id = str(data.get("project_id") or "").strip()
         if not project_id:
             raise ValueError("Project ID is required.")
@@ -53,21 +55,12 @@ class XnatRepository:
                 f"Expected one of: {sorted(valid_access)}"
             )
 
-        base_uri = f"/data/projects/{project_id}"
-        creation_params = [
-            "xsiType=xnat:projectData",
-            f"name={quote_plus(project_name)}",
-        ]
+        project = session.classes.ProjectData( parent=session,
+                                               secondary_id=project_id,
+                                               id_=project_id, label=project_id,
+                                               name=project_name )
 
-        if project_description:
-            creation_params.append(f"description={quote_plus(project_description)}")
-
-        try:
-            self._session.put(f"{base_uri}?{'&'.join(creation_params)}")
-            self._session.put(f"{base_uri}/accessibility/{project_access}")
-            self._session.clearcache()
-        except Exception as e:
-            raise RuntimeError(f"Project creation failed for '{project_id}': {e}")
+        project.description = project_description
 
     def create_subject(self, data):
         session = self._session
