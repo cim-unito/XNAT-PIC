@@ -251,8 +251,14 @@ class ControllerUploader:
         self._view_xnat_new_project.open()
 
     def on_data_project_collected(self, data):
-        self._xnat_repo.create_project(data)
-        project_id = data["project_id"]
+        try:
+            created_project = self._xnat_repo.create_project(data)
+        except Exception as ex:
+            self._view.create_alert(f"Cannot create project: {ex}")
+            return
+
+        project_id = created_project["project_id"]
+        project_label = created_project["project_name"] or project_id
         exists = False
 
         for opt in self._view.dd_xnat_project.options:
@@ -263,7 +269,7 @@ class ControllerUploader:
         if not exists:
             print("Add new project:", project_id)
             self._view.dd_xnat_project.options.append(
-                ft.dropdown.Option(key=project_id, text=project_id)
+                ft.dropdown.Option(key=project_id, text=project_label)
             )
 
         self._view.dd_xnat_project.value = project_id

@@ -44,6 +44,9 @@ class XnatRepository:
         if "/" in project_id:
             raise ValueError("Project ID cannot contain '/'.")
 
+        if project_id in session.projects:
+            raise ValueError(f"Project '{project_id}' already exists.")
+
         project_name = str(data.get("project_name") or project_id).strip()
         project_description = str(data.get("description") or "").strip()
         project_access = str(data.get("accessibility") or "private").strip().lower()
@@ -55,12 +58,24 @@ class XnatRepository:
                 f"Expected one of: {sorted(valid_access)}"
             )
 
-        project = session.classes.ProjectData( parent=session,
-                                               secondary_id=project_id,
-                                               id_=project_id, label=project_id,
-                                               name=project_name )
+        project = session.classes.ProjectData(
+            parent=session,
+            secondary_id=project_id,
+            id_=project_id,
+            label=project_id,
+            name=project_name,
+        )
 
         project.description = project_description
+        project.accessibility = project_access
+        session.clearcache()
+
+        return {
+            "project_id": project_id,
+            "project_name": project_name,
+            "accessibility": project_access,
+            "description": project_description,
+        }
 
     def create_subject(self, data):
         session = self._session

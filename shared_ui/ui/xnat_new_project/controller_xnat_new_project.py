@@ -32,6 +32,16 @@ class ControllerXnatNewProject:
         self._update_submit()
 
     def on_submit_requested(self):
+        validation_errors = self._model.validate_payload(
+            self._view.txt_project_name.value,
+            self._view.txt_project_id.value,
+            self._view.rb_access.value,
+        )
+
+        if validation_errors:
+            self._view.create_alert("\n".join(validation_errors))
+            return
+
         payload = self._model.build_payload(
             self._view.txt_project_name.value,
             self._view.txt_project_id.value,
