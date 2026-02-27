@@ -1,7 +1,3 @@
-from datetime import datetime
-import re
-
-
 class ControllerXnatNewSubject:
     def __init__(self, view, model, on_submit=None):
         self._view = view
@@ -36,26 +32,10 @@ class ControllerXnatNewSubject:
         self._update_submit()
 
     def on_submit_requested(self):
-        selected_mode = self._view.rg_yob_dob_age.value
-        date_of_birth = ""
-        year_of_birth = ""
-        age = ""
-
-        if selected_mode == "dob":
-            date_of_birth = (self._view.txt_date_of_birth.value or "").strip()
-        elif selected_mode == "yob":
-            year_of_birth = (self._view.txt_year_of_birth.value or "").strip()
-        elif selected_mode == "age":
-            age = (self._view.txt_age.value or "").strip()
-
         payload = self._model.build_payload(
             self._view.dd_project.value,
             self._view.txt_project_name.value,
             self._view.txt_project_id.value,
-            selected_mode,
-            date_of_birth,
-            year_of_birth,
-            age,
             self._view.dd_gender.value,
             self._view.txt_height_inches.value,
             self._view.txt_weight_lbs.value,

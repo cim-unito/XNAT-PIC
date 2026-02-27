@@ -279,6 +279,18 @@ class ControllerUploader:
     # NEW XNAT SUBJECT
     # ==========================================================
     def create_new_subject(self, e):
+        if not self._xnat_repo:
+            self._view.create_alert("You must login to XNAT first.")
+            return
+
+        try:
+            projects = self._xnat_repo.list_projects()
+            project_ids = [project["id"] for project in projects]
+            self._view_xnat_new_subject.set_project_options(project_ids)
+        except Exception as ex:
+            self._view.create_alert(f"Cannot load projects for new subject: {ex}")
+            return
+
         self._controller_xnat_new_subject.reset_form()
         self._view_xnat_new_subject.open()
 

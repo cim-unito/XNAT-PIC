@@ -89,19 +89,6 @@ class XnatRepository:
 
         subject_name = str(data.get("subject_name", "")).strip()
         subject_label = subject_name or subject_id
-        subject_fields = {
-            "demographics/gender": data.get("gender", ""),
-            "demographics/handedness": data.get("handedness", ""),
-            "demographics/education": data.get("education", ""),
-            "demographics/race": data.get("race", ""),
-            "demographics/ethnicity": data.get("ethnicity", ""),
-            "demographics/height": data.get("height_inches", ""),
-            "demographics/weight": data.get("weight_lbs", ""),
-            "demographics/recruitment_src": data.get("recruitment_source", ""),
-            "demographics/dob": data.get("date_of_birth", ""),
-            "demographics/yob": data.get("year_of_birth", ""),
-            "demographics/age": data.get("age", ""),
-        }
 
         project = session.projects[project_id]
         subject = session.classes.SubjectData(
@@ -111,10 +98,9 @@ class XnatRepository:
         )
 
         subject.demographics.gender = data.get("gender", "").lower()
-        subject.demographics.handedness = data.get("handedness", "").lower()
-        subject.demographics.education = int(data.get("education", ""))
-        subject.demographics.race = data.get("race", "")
         subject.demographics.height = data.get("height_inches", "")
+        subject.demographics.weight = data.get("weight_lbs", "")
+        subject.demographics.recruitment_src = data.get("recruitment_source", "")
 
 
     def upload_dicom(self, exp_folder, project_id, subject_id,

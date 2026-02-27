@@ -16,11 +16,6 @@ class ViewXnatNewSubject(BaseView):
         self.txt_subject_id = None
         self.chk_edit_id = None
 
-        self.rg_yob_dob_age = None
-        self.txt_date_of_birth = None
-        self.txt_year_of_birth = None
-        self.txt_age = None
-
         self.dd_gender = None
         self.txt_height_inches = None
         self.txt_weight_lbs = None
@@ -44,10 +39,6 @@ class ViewXnatNewSubject(BaseView):
         self.txt_subject_id.value = ""
         self.txt_subject_id.disabled = True
         self.chk_edit_id.value = False
-        self.rg_yob_dob_age.value = None
-        self.txt_date_of_birth.value = ""
-        self.txt_year_of_birth.value = ""
-        self.txt_age.value = ""
         self.dd_gender.value = None
         self.txt_height_inches.value = ""
         self.txt_weight_lbs.value = ""
@@ -98,55 +89,6 @@ class ViewXnatNewSubject(BaseView):
         )
         self.chk_edit_id = ft.Checkbox(label="Edit ID")
 
-        self.rg_yob_dob_age = ft.RadioGroup(
-            value=None,
-            content=ft.Column(
-                spacing=8,
-                controls=[
-                    ft.Row(
-                        [
-                            ft.Radio(value="dob", label="Date Of Birth"),
-                        ]
-                    ),
-                    ft.Row(
-                        [
-                            ft.Radio(value="yob", label="Year Of Birth"),
-                        ]
-                    ),
-                    ft.Row(
-                        [
-                            ft.Radio(value="age", label="Age"),
-                        ]
-                    ),
-                ],
-            ),
-        )
-
-        self.txt_date_of_birth = ft.TextField(
-            label="Date of birth",
-            hint_text="MM/DD/YYYY",
-            width=180,
-            keyboard_type=ft.KeyboardType.DATETIME,
-            input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9]*"),
-            max_length=10,
-        )
-
-        self.txt_year_of_birth = ft.TextField(
-            label="YYYY",
-            width=180,
-            keyboard_type=ft.KeyboardType.NUMBER,
-            input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9]*"),
-            max_length=4,
-        )
-
-        self.txt_age = ft.TextField(
-            label="Age",
-            width=180,
-            keyboard_type=ft.KeyboardType.NUMBER,
-            input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9]*"),
-            max_length=4,
-        )
-
         self.dd_gender = ft.Dropdown(
             label="Gender",
             width=320,
@@ -186,35 +128,6 @@ class ViewXnatNewSubject(BaseView):
             [self.txt_subject_id, self.chk_edit_id],
             spacing=10,
         )
-        row_dob = ft.Row([self.txt_date_of_birth], spacing=8)
-        row_yob = ft.Row([self.txt_year_of_birth], visible=False)
-        row_age = ft.Row([self.txt_age], visible=False)
-
-        yob_dob_age_box = ft.Container(
-            border=ft.border.all(1, ft.Colors.BLACK26),
-            padding=12,
-            content=ft.Column(
-                spacing=8,
-                controls=[
-                    ft.Text("Please Select One"),
-                    ft.Row(
-                        [
-                            ft.Container(width=180, content=self.rg_yob_dob_age),
-                            ft.Column(
-                                spacing=8,
-                                controls=[
-                                    row_dob,
-                                    row_yob,
-                                    row_age,
-                                ],
-                            ),
-                        ],
-                        alignment=ft.MainAxisAlignment.START,
-                        vertical_alignment=ft.CrossAxisAlignment.START,
-                    ),
-                ],
-            ),
-        )
 
         content = ft.Column(
             width=600,
@@ -223,7 +136,6 @@ class ViewXnatNewSubject(BaseView):
                 self.dd_project,
                 self.txt_subject_name,
                 id_row,
-                yob_dob_age_box,
                 self.dd_gender,
                 self.txt_height_inches,
                 self.txt_weight_lbs,
