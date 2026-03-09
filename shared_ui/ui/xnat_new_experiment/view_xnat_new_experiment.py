@@ -3,7 +3,7 @@ import flet as ft
 from shared_ui.ui.base_view import BaseView
 
 
-class ViewXnatNewSubject(BaseView):
+class ViewXnatNewExperiment(BaseView):
     def __init__(self, page: ft.Page, on_submit=None, on_cancel=None):
         super().__init__(page)
         self.on_submit_callback = on_submit
@@ -12,8 +12,9 @@ class ViewXnatNewSubject(BaseView):
         self.dlg = None
 
         self.dd_project = None
-        self.txt_subject_name = None
-        self.txt_subject_id = None
+        self.dd_subject = None
+        self.txt_experiment_name = None
+        self.txt_experiment_id = None
         self.chk_edit_id = None
 
         self.btn_submit = None
@@ -30,9 +31,10 @@ class ViewXnatNewSubject(BaseView):
 
     def set_initial_state(self):
         self.dd_project.value = None
-        self.txt_subject_name.value = ""
-        self.txt_subject_id.value = ""
-        self.txt_subject_id.disabled = True
+        self.dd_subject.value = None
+        self.txt_experiment_name.value = ""
+        self.txt_experiment_id.value = ""
+        self.txt_experiment_id.disabled = True
         self.chk_edit_id.value = False
         self.btn_submit.disabled = True
 
@@ -40,12 +42,16 @@ class ViewXnatNewSubject(BaseView):
         self.dd_project.options = [ft.dropdown.Option(project) for project in projects]
         self.update_page()
 
-    def set_subject_id_value(self, value):
-        self.txt_subject_id.value = value
+    def set_subject_options(self, subjects):
+        self.dd_subject.options = [ft.dropdown.Option(subject) for subject in subjects]
+        self.update_page()
+
+    def set_experiment_id_value(self, value):
+        self.txt_experiment_id.value = value
         self._page.update()
 
-    def set_subject_id_editable(self, editable):
-        self.txt_subject_id.disabled = not editable
+    def set_experiment_id_editable(self, editable):
+        self.txt_experiment_id.disabled = not editable
         self.update_page()
 
     def set_submit_enabled(self, enabled):
@@ -67,14 +73,15 @@ class ViewXnatNewSubject(BaseView):
         self._page.close(self.dlg)
         self._page.update()
 
-
     def _build_controls(self):
         self.dd_project = ft.Dropdown(label="Parent project *", options=[], expand=True)
 
-        self.txt_subject_name = ft.TextField(label="Subject name *", expand=True)
+        self.dd_subject = ft.Dropdown(label="Parent subject *", options=[], expand=True)
 
-        self.txt_subject_id = ft.TextField(
-            label="Subject ID *",
+        self.txt_experiment_name = ft.TextField(label="Experiment name *", expand=True)
+
+        self.txt_experiment_id = ft.TextField(
+            label="Experiment ID *",
             disabled=True,
             expand=True,
         )
@@ -94,7 +101,7 @@ class ViewXnatNewSubject(BaseView):
 
     def _define_layout(self):
         id_row = ft.Row(
-            [self.txt_subject_id, self.chk_edit_id],
+            [self.txt_experiment_id, self.chk_edit_id],
             spacing=10,
         )
 
@@ -103,7 +110,8 @@ class ViewXnatNewSubject(BaseView):
             spacing=12,
             controls=[
                 self.dd_project,
-                self.txt_subject_name,
+                self.dd_subject,
+                self.txt_experiment_name,
                 id_row,
                 self.txt_error,
             ],
@@ -112,7 +120,7 @@ class ViewXnatNewSubject(BaseView):
 
         self.dlg = ft.AlertDialog(
             modal=True,
-            title=ft.Text("New XNAT subject"),
+            title=ft.Text("New XNAT experiment"),
             content=content,
             actions=[self.btn_cancel, self.btn_submit],
             content_padding=ft.Padding(20, 12, 20, 16),

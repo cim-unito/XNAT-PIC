@@ -13,17 +13,9 @@ class ModelXnatNewSubject:
             parent_project: str,
             subject_name: str,
             subject_id: str,
-            gender: str,
-            height_inches: str,
-            weight_lbs: str,
-            recruitment_source: str,
     ):
         return {
             "parent_project": (parent_project or "").strip(),
             "subject_name": (subject_name or "").strip(),
             "subject_id": (subject_id or "").strip(),
-            "gender": (gender or "").strip(),
-            "height_inches": (height_inches or "").strip(),
-            "weight_lbs": (weight_lbs or "").strip(),
-            "recruitment_source": (recruitment_source or "").strip(),
         }

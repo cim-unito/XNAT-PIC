@@ -1,8 +1,6 @@
 import shutil
 import tempfile
-from datetime import datetime
 from pathlib import Path
-from urllib.parse import quote_plus
 
 from xnat_client.xnat_session import XnatSession
 
@@ -67,7 +65,7 @@ class XnatRepository:
         )
 
         project.description = project_description
-        project.accessibility = project_access
+        session.put(f"/data/projects/{project_id}/accessibility/{project_access}")
         session.clearcache()
 
         return {
@@ -97,11 +95,11 @@ class XnatRepository:
             parent=project
         )
 
-        subject.demographics.gender = data.get("gender", "").lower()
-        subject.demographics.height = data.get("height_inches", "")
-        subject.demographics.weight = data.get("weight_lbs", "")
-        subject.demographics.recruitment_src = data.get("recruitment_source", "")
-
+        return {
+            "project_id": project_id,
+            "subject_name": subject_label,
+            "subject_id": subject_id,
+        }
 
     def upload_dicom(self, exp_folder, project_id, subject_id,
                      experiment_id):

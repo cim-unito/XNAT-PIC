@@ -335,6 +335,65 @@ class ControllerUploader:
         self._view.dd_xnat_project.update()
 
     # ==========================================================
+    # NEW XNAT SUBJECT
+    # ==========================================================
+    def create_new_experiment(self, e):
+        if not self._xnat_repo:
+            self._view.create_alert("You must login to XNAT first.")
+            return
+
+        try:
+            projects = self._xnat_repo.list_projects()
+            project_ids = [project["id"] for project in projects]
+            self._view_xnat_new_experiment.set_project_options(project_ids)
+        except Exception as ex:
+            self._view.create_alert(f"Cannot load projects for new subject: {ex}")
+            return
+
+        self._controller_xnat_new_subject.reset_form()
+        self._view_xnat_new_subject.open()
+
+    def on_data_experiment_collected(self, data):
+        self._xnat_repo.create_subject(data)
+        project_id = data["parent_project"]
+        subject_id = data["subject_id"]
+        subject_label = data.get("subject_name") or subject_id
+        exists = False
+
+        for opt in self._view.dd_xnat_project.options:
+            if opt.key == project_id:
+                exists = True
+                break
+
+        if not exists:
+            print("Add new project:", project_id)
+            self._view.dd_xnat_project.options.append(
+                ft.dropdown.Option(key=project_id, text=project_id)
+            )
+
+        self._view.dd_xnat_project.value = project_id
+        try:
+            subjects = self._xnat_repo.list_subjects(project_id)
+            self._view.populate_subjects(subjects)
+        except Exception as ex:
+            self._view.create_alert(
+                f"Subject created but list refresh failed: {ex}")
+            self._view.dd_xnat_project.update()
+            return
+
+        subject_exists = any(
+            opt.key == subject_id for opt in self._view.dd_xnat_subject.options
+        )
+
+        if not subject_exists:
+            self._view.dd_xnat_subject.options.append(
+                ft.dropdown.Option(key=subject_id, text=subject_label)
+            )
+
+        self._view.dd_xnat_subject.value = subject_id
+        self._view.dd_xnat_project.update()
+
+    # ==========================================================
     # UPLOAD
     # ==========================================================
     def _normalize_id(self, name):
@@ -342,7 +401,7 @@ class ControllerUploader:
         name = name.replace(" ", "_")
         name = name.replace(".", "_")
         name = name.replace("-", "_")
-        return name.upper()
+        return name
 
     def dicom_upload(self, e):
         if not self._xnat_repo:
@@ -387,7 +446,7 @@ class ControllerUploader:
 
         for subj in subjects:
 
-            # SUBJECT ID — dropdown oppure cartella
+            # SUBJECT ID — dropdown or folder
             if self._view.dd_xnat_subject.value:
                 subject_id = self._view.dd_xnat_subject.value
             else:

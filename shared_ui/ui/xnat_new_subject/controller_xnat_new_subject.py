@@ -34,12 +34,8 @@ class ControllerXnatNewSubject:
     def on_submit_requested(self):
         payload = self._model.build_payload(
             self._view.dd_project.value,
-            self._view.txt_project_name.value,
-            self._view.txt_project_id.value,
-            self._view.dd_gender.value,
-            self._view.txt_height_inches.value,
-            self._view.txt_weight_lbs.value,
-            self._view.txt_recruitment_source.value
+            self._view.txt_subject_name.value,
+            self._view.txt_subject_id.value,
         )
 
         if self._on_submit:
