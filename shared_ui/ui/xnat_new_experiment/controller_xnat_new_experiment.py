@@ -4,10 +4,18 @@ class ControllerXnatNewExperiment:
         self._model = model
         self._on_submit = on_submit
 
+        self._view.dd_project.on_change = self.on_project_changed
+        self._view.dd_subject.on_change = self.on_subject_changed
         self._view.txt_experiment_name.on_change = self.on_experiment_name_changed
         self._view.txt_experiment_id.on_change = self.on_experiment_id_changed
         self._view.chk_edit_id.on_change = self.on_toggle_edit_id
         self._view.on_submit_callback = self.on_submit_requested
+
+    def on_project_changed(self, e):
+        self._update_submit()
+
+    def on_subject_changed(self, e):
+        self._update_submit()
 
     def on_experiment_name_changed(self, e):
         experiment_name = e.control.value

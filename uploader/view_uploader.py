@@ -454,6 +454,7 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         self.dd_xnat_subject.on_change = self._controller.on_subject_selected
         self.btn_new_project.on_click = self._controller.create_new_project
         self.btn_new_subject.on_click = self._controller.create_new_subject
+        self.btn_new_experiment.on_click = self._controller.create_new_experiment
         self.btn_home_back.on_click = self._controller.on_home_back_clicked
         self.btn_upload.on_click = self._controller.dicom_upload
 

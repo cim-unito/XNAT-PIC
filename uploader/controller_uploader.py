@@ -18,6 +18,12 @@ from shared_ui.ui.xnat_new_project.model_xnat_new_project import \
 from shared_ui.ui.xnat_new_project.view_xnat_new_project import ViewXnatNewProject
 from shared_ui.ui.xnat_new_project.controller_xnat_new_project import \
     ControllerXnatNewProject
+from shared_ui.ui.xnat_new_experiment.model_xnat_new_experiment import \
+    ModelXnatNewExperiment
+from shared_ui.ui.xnat_new_experiment.view_xnat_new_experiment import \
+    ViewXnatNewExperiment
+from shared_ui.ui.xnat_new_experiment.controller_xnat_new_experiment import \
+    ControllerXnatNewExperiment
 
 class ControllerUploader:
     def __init__(self, view, model):
@@ -56,6 +62,20 @@ class ControllerUploader:
         )
         self._view_xnat_new_subject.set_controller(
             self._controller_xnat_new_subject)
+
+        # New experiment
+        self._model_xnat_new_experiment = ModelXnatNewExperiment()
+        self._view_xnat_new_experiment = ViewXnatNewExperiment(self._view.page)
+        self._controller_xnat_new_experiment = ControllerXnatNewExperiment(
+            self._view_xnat_new_experiment,
+            self._model_xnat_new_experiment,
+            on_submit=self.on_data_experiment_collected,
+        )
+        self._view_xnat_new_experiment.set_controller(
+            self._controller_xnat_new_experiment)
+        self._view_xnat_new_experiment.dd_project.on_change = (
+            self.on_new_experiment_project_selected
+        )
 
         self._xnat_session = None
         self._xnat_repo = None
@@ -335,7 +355,7 @@ class ControllerUploader:
         self._view.dd_xnat_project.update()
 
     # ==========================================================
-    # NEW XNAT SUBJECT
+    # NEW XNAT EXPERIMENT
     # ==========================================================
     def create_new_experiment(self, e):
         if not self._xnat_repo:
@@ -350,14 +370,46 @@ class ControllerUploader:
             self._view.create_alert(f"Cannot load projects for new subject: {ex}")
             return
 
-        self._controller_xnat_new_subject.reset_form()
-        self._view_xnat_new_subject.open()
+        selected_project_id = self._view.dd_xnat_project.value
+        self._controller_xnat_new_experiment.reset_form()
+
+        if selected_project_id:
+            self._view_xnat_new_experiment.dd_project.value = selected_project_id
+            try:
+                subjects = self._xnat_repo.list_subjects(selected_project_id)
+                subject_ids = [subject["id"] for subject in subjects]
+                self._view_xnat_new_experiment.set_subject_options(subject_ids)
+            except Exception as ex:
+                self._view.create_alert(
+                    f"Cannot load subjects for project '{selected_project_id}': {ex}")
+                return
+
+        self._view_xnat_new_experiment.open()
+
+    def on_new_experiment_project_selected(self, e):
+        project_id = self._view_xnat_new_experiment.dd_project.value
+        self._view_xnat_new_experiment.set_subject_options([])
+
+        if not project_id:
+            self._controller_xnat_new_experiment._update_submit()
+            return
+
+        try:
+            subjects = self._xnat_repo.list_subjects(project_id)
+            subject_ids = [subject["id"] for subject in subjects]
+            self._view_xnat_new_experiment.set_subject_options(subject_ids)
+        except Exception as ex:
+            self._view.create_alert(
+                f"Cannot load subjects for project '{project_id}': {ex}")
+
+        self._controller_xnat_new_experiment._update_submit()
 
     def on_data_experiment_collected(self, data):
-        self._xnat_repo.create_subject(data)
+        self._xnat_repo.create_experiment(data)
         project_id = data["parent_project"]
-        subject_id = data["subject_id"]
-        subject_label = data.get("subject_name") or subject_id
+        subject_id = data["subject_project"]
+        experiment_id = data["experiment_id"]
+        experiment_label = data.get("experiment_name") or experiment_id
         exists = False
 
         for opt in self._view.dd_xnat_project.options:
@@ -377,7 +429,7 @@ class ControllerUploader:
             self._view.populate_subjects(subjects)
         except Exception as ex:
             self._view.create_alert(
-                f"Subject created but list refresh failed: {ex}")
+                f"Experiment created but subject list refresh failed: {ex}")
             self._view.dd_xnat_project.update()
             return
 
@@ -387,11 +439,33 @@ class ControllerUploader:
 
         if not subject_exists:
             self._view.dd_xnat_subject.options.append(
-                ft.dropdown.Option(key=subject_id, text=subject_label)
+                ft.dropdown.Option(key=subject_id, text=subject_id)
             )
 
         self._view.dd_xnat_subject.value = subject_id
+        try:
+            experiments = self._xnat_repo.list_experiments(project_id,
+                                                           subject_id)
+            self._view.populate_experiments(experiments)
+        except Exception as ex:
+            self._view.create_alert(
+                f"Experiment created but experiment list refresh failed: {ex}")
+            self._view.dd_xnat_project.update()
+            return
+
+        experiment_exists = any(
+            opt.key == experiment_id
+            for opt in self._view.dd_xnat_experiment.options
+        )
+
+        if not experiment_exists:
+            self._view.dd_xnat_experiment.options.append(
+                ft.dropdown.Option(key=experiment_id, text=experiment_label)
+            )
+
+        self._view.dd_xnat_experiment.value = experiment_id
         self._view.dd_xnat_project.update()
+
 
     # ==========================================================
     # UPLOAD

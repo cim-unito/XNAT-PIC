@@ -101,6 +101,35 @@ class XnatRepository:
             "subject_id": subject_id,
         }
 
+    def create_experiment(self, data):
+        session = self._session
+
+        project_id = str(data["parent_project"]).strip()
+        subject_id = str(data["subject_project"]).strip()
+        experiment_id = str(data["experiment_id"]).strip()
+        if not project_id:
+            raise ValueError("parent_project is required.")
+        if not subject_id:
+            raise ValueError("subject_project is required.")
+        if not experiment_id:
+            raise ValueError("experiment_id is required.")
+
+        experiment_name = str(data.get("experiment_name", "")).strip()
+        experiment_label = experiment_name or experiment_id
+
+        subject = session.projects[project_id].subjects[subject_id]
+        session.classes.MrSessionData(
+            id=experiment_id,
+            label=experiment_label,
+            parent=subject,
+        )
+
+        return {
+            "project_id": project_id,
+            "subject_id": subject_id,
+            "experiment_id": experiment_id,
+            "experiment_name": experiment_label,
+        }
     def upload_dicom(self, exp_folder, project_id, subject_id,
                      experiment_id):
 
