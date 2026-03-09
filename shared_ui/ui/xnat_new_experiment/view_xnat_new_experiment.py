@@ -43,8 +43,18 @@ class ViewXnatNewExperiment(BaseView):
         self.update_page()
 
     def set_subject_options(self, subjects):
-        self.dd_subject.options = [ft.dropdown.Option(subject) for subject in subjects]
-        self.update_page()
+        self.dd_subject.options = []
+
+        for subject in subjects:
+            if isinstance(subject, dict):
+                self.dd_subject.options.append(
+                    ft.dropdown.Option(
+                        key=subject.get("id"),
+                        text=subject.get("label") or subject.get("id"),
+                    )
+                )
+            else:
+                self.dd_subject.options.append(ft.dropdown.Option(subject))
 
     def set_experiment_id_value(self, value):
         self.txt_experiment_id.value = value

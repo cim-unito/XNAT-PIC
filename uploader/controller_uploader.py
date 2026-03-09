@@ -377,8 +377,7 @@ class ControllerUploader:
             self._view_xnat_new_experiment.dd_project.value = selected_project_id
             try:
                 subjects = self._xnat_repo.list_subjects(selected_project_id)
-                subject_ids = [subject["id"] for subject in subjects]
-                self._view_xnat_new_experiment.set_subject_options(subject_ids)
+                self._view_xnat_new_experiment.set_subject_options(subjects)
             except Exception as ex:
                 self._view.create_alert(
                     f"Cannot load subjects for project '{selected_project_id}': {ex}")
@@ -396,8 +395,7 @@ class ControllerUploader:
 
         try:
             subjects = self._xnat_repo.list_subjects(project_id)
-            subject_ids = [subject["id"] for subject in subjects]
-            self._view_xnat_new_experiment.set_subject_options(subject_ids)
+            self._view_xnat_new_experiment.set_subject_options(subjects)
         except Exception as ex:
             self._view.create_alert(
                 f"Cannot load subjects for project '{project_id}': {ex}")

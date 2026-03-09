@@ -118,7 +118,7 @@ class XnatRepository:
         experiment_label = experiment_name or experiment_id
 
         subject = session.projects[project_id].subjects[subject_id]
-        session.classes.MrSessionData(
+        session.classes.ExperimentData(
             id=experiment_id,
             label=experiment_label,
             parent=subject,
