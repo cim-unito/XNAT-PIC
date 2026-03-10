@@ -17,7 +17,11 @@ class ModelUploader:
     def reset_level(self):
         self._level = None
 
+
     def validate_dicom_files(self):
+        if self._level and self._level.value == "file":
+            self._tmp_folder_to_upload = self._input_root
+            return
         list_dicom_files = FilesystemService.get_list_dicom_files(
             self._input_root, self._level)
 

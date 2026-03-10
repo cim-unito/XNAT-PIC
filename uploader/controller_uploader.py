@@ -532,6 +532,37 @@ class ControllerUploader:
         else:
             raise ValueError("Selected upload level is not supported.")
 
+    def _validate_experiment_resource_upload_context(self):
+        if self._model.level != UploaderLevel.FILE:
+            return
+
+        if not self._view.dd_xnat_subject.value:
+            raise ValueError(
+                "Select an XNAT subject before uploading resources."
+            )
+
+        if not self._view.dd_xnat_experiment.value:
+            raise ValueError(
+                "Select an XNAT experiment before uploading resources."
+            )
+
+    def _upload_file_resources_thread(self, base_path: Path, project_id: str):
+        subject_id = self._view.dd_xnat_subject.value
+        experiment_id = self._view.dd_xnat_experiment.value
+
+        uploaded_files = self._xnat_repo.upload_experiment_resources(
+            source_folder=base_path,
+            project_id=project_id,
+            subject_id=subject_id,
+            experiment_id=experiment_id,
+        )
+
+        self._view.dlg_upload.open = False
+        self._view.update_page()
+        self._view.create_alert(
+            f"Resources upload completed successfully ({uploaded_files} files)."
+        )
+
     def dicom_upload(self, e):
         if not self._xnat_repo:
             self._view.create_alert("You must login to XNAT first.")
@@ -547,7 +578,11 @@ class ControllerUploader:
             self._view.create_alert("Select a project in XNAT.")
             return
 
-        self._view.show_progress_bar_dialog()
+        try:
+            self._validate_experiment_resource_upload_context()
+        except ValueError as err:
+            self._view.create_alert(str(err))
+            return
 
         # t = threading.Thread(
         #     target=self._upload_project_thread,
@@ -556,7 +591,15 @@ class ControllerUploader:
         # )
         # t.start()
 
-        self._upload_project_thread(base_path, project_id)
+        try:
+            if self._model.level == UploaderLevel.FILE:
+                self._upload_file_resources_thread(base_path, project_id)
+            else:
+                self._upload_project_thread(base_path, project_id)
+        except Exception as err:
+            self._view.dlg_upload.open = False
+            self._view.update_page()
+            self._view.create_alert(f"Upload error: {err}")
 
     def _upload_project_thread(self, base_path: Path, project_id: str):
         try:

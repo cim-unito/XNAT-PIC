@@ -161,3 +161,104 @@ class XnatRepository:
 
         except Exception as e:
             raise RuntimeError(f"Upload failed: {e}")
+
+    def upload_experiment_resources(
+            self,
+            source_folder,
+            project_id,
+            subject_id,
+            experiment_id,
+            default_resource_label="NON_DICOM",
+    ):
+        source_folder = Path(source_folder)
+
+        if not source_folder.exists() or not source_folder.is_dir():
+            raise ValueError("Resource source folder is not valid.")
+
+        if not project_id or not subject_id or not experiment_id:
+            raise ValueError(
+                "Project, subject, and experiment are required "
+                "to upload resources."
+            )
+
+        self._session.projects[project_id].subjects[
+            subject_id].experiments[experiment_id]
+
+        files_by_resource = self._group_resource_files(
+            source_folder,
+            default_resource_label,
+        )
+
+        if not files_by_resource:
+            raise ValueError("No non-DICOM files found to upload.")
+
+        uploaded_files = 0
+        for resource_label, resources in files_by_resource.items():
+            resource = self._get_or_create_experiment_resource(
+                experiment_id,
+                resource_label,
+            )
+
+            for local_file, remote_path in resources:
+                resource.upload(
+                    str(local_file),
+                    remotepath=remote_path,
+                    overwrite=True,
+                )
+                uploaded_files += 1
+
+        self._session.clearcache()
+        return uploaded_files
+
+    def _group_resource_files(self, source_folder: Path,
+                              default_resource_label: str):
+        grouped = {}
+
+        for local_file in source_folder.rglob("*"):
+            if not local_file.is_file():
+                continue
+
+            if local_file.suffix.lower() in {".dcm", ".dicom"}:
+                continue
+
+            relative_path = local_file.relative_to(source_folder)
+            path_parts = relative_path.parts
+
+            if len(path_parts) > 1:
+                resource_label = self._sanitize_resource_label(path_parts[0])
+                remote_path = "/".join(path_parts[1:])
+            else:
+                resource_label = self._sanitize_resource_label(
+                    default_resource_label)
+                remote_path = relative_path.name
+
+            grouped.setdefault(resource_label, []).append(
+                (local_file, remote_path)
+            )
+
+        return grouped
+
+    @staticmethod
+    def _sanitize_resource_label(label: str):
+        cleaned = "".join(
+            ch if (ch.isalnum() or ch in {"_", "-"}) else "_"
+            for ch in label.strip()
+        )
+        return cleaned or "NON_DICOM"
+
+    def _get_or_create_experiment_resource(self, experiment_id: str,
+                                           resource_label: str):
+        resource = self._session.experiments[experiment_id].resources.get(
+            resource_label
+        )
+
+        if resource:
+            return resource
+
+        self._session.put(
+            f"/data/experiments/{experiment_id}/resources/{resource_label}"
+        )
+        self._session.clearcache()
+
+        return self._session.experiments[experiment_id].resources[
+            resource_label]
