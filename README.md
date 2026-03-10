@@ -37,6 +37,7 @@ Schematic view. (A) XNAT-PIC converts to DICOM multimodal images from several ve
 preclinical images to the XNAT server. (B) Datasets can be processed via containerized workflows in XNAT. (C) Custom
 plugins introduce new data types for optical and optoacoustic imaging, enabling users to upload, organize, and view
 these images directly in XNAT.
+
 ---
 
 ## Main Features
@@ -108,7 +109,7 @@ The latest release can be downloaded here:
 
 ## Roadmap
 
-See [open issues](https://github.com/ricgambino/XNAT-PIC/issues) for planned features and known issues.
+See [open issues](https://github.com/cim-unito/XNAT-PIC/issues) for planned features and known issues.
 
 ---
 
