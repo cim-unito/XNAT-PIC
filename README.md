@@ -16,7 +16,6 @@ the preclinical imaging community and to promote open science practices.
 - [Main Features](#main-features)
 - [Architecture](#architecture)
 - [Requirements](#requirements)
-- [Installation](#installation)
 - [Run the App](#run-the-app)
 - [Releases](#releases)
 - [Roadmap](#roadmap)
@@ -75,18 +74,6 @@ Python dependencies are listed in [`requirements.txt`](requirements.txt):
 - `xnat`
 - `python-dateutil`
  
----
-
-## Installation
-
-```bash
-git clone https://github.com/ricgambino/XNAT-PIC.git
-cd XNAT-PIC
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-```
-
 ---
 
 ## Run the App
