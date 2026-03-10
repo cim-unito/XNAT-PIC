@@ -49,7 +49,7 @@ Converts raw imaging data from MRI (Bruker) and Optical Imaging (IVIS) systems i
 Uploads DICOM datasets to an XNAT instance, supporting workflows at the project, subject, and experiment levels.
 The uploader also enables the management of imaging modalities not natively supported by XNAT, such as optical imaging and photoacoustic imaging.
 ### 3) Grouping Annotation Interface
-Provides an interface to efficiently cope with different experimental protocols by labelling subjects with dedicated Custom Variables to manage several types of cohorts (e.g. treated/untreated, timepoints, doses, etc..)
+Provides an interface to efficiently cope with different experimental protocols by labelling subjects with dedicated Custom Forms to manage several types of cohorts (e.g. treated/untreated, timepoints, doses, etc..)
 
 ---
 
