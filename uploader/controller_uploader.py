@@ -194,6 +194,7 @@ class ControllerUploader:
     def get_directory_to_upload(self, path: str):
         self._model.input_root = path
         self._model.validate_dicom_files()
+
         self._treeview_controller.populate_tree(
             self._model.tmp_folder_to_upload,
             TreeType.DICOM)
@@ -475,6 +476,62 @@ class ControllerUploader:
         name = name.replace("-", "_")
         return name
 
+    def _selected_or_normalized(self, selected_value, fallback_name):
+        if selected_value:
+            return selected_value
+        return self._normalize_id(fallback_name)
+
+    def _iter_upload_targets(self, base_path: Path):
+        level = self._model.level
+
+        if level == UploaderLevel.PROJECT:
+            subjects = [p for p in base_path.iterdir() if p.is_dir()]
+            if not subjects:
+                raise ValueError("No subject folders found in selected path.")
+
+            for subj_folder in subjects:
+                subject_id = self._selected_or_normalized(
+                    self._view.dd_xnat_subject.value,
+                    subj_folder.name,
+                )
+                experiments = [e for e in subj_folder.iterdir() if e.is_dir()]
+                for exp_folder in experiments:
+                    experiment_id = self._selected_or_normalized(
+                        self._view.dd_xnat_experiment.value,
+                        exp_folder.name,
+                    )
+                    yield exp_folder, subject_id, experiment_id
+
+        elif level == UploaderLevel.SUBJECT:
+            subject_id = self._selected_or_normalized(
+                self._view.dd_xnat_subject.value,
+                base_path.name,
+            )
+            experiments = [e for e in base_path.iterdir() if e.is_dir()]
+            for exp_folder in experiments:
+                experiment_id = self._selected_or_normalized(
+                    self._view.dd_xnat_experiment.value,
+                    exp_folder.name,
+                )
+                yield exp_folder, subject_id, experiment_id
+
+        elif level == UploaderLevel.EXPERIMENT:
+            source_experiment = self._model.input_root
+            source_subject_name = source_experiment.parent.name
+
+            subject_id = self._selected_or_normalized(
+                self._view.dd_xnat_subject.value,
+                source_subject_name,
+            )
+            experiment_id = self._selected_or_normalized(
+                self._view.dd_xnat_experiment.value,
+                base_path.name,
+            )
+            yield base_path, subject_id, experiment_id
+
+        else:
+            raise ValueError("Selected upload level is not supported.")
+
     def dicom_upload(self, e):
         if not self._xnat_repo:
             self._view.create_alert("You must login to XNAT first.")
@@ -502,49 +559,27 @@ class ControllerUploader:
         self._upload_project_thread(base_path, project_id)
 
     def _upload_project_thread(self, base_path: Path, project_id: str):
-        subjects = [p for p in base_path.iterdir() if p.is_dir()]
-
-        if not subjects:
-            self._view.create_alert(
-                "No subject folders found in selected path.")
+        try:
+            upload_targets = list(self._iter_upload_targets(base_path))
+        except ValueError as err:
+            self._view.create_alert(str(err))
             return
 
-        total = sum(
-            len([e for e in s.iterdir() if e.is_dir()]) for s in subjects)
-
-        if total == 0:
+        if not upload_targets:
             self._view.create_alert("No experiment folders found.")
             return
 
-        for subj in subjects:
-
-            # SUBJECT ID — dropdown or folder
-            if self._view.dd_xnat_subject.value:
-                subject_id = self._view.dd_xnat_subject.value
-            else:
-                subject_id = self._normalize_id(subj.name)
-
-            experiments = [e for e in subj.iterdir() if e.is_dir()]
-
-            for exp_folder in experiments:
-
-                if self._view.dd_xnat_experiment.value:
-                    experiment_id = self._view.dd_xnat_experiment.value
-                else:
-                    experiment_id = self._normalize_id(exp_folder.name)
-
-                try:
-                    # CHIAMATA AL REPOSITORY
-                    self._xnat_repo.upload_dicom(
-                        exp_folder,
-                        project_id,
-                        subject_id,
-                        experiment_id
-                    )
-
-                except Exception as err:
-                    self._view.create_alert(f"Upload error: {err}")
-                    return
+        for exp_folder, subject_id, experiment_id in upload_targets:
+            try:
+                self._xnat_repo.upload_dicom(
+                    exp_folder,
+                    project_id,
+                    subject_id,
+                    experiment_id,
+                )
+            except Exception as err:
+                self._view.create_alert(f"Upload error: {err}")
+                return
 
         # ---- Completed! ----
         self._view.dlg_upload.open = False

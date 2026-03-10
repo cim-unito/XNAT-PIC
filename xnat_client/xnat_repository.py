@@ -90,9 +90,10 @@ class XnatRepository:
 
         project = session.projects[project_id]
         subject = session.classes.SubjectData(
-            name=subject_id,
-            label=subject_label,
-            parent=project
+            parent = project,
+            id_ = subject_id,
+            label = subject_id,
+            name = subject_label,
         )
 
         return {
@@ -118,10 +119,11 @@ class XnatRepository:
         experiment_label = experiment_name or experiment_id
 
         subject = session.projects[project_id].subjects[subject_id]
-        session.classes.ExperimentData(
-            id=experiment_id,
-            label=experiment_label,
-            parent=subject,
+        session.classes.MrSessionData(
+            parent = subject,
+            id_ = experiment_id,
+            label = experiment_id,
+            name = experiment_label,
         )
 
         return {
