@@ -31,7 +31,7 @@ the preclinical imaging community and to promote open science practices.
 
 ## Overview
 
-<img src="assets/images/Workflow.PNG" width="750" title="XNAT-PIC workflow" alt="XNAT-PIC workflow">
+<img src="assets/images/Workflow.png" width="750" title="XNAT-PIC workflow" alt="XNAT-PIC workflow">
 
 Schematic view. (A) XNAT-PIC converts to DICOM multimodal images from several vendors, uploads, and annotates
 preclinical images to the XNAT server. (B) Datasets can be processed via containerized workflows in XNAT. (C) Custom
