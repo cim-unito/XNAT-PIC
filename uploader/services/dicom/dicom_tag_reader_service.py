@@ -1,11 +1,14 @@
 from typing import Any
 
 import pydicom
+from pydicom.dataelem import DataElement
+from pydicom.dataset import Dataset
 from pydicom.multival import MultiValue
 from pydicom.tag import Tag
 
 
 class DicomTagReaderService:
+
     CEST_PRIVATE_TAGS = {
         (0x1061, 0x0010): "Creator of the parameter set",
         (0x1061, 0x1001): "Chemical Exchange Saturation Method",
@@ -22,7 +25,7 @@ class DicomTagReaderService:
         (0x1061, 0x1012): "Recovery time (ms)",
         (0x1061, 0x1013): "Measurement number",
         (0x1061, 0x1014): "Saturation offset (Hz)",
-        (0x1061, 0x1015): "Saturation offset (ppm)"
+        (0x1061, 0x1015): "Saturation offset (ppm)",
     }
 
     IVIS_PRIVATE_TAGS = {
@@ -40,50 +43,58 @@ class DicomTagReaderService:
         (0x0011, 0x1012): "Luminescent Exposure (Seconds)",
         (0x0011, 0x1013): "Luminescent Exposure Units",
         (0x0011, 0x1014): "Excitation filter",
-
     }
 
     @staticmethod
     def read_dicom_tags(dicom_path: str) -> list[dict[str, Any]]:
-        """Read DICOM tags excluding pixel data and return a flattened tree."""
+        """Read tags from a DICOM file and return them as a flat list."""
         try:
             dataset = pydicom.dcmread(dicom_path, stop_before_pixels=True, force=True)
             elements = []
             DicomTagReaderService._process_dataset(dataset, elements)
             return elements
-
         except Exception as error:
             raise ValueError(f"DICOM tag reading error: {error}")
 
     @staticmethod
-    def _process_dataset(dataset, elements, parent_path=""):
+    def _process_dataset(
+        dataset: Dataset,
+        elements: list[dict[str, Any]],
+        parent_path: str = "",
+    ) -> None:
+        """Walk a DICOM dataset recursively and append flattened tag entries."""
         for elem in dataset:
             if elem.tag == Tag(0x7FE0, 0x0010):
                 continue
 
-            tag_tuple = (elem.tag.group, elem.tag.elem)
-            name = DicomTagReaderService._tag_name(dataset, elem)
+            tag_tuple = DicomTagReaderService._tag_to_tuple(elem)
+            name = DicomTagReaderService._tag_name(elem)
             path = f"{parent_path}{name}" if not parent_path else f"{parent_path}/{name}"
 
             if elem.VR == "SQ":
-                elements.append({
-                    "tag": tag_tuple,
-                    "name": name,
-                    "value": f"Sequence of {len(elem.value)} item(s)",
-                    "path": path
-                })
+                elements.append(
+                    {
+                        "tag": tag_tuple,
+                        "name": name,
+                        "value": f"Sequence of {len(elem.value)} item(s)",
+                        "path": path,
+                    }
+                )
                 for index, item in enumerate(elem.value):
                     DicomTagReaderService._process_dataset(item, elements, f"{path}[{index}]")
             else:
-                elements.append({
-                    "tag": tag_tuple,
-                    "name": name,
-                    "value": DicomTagReaderService._safe_string(elem.value),
-                    "path": path
-                })
+                elements.append(
+                    {
+                        "tag": tag_tuple,
+                        "name": name,
+                        "value": DicomTagReaderService._safe_string(elem.value),
+                        "path": path,
+                    }
+                )
 
     @staticmethod
-    def _safe_string(value, max_length=200):
+    def _safe_string(value: Any, max_length: int = 200) -> str:
+        """Convert a DICOM tag value to a compact, printable string."""
         if value is None:
             return ""
 
@@ -104,16 +115,25 @@ class DicomTagReaderService:
         return value_str
 
     @staticmethod
-    def _tag_name(dataset, elem):
-        tag_tuple = (elem.tag.group, elem.tag.elem)
+    def _tag_to_tuple(elem: DataElement) -> tuple[int, int]:
+        """Return `(group, element)` from a DICOM tag without relying on stub-specific attrs."""
+        tag_value = int(elem.tag)
+        return tag_value >> 16, tag_value & 0xFFFF
+
+    @staticmethod
+    def _tag_name(elem: DataElement) -> str:
+        """Resolve a display name for a DICOM tag."""
+        tag_tuple = DicomTagReaderService._tag_to_tuple(elem)
 
         if tag_tuple in DicomTagReaderService.CEST_PRIVATE_TAGS:
             return DicomTagReaderService.CEST_PRIVATE_TAGS[tag_tuple]
 
-        elif tag_tuple in DicomTagReaderService.IVIS_PRIVATE_TAGS:
+        if tag_tuple in DicomTagReaderService.IVIS_PRIVATE_TAGS:
             return DicomTagReaderService.IVIS_PRIVATE_TAGS[tag_tuple]
 
-        if elem.tag.is_private:
+        tag_value = int(elem.tag)
+        is_private = (tag_value >> 16) % 2 == 1
+        if is_private:
             creator = getattr(elem, "private_creator", None)
             creator_label = f"{creator}: " if creator else ""
             return f"{creator_label}{elem.name}"
