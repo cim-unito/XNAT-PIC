@@ -27,8 +27,11 @@ from shared_ui.ui.xnat_new_experiment.controller_xnat_new_experiment import \
 
 class ControllerUploader:
     def __init__(self, view, model):
+
         self._view = view
         self._model = model
+
+        # Treeview
         self._treeview_model = ModelTreeview()
         self._treeview_view = ViewTreeview(self._view)
         self._treeview_controller = ControllerTreeview(
@@ -38,6 +41,8 @@ class ControllerUploader:
             on_expand_selected=self._on_treeview_expand,
             on_file_selected=self._on_treeview_file_selected,
         )
+
+        # Xnat Auth
         self._view_xnat_auth = None
         self._controller_xnat_auth = None
 
@@ -85,7 +90,7 @@ class ControllerUploader:
         self.preview_cache = {}
 
     # ==========================================================
-    # LOGIN / ROUTE
+    # XNAT LOGIN
     # ==========================================================
     def set_xnat_auth(self, view_auth, controller_auth):
         self._view_xnat_auth = view_auth
@@ -150,7 +155,7 @@ class ControllerUploader:
         self._view.open_directory_picker()
 
     # ==========================================================
-    # DROPDOWN PROJECT / SUBJECT / EXPERIMENT XNAT
+    # DROPDOWN PROJECT / SUBJECT / EXPERIMENT IN XNAT
     # ==========================================================
     def load_projects(self):
         try:
@@ -159,7 +164,7 @@ class ControllerUploader:
         except Exception as e:
             self._view.create_alert(f"Cannot load projects: {e}")
 
-    def on_project_selected(self, e):
+    def on_project_selected(self, e: ft.ControlEvent):
         project_id = self._view.dd_xnat_project.value
         self._view.populate_subjects([])
         self._view.populate_experiments([])
@@ -173,7 +178,7 @@ class ControllerUploader:
         except Exception as e:
             self._view.create_alert(f"Cannot load subjects: {e}")
 
-    def on_subject_selected(self, e):
+    def on_subject_selected(self, e: ft.ControlEvent):
         project_id = self._view.dd_xnat_project.value
         subject_id = self._view.dd_xnat_subject.value
         self._view.populate_experiments([])
@@ -206,16 +211,17 @@ class ControllerUploader:
         """Handle a file selection in the treeview."""
         self.file_path_selected = file_path
         self.folder_path_selected = None
-        print(f"[SELECTED FILE] {self.file_path_selected}")
-        p = Path(self.file_path_selected)
+        self._show_preview()
 
+    def _show_preview(self):
+        p = Path(self.file_path_selected)
         if p in self.preview_cache:
             self._view.set_image_preview(self.preview_cache[p])
             return
 
         try:
             if p.suffix.lower() in (".dcm", ".dicom"):
-                b64 = DicomPreviewService.dicom_to_base64(p)
+                b64 = DicomPreviewService.dicom_to_base64(str(p))
                 self.preview_cache[p] = b64
                 self._view.set_image_preview(b64)
         except Exception as e:
