@@ -117,10 +117,15 @@ If you use XNAT-PIC in your work, please cite:
 
 ## News
 
-- "Demonstrator 5: XNAT-PIC: expanding XNAT for image archiving and processing to Preclinical Imaging Centers" — EOSC-Life: https://www.eosc-life.eu/d5/
-- "Towards sharing and reusing of preclinical image data" — Euro-BioImaging: https://www.eurobioimaging.eu/news/towards-sharing-and-reusing-of-preclinical-image-data/
-- "Data Management: Biological and Preclinical Imaging Perspective" — Euro-BioImaging Virtual Pub (Feb 12, 2021): [YouTube](https://youtu.be/QNiAGuFk53w)
-- "XNAT-PIC: expanding XNAT for image archiving and processing to Preclinical Imaging Centers" — EOSC-Life Demonstrator Session 1 (Jan 13, 2021): [YouTube](https://youtu.be/cpEcfIJJqCo)
+* "Demonstrator 5: XNAT-PIC: expanding XNAT for image archiving and processing to Preclinical Imaging Centers". EOSC-Life website, https://www.eosc-life.eu/d5/
+
+* "Towards sharing and reusing of preclinical image data". Euro-Bioimaging website, https://www.eurobioimaging.eu/news/towards-sharing-and-reusing-of-preclinical-image-data/
+
+* "Data Management: Biological and Preclinical Imaging Perspective". Euro-Bioimaging Virtual Pub, February 12th, 2021. <br>
+[![](https://img.youtube.com/vi/QNiAGuFk53w/0.jpg)](https://youtu.be/QNiAGuFk53w "")
+
+* "XNAT-PIC: expanding XNAT for image archiving and processing to Preclinical Imaging Centers". Demonstrator 5 from Populating EOSC-Life: Success stories for the Demonstrators – Session 1 from January 13, 2021.<br>
+[![](https://img.youtube.com/vi/cpEcfIJJqCo/0.jpg)](https://youtu.be/cpEcfIJJqCo "")
 
 ---
 
