@@ -210,32 +210,9 @@ class ControllerUploader:
             TreeType.DICOM)
 
     # ==========================================================
-    # FILE SELECTION + DICOM PREVIEW
+    # SHOW DICOM TAGS
     # ==========================================================
-    def _on_treeview_file_selected(self, file_path):
-        """Handle a file selection in the treeview."""
-        self._selected_file_path = file_path
-        self._selected_folder_path = None
-        self._show_selected_file_preview()
-
-    def _show_selected_file_preview(self):
-        if not self._selected_file_path:
-            return
-
-        selected_path = Path(self._selected_file_path)
-        if selected_path in self._preview_cache:
-            self._view.set_image_preview(self._preview_cache[selected_path])
-            return
-
-        try:
-            if selected_path.suffix.lower() in (".dcm", ".dicom"):
-                b64 = DicomPreviewService.dicom_to_base64(str(selected_path))
-                self._preview_cache[selected_path] = b64
-                self._view.set_image_preview(b64)
-        except Exception as e:
-            self._view.create_alert(f"Preview failed: {e}")
-
-    def on_show_tags_clicked(self, e):
+    def on_show_tags_clicked(self, e: ft.ControlEvent):
         if not self._selected_file_path:
             self._view.create_alert("No file selected.")
             return
@@ -249,13 +226,13 @@ class ControllerUploader:
     # ==========================================================
     # MODIFY MODALITY
     # ==========================================================
-    def modify_modality(self, e):
+    def modify_modality(self, e: ft.ControlEvent):
         self._view.cnt_modify_modality.controls.clear()
         self._view.cnt_modify_modality.controls.append(
             self._view.dd_modify_modality)
         self._view.page.update()
 
-    def on_select_modality(self, e):
+    def on_select_modality(self, e: ft.ControlEvent):
         if self._selected_folder_path is None and self._selected_file_path is None:
             self._view.create_alert("No file selected.")
             return
@@ -666,4 +643,27 @@ class ControllerUploader:
         """Handle a treeview node expansion."""
         self._selected_folder_path = node_path
         self._selected_file_path = None
+
+    def _on_treeview_file_selected(self, file_path):
+        """Handle a file selection in the treeview."""
+        self._selected_file_path = file_path
+        self._selected_folder_path = None
+        self._show_selected_file_preview()
+
+    def _show_selected_file_preview(self):
+        if not self._selected_file_path:
+            return
+
+        selected_path = Path(self._selected_file_path)
+        if selected_path in self._preview_cache:
+            self._view.set_image_preview(self._preview_cache[selected_path])
+            return
+
+        try:
+            if selected_path.suffix.lower() in (".dcm", ".dicom"):
+                b64 = DicomPreviewService.dicom_to_base64(str(selected_path))
+                self._preview_cache[selected_path] = b64
+                self._view.set_image_preview(b64)
+        except Exception as e:
+            self._view.create_alert(f"Preview failed: {e}")
 

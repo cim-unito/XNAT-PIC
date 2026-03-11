@@ -1,3 +1,5 @@
+from typing import Any
+
 import pydicom
 from pydicom.multival import MultiValue
 from pydicom.tag import Tag
@@ -42,6 +44,45 @@ class DicomTagReaderService:
     }
 
     @staticmethod
+    def read_dicom_tags(dicom_path: str) -> list[dict[str, Any]]:
+        """Read DICOM tags excluding pixel data and return a flattened tree."""
+        try:
+            dataset = pydicom.dcmread(dicom_path, stop_before_pixels=True, force=True)
+            elements = []
+            DicomTagReaderService._process_dataset(dataset, elements)
+            return elements
+
+        except Exception as error:
+            raise ValueError(f"DICOM tag reading error: {error}")
+
+    @staticmethod
+    def _process_dataset(dataset, elements, parent_path=""):
+        for elem in dataset:
+            if elem.tag == Tag(0x7FE0, 0x0010):
+                continue
+
+            tag_tuple = (elem.tag.group, elem.tag.elem)
+            name = DicomTagReaderService._tag_name(dataset, elem)
+            path = f"{parent_path}{name}" if not parent_path else f"{parent_path}/{name}"
+
+            if elem.VR == "SQ":
+                elements.append({
+                    "tag": tag_tuple,
+                    "name": name,
+                    "value": f"Sequence of {len(elem.value)} item(s)",
+                    "path": path
+                })
+                for index, item in enumerate(elem.value):
+                    DicomTagReaderService._process_dataset(item, elements, f"{path}[{index}]")
+            else:
+                elements.append({
+                    "tag": tag_tuple,
+                    "name": name,
+                    "value": DicomTagReaderService._safe_string(elem.value),
+                    "path": path
+                })
+
+    @staticmethod
     def _safe_string(value, max_length=200):
         if value is None:
             return ""
@@ -78,41 +119,3 @@ class DicomTagReaderService:
             return f"{creator_label}{elem.name}"
 
         return elem.name
-
-    @staticmethod
-    def _process_dataset(dataset, elements, parent_path=""):
-        for elem in dataset:
-            if elem.tag == Tag(0x7FE0, 0x0010):
-                continue
-
-            tag_tuple = (elem.tag.group, elem.tag.elem)
-            name = DicomTagReaderService._tag_name(dataset, elem)
-            path = f"{parent_path}{name}" if not parent_path else f"{parent_path}/{name}"
-
-            if elem.VR == "SQ":
-                elements.append({
-                    "tag": tag_tuple,
-                    "name": name,
-                    "value": f"Sequence of {len(elem.value)} item(s)",
-                    "path": path
-                })
-                for index, item in enumerate(elem.value):
-                    DicomTagReaderService._process_dataset(item, elements, f"{path}[{index}]")
-            else:
-                elements.append({
-                    "tag": tag_tuple,
-                    "name": name,
-                    "value": DicomTagReaderService._safe_string(elem.value),
-                    "path": path
-                })
-
-    @staticmethod
-    def read_dicom_tags(dicom_path):
-        try:
-            dataset = pydicom.dcmread(dicom_path, stop_before_pixels=True, force=True)
-            elements = []
-            DicomTagReaderService._process_dataset(dataset, elements)
-            return elements
-
-        except Exception as error:
-            raise ValueError(f"DICOM tag reading error: {error}")

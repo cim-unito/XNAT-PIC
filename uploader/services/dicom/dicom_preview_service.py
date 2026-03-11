@@ -1,5 +1,6 @@
 import base64
 import io
+from typing import Any
 
 import numpy as np
 import pydicom
@@ -10,12 +11,12 @@ from pydicom.pixel_data_handlers.util import apply_voi_lut, convert_color_space
 class DicomPreviewService:
     @staticmethod
     def dicom_to_base64(dicom_path: str):
+        """Convert a DICOM file into a Base64-encoded PNG preview."""
         try:
             dicom = pydicom.dcmread(dicom_path)
             interpretation = dicom.get("PhotometricInterpretation", "").upper()
             pixels = dicom.pixel_array
 
-            # Pick a representative frame before further processing to bound memory usage
             n_frames = int(getattr(dicom, "NumberOfFrames", 1))
             if n_frames > 1 and pixels.ndim > 2:
                 frame_index = n_frames // 2
@@ -31,8 +32,8 @@ class DicomPreviewService:
                     pixels = convert_color_space(pixels, interpretation or "RGB", "RGB")
                     interpretation = "RGB"
                     planar_config = 0
-                except Exception:
-                    # Fall back to raw pixels if color conversion fails
+                except Exception as e:
+                    print(f"DICOM conversion error: {e}")
                     pass
 
             if interpretation == "MONOCHROME1":
@@ -71,8 +72,10 @@ class DicomPreviewService:
             raise ValueError(f"DICOM conversion error: {e}")
 
     @staticmethod
-    def _apply_voi_lut_safe(pixels, dicom):
+    def _apply_voi_lut_safe(pixels: np.ndarray, dicom: Any) -> np.ndarray:
+        """Apply VOI LUT and fall back to raw pixels when unavailable."""
         try:
             return apply_voi_lut(pixels, dicom)
-        except Exception:
+        except Exception as e:
+            print(f"DICOM conversion error: {e}")
             return pixels
