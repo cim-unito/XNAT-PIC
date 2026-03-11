@@ -34,7 +34,7 @@ the preclinical imaging community and to promote open science practices.
 
 Schematic view. (A) XNAT-PIC converts to DICOM multimodal images from several vendors, uploads, and annotates
 preclinical images to the XNAT server. (B) Datasets can be processed via containerized workflows in XNAT. (C) Custom
-plugins introduce new data types for optical and optoacoustic imaging, enabling users to upload, organize, and view
+plugins introduce new data types for optical and photoacoustic imaging, enabling users to upload, organize, and view
 these images directly in XNAT.
 
 ---
