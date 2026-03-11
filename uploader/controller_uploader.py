@@ -85,9 +85,14 @@ class ControllerUploader:
         self._xnat_session = None
         self._xnat_repo = None
 
-        self.file_path_selected = None
-        self.folder_path_selected = None
-        self.preview_cache = {}
+        self._selected_file_path = None
+        self._selected_folder_path = None
+        self._preview_cache = {}
+
+    @property
+    def preview_cache(self):
+        """Temporary compatibility accessor for the view layer."""
+        return self._preview_cache
 
     # ==========================================================
     # XNAT LOGIN
@@ -209,31 +214,34 @@ class ControllerUploader:
     # ==========================================================
     def _on_treeview_file_selected(self, file_path):
         """Handle a file selection in the treeview."""
-        self.file_path_selected = file_path
-        self.folder_path_selected = None
-        self._show_preview()
+        self._selected_file_path = file_path
+        self._selected_folder_path = None
+        self._show_selected_file_preview()
 
-    def _show_preview(self):
-        p = Path(self.file_path_selected)
-        if p in self.preview_cache:
-            self._view.set_image_preview(self.preview_cache[p])
+    def _show_selected_file_preview(self):
+        if not self._selected_file_path:
+            return
+
+        selected_path = Path(self._selected_file_path)
+        if selected_path in self._preview_cache:
+            self._view.set_image_preview(self._preview_cache[selected_path])
             return
 
         try:
-            if p.suffix.lower() in (".dcm", ".dicom"):
-                b64 = DicomPreviewService.dicom_to_base64(str(p))
-                self.preview_cache[p] = b64
+            if selected_path.suffix.lower() in (".dcm", ".dicom"):
+                b64 = DicomPreviewService.dicom_to_base64(str(selected_path))
+                self._preview_cache[selected_path] = b64
                 self._view.set_image_preview(b64)
         except Exception as e:
             self._view.create_alert(f"Preview failed: {e}")
 
     def on_show_tags_clicked(self, e):
-        if not self.file_path_selected:
+        if not self._selected_file_path:
             self._view.create_alert("No file selected.")
             return
         try:
             tags = DicomTagReaderService.read_dicom_tags(
-                self.file_path_selected)
+                self._selected_file_path)
             self._view.show_dicom_tags_dialog(tags)
         except Exception as e:
             self._view.create_alert(f"Cannot read DICOM tags: {e}")
@@ -248,13 +256,13 @@ class ControllerUploader:
         self._view.page.update()
 
     def on_select_modality(self, e):
-        if self.folder_path_selected is None and self.file_path_selected is None:
+        if self._selected_folder_path is None and self._selected_file_path is None:
             self._view.create_alert("No file selected.")
             return
 
-        selected_item = self.folder_path_selected if (self.folder_path_selected
+        selected_item = self._selected_folder_path if (self._selected_folder_path
                                                       is not None) \
-            else self.file_path_selected
+            else self._selected_file_path
         print(selected_item)
         self._model.modify_modality(Path(selected_item),
                                     e.control.value)
@@ -262,7 +270,7 @@ class ControllerUploader:
             Path(self._model.tmp_folder_to_upload),
             TreeType.DICOM
         )
-        self.preview_cache.clear()
+        self._preview_cache.clear()
         self._view.reset_image_preview()
         self._view.dd_modify_modality.value = None
         self._view.cnt_modify_modality.controls.clear()
@@ -651,11 +659,11 @@ class ControllerUploader:
 
     def _on_treeview_collapse(self, node_path, tile):
         """Handle a treeview node collapse."""
-        self.folder_path_selected = None
-        self.file_path_selected = None
+        self._selected_folder_path = None
+        self._selected_file_path = None
 
     def _on_treeview_expand(self, node_path, tile):
         """Handle a treeview node expansion."""
-        self.folder_path_selected = node_path
-        self.file_path_selected = None
+        self._selected_folder_path = node_path
+        self._selected_file_path = None
 
