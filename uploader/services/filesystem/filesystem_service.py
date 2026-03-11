@@ -1,7 +1,7 @@
 import shutil
 import tempfile
 from pathlib import Path
-from typing import List, Dict
+from typing import Any, Dict, Iterable, List, Tuple
 
 from enums.uploader_level import UploaderLevel
 
@@ -45,7 +45,10 @@ class FilesystemService:
         return items
 
     @staticmethod
-    def _find_experiments(path, level):
+    def _find_experiments(path: Path, level: UploaderLevel) -> List[Path]:
+        """
+        Resolve experiment directories according to the selected uploader level.
+        """
         experiment_list = []
         if level == UploaderLevel.PROJECT:
             # project → subject → experiment
@@ -65,7 +68,10 @@ class FilesystemService:
         return experiment_list
 
     @staticmethod
-    def get_list_dicom_files(path, level):
+    def get_list_dicom_files(path: Path, level: UploaderLevel) -> List[Path]:
+        """
+        Collect DICOM files from scans within the detected experiment folders.
+        """
         if path is None:
             raise ValueError("Input path not set.")
 
@@ -86,19 +92,30 @@ class FilesystemService:
         return list_dicom_files
 
     @staticmethod
-    def create_temp_dicom_upload_directory():
+    def create_temp_dicom_upload_directory() -> Path:
+        """Create and return a temporary directory for upload processing."""
         tmpdir = tempfile.mkdtemp()
         return Path(tmpdir)
 
     @staticmethod
-    def copy_dicom_file(input_root, dicom_file, tmpdir):
+    def copy_dicom_file(input_root: Path, dicom_file: Path, tmpdir: Path) -> None:
+        """
+        Copy a DICOM file preserving its relative path under ``input_root``..
+        """
         dst_file = tmpdir / dicom_file.relative_to(
             input_root)
         dst_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(dicom_file, dst_file)
 
     @staticmethod
-    def save_dicom_file(input_root, dicom_file, tmpdir, new_dicom_file):
+    def save_dicom_file(
+            input_root: Path,
+            dicom_file: Path,
+            tmpdir: Path,
+            new_dicom_file: Iterable[Tuple[Any, str]]) -> None:
+        """
+        Save generated DICOM datasets preserving the original folder structure.
+        """
         relative_path = dicom_file.relative_to(input_root)
         relative_dir = relative_path.parent
         dst = tmpdir / relative_dir
@@ -106,4 +123,3 @@ class FilesystemService:
             out_path = dst / filename
             out_path.parent.mkdir(parents=True, exist_ok=True)
             ds.save_as(out_path, write_like_original=False)
-            print(f"[OK] Saved: {out_path}")
