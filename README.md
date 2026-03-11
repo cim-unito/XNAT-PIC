@@ -55,10 +55,10 @@ Provides an interface to efficiently cope with different experimental protocols 
 ## Architecture
 
 The app is a Python desktop application built with **Flet** and organized in modules:
-- `converter/` for conversion workflows,
-- `uploader/` for XNAT upload workflows,
-- `custom_form/` for metadata annotation,
-- `xnat_client/` for XNAT API integration,
+- `converter/` for conversion workflows
+- `uploader/` for XNAT upload workflows
+- `custom_form/` for metadata annotation
+- `xnat_client/` for XNAT API integration
 
 Entry point: `main.py`.
 
