@@ -109,8 +109,11 @@ class ControllerUploader:
         self._view.open_auth_dialog(dlg)
 
     def on_exit_route(self):
+        self._reset_workflow_state()
         if self._xnat_session:
             self._xnat_session.disconnect()
+        self._xnat_session = None
+        self._xnat_repo = None
 
     def _on_login_success(self, xnat_session):
         self._xnat_session = xnat_session
@@ -120,21 +123,40 @@ class ControllerUploader:
     def _on_login_cancel(self):
         if self._xnat_session:
             self._xnat_session.disconnect()
+        self._xnat_session = None
+        self._xnat_repo = None
         self.go_home()
 
     # ==========================================================
     # HOME / BACK
     # ==========================================================
     def go_home(self):
-        self._view._page.go("/")
+        self._view.page.go("/")
 
     def on_home_back_clicked(self, e):
         if self._model.level is None:
-            self._view.set_initial_state()
+            self._reset_workflow_state()
             self.go_home()
         else:
-            self._model.reset_level()
-            self._view.set_initial_state()
+            self._reset_workflow_state()
+
+    def _reset_workflow_state(self):
+        """Reset uploader workflow state across model, controller, and view."""
+        self._model.reset_state()
+        self._selected_file_path = None
+        self._selected_folder_path = None
+        self._preview_cache.clear()
+        self._reset_nested_components_state()
+        if self._view.dlg_upload:
+            self._view.dlg_upload.open = False
+        self._view.set_initial_state()
+
+    def _reset_nested_components_state(self):
+        """Reset reusable nested components without recreating instances."""
+        self._treeview_view.reset_selection()
+        self._controller_xnat_new_project.reset_form()
+        self._controller_xnat_new_subject.reset_form()
+        self._controller_xnat_new_experiment.reset_form()
 
     # ==========================================================
     # SET LEVEL (PROJECT / SUBJECT / EXPERIMENT / FILE)
@@ -168,6 +190,7 @@ class ControllerUploader:
             self._view.populate_projects(projects)
         except Exception as e:
             self._view.create_alert(f"Cannot load projects: {e}")
+            return
 
     def on_project_selected(self, e: ft.ControlEvent):
         project_id = self._view.dd_xnat_project.value
@@ -203,7 +226,13 @@ class ControllerUploader:
     # -------------------------------------------------------
     def get_directory_to_upload(self, path: str):
         self._model.input_root = path
-        self._model.validate_dicom_files()
+        try:
+            list_dicom_files = self._model.get_dicom_files()
+            self._model.validate_dicom_files(list_dicom_files)
+        except Exception as e:
+            self._view.create_alert(f"Cannot load the {self._model.level}: {e}")
+            self._reset_workflow_state()
+            return
 
         self._treeview_controller.populate_tree(
             self._model.tmp_folder_to_upload,

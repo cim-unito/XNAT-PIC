@@ -5,3 +5,6 @@ class UploaderLevel(Enum):
     SUBJECT = "subject"
     EXPERIMENT = "experiment"
     FILE = "file"
+
+    def __str__(self) -> str:
+        return self.value

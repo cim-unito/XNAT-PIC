@@ -14,23 +14,35 @@ class ModelUploader:
         self._level = None
         self._tmp_folder_to_upload = None
 
-    def reset_level(self):
+    def reset_state(self):
+        """Reset all transient uploader state used by a single workflow."""
+        self._input_root = None
+        self._tmp_folder_to_upload = None
         self._level = None
 
-
-    def validate_dicom_files(self):
+    def get_dicom_files(self) -> list[Path] | None:
         if self._level and self._level.value == "file":
             self._tmp_folder_to_upload = self._input_root
-            return
+            return None
         list_dicom_files = FilesystemService.get_list_dicom_files(
             self._input_root, self._level)
 
         if not list_dicom_files:
-            print(
-                f"The folder {self._input_root} does not contain dicom files)")
+            raise ValueError(
+                f"The folder\n{self._input_root}\ndoes not contain DICOM files.\n"
+                f"Make sure you have selected a valid {self.level}."
+            )
+        return list_dicom_files
+
+    def validate_dicom_files(self, list_dicom_files: list[Path] | None) -> None:
+        if self._level and self._level.value == "file":
             return
 
-        tmp_dir = FilesystemService.create_temp_dicom_upload_directory()
+        try:
+            tmp_dir = FilesystemService.create_temp_dicom_upload_directory()
+        except OSError as e:
+            raise RuntimeError("Temporary upload directory creation failed") from e
+
         self._tmp_folder_to_upload = tmp_dir / self._input_root.name
 
         study_instance_uid_map = {}

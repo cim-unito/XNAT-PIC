@@ -68,7 +68,7 @@ class FilesystemService:
         return experiment_list
 
     @staticmethod
-    def get_list_dicom_files(path: Path, level: UploaderLevel) -> List[Path]:
+    def get_list_dicom_files(path: Path, level: UploaderLevel) -> List[Path] | None:
         """
         Collect DICOM files from scans within the detected experiment folders.
         """
@@ -79,7 +79,7 @@ class FilesystemService:
                                                          level)
 
         if not experiment:
-            raise ValueError("There are no experiments to iterate")
+            return None
 
         list_dicom_files = [
             file
@@ -99,13 +99,16 @@ class FilesystemService:
 
     @staticmethod
     def copy_dicom_file(input_root: Path, dicom_file: Path, tmpdir: Path) -> None:
-        """
-        Copy a DICOM file preserving its relative path under ``input_root``..
-        """
-        dst_file = tmpdir / dicom_file.relative_to(
-            input_root)
-        dst_file.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(dicom_file, dst_file)
+        """Copy a DICOM file preserving its relative path under ``input_root``"""
+        try:
+            dst_file = tmpdir / dicom_file.relative_to(input_root)
+            dst_file.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(dicom_file, dst_file)
+
+        except (ValueError, OSError) as e:
+            raise RuntimeError(
+                f"Failed copying DICOM file {dicom_file}"
+            ) from e
 
     @staticmethod
     def save_dicom_file(

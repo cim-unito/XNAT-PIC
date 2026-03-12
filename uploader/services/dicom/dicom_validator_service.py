@@ -1,22 +1,25 @@
+from pathlib import Path
+
 from pydicom import dcmread
 from pydicom.uid import UID
 
 
 class DicomValidatorService:
-    @staticmethod
-    def is_valid_dicom_file(dicom_file):
-        REQUIRED_TAGS = {
-            (0x0008, 0x0016): "SOP Class UID",
-            (0x0008, 0x0018): "SOP Instance UID",
-            (0x0020, 0x000D): "Study Instance UID",
-            (0x0020, 0x000E): "Series Instance UID",
-            (0x0008, 0x0060): "Modality",
-            (0x0010, 0x0020): "Patient ID",
-        }
 
+    REQUIRED_TAGS = {
+        (0x0008, 0x0016): "SOP Class UID",
+        (0x0008, 0x0018): "SOP Instance UID",
+        (0x0020, 0x000D): "Study Instance UID",
+        (0x0020, 0x000E): "Series Instance UID",
+        (0x0008, 0x0060): "Modality",
+        (0x0010, 0x0020): "Patient ID",
+    }
+
+    @staticmethod
+    def is_valid_dicom_file(dicom_file: Path) -> bool:
         ds = dcmread(dicom_file)
 
-        for tag, name in REQUIRED_TAGS.items():
+        for tag, name in DicomValidatorService.REQUIRED_TAGS.items():
             if tag not in ds:
                 print(f"Miss: {name} ({tag})")
                 return False
@@ -26,7 +29,7 @@ class DicomValidatorService:
             elem = ds.get(tag)
             uid = elem.value if elem else ""
 
-            name = REQUIRED_TAGS.get(tag, "UID")
+            name = DicomValidatorService.REQUIRED_TAGS.get(tag, "UID")
             if not UID(uid).is_valid:
                 print(f"UID not valid: {name} = {uid}")
                 return False

@@ -7,3 +7,6 @@ class ConverterType(Enum):
     IVIS2DICOM = "Ivis2Dicom"
     MILABS2DICOM = "MILabs2Dicom"
 
+    def __str__(self) -> str:
+        return self.value
+
