@@ -13,12 +13,15 @@ class ModelUploader:
         self._input_root = None
         self._level = None
         self._tmp_folder_to_upload = None
+        self._validation_report = None
+
 
     def reset_state(self):
         """Reset all transient uploader state used by a single workflow."""
         self._input_root = None
         self._tmp_folder_to_upload = None
         self._level = None
+        self._validation_report = None
 
     def get_dicom_files(self) -> list[Path] | None:
         if self._level and self._level.value == "file":

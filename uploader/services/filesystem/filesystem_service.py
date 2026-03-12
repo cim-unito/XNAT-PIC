@@ -75,19 +75,26 @@ class FilesystemService:
         if path is None:
             raise ValueError("Input path not set.")
 
-        experiment = FilesystemService._find_experiments(path,
-                                                         level)
+        try:
+            experiment = FilesystemService._find_experiments(path, level)
+        except (FileNotFoundError, PermissionError, OSError) as e:
+            raise RuntimeError(f"Cannot inspect upload path: {path}") from e
 
         if not experiment:
             return None
 
-        list_dicom_files = [
-            file
-            for exp in experiment
-            for scan in exp.iterdir() if scan.is_dir()
-            for file in scan.iterdir()
-            if file.is_file() and file.suffix.lower() in [".dcm", ".dicom"]
-        ]
+        try:
+            list_dicom_files = [
+                file
+                for exp in experiment
+                for scan in exp.iterdir() if scan.is_dir()
+                for file in scan.iterdir()
+                if file.is_file() and file.suffix.lower() in [".dcm", ".dicom"]
+            ]
+        except (FileNotFoundError, PermissionError, OSError) as e:
+            raise RuntimeError(
+                "Failed while scanning experiments/scans for DICOM files"
+            ) from e
 
         return list_dicom_files
 
@@ -119,10 +126,15 @@ class FilesystemService:
         """
         Save generated DICOM datasets preserving the original folder structure.
         """
-        relative_path = dicom_file.relative_to(input_root)
-        relative_dir = relative_path.parent
-        dst = tmpdir / relative_dir
-        for ds, filename in new_dicom_file:
-            out_path = dst / filename
-            out_path.parent.mkdir(parents=True, exist_ok=True)
-            ds.save_as(out_path, write_like_original=False)
+        try:
+            relative_path = dicom_file.relative_to(input_root)
+            relative_dir = relative_path.parent
+            dst = tmpdir / relative_dir
+            for ds, filename in new_dicom_file:
+                out_path = dst / filename
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                ds.save_as(out_path, write_like_original=False)
+        except (ValueError, OSError, AttributeError, TypeError) as e:
+            raise RuntimeError(
+                f"Failed saving converted DICOM file {dicom_file}"
+            ) from e
