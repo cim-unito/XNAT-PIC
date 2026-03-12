@@ -34,32 +34,73 @@ class ModelUploader:
             )
         return list_dicom_files
 
-    def validate_dicom_files(self, list_dicom_files: list[Path] | None) -> None:
+    def validate_dicom_files(self, list_dicom_files: list[Path] | None) -> dict:
         if self._level and self._level.value == "file":
-            return
+            self._validation_report = {
+                "total": 1,
+                "copied": 1,
+                "converted": 0,
+                "failed": [],
+            }
+            return self._validation_report
+
+        if list_dicom_files is None:
+            raise ValueError("No DICOM files provided for validation.")
 
         try:
             tmp_dir = FilesystemService.create_temp_dicom_upload_directory()
+            self._tmp_folder_to_upload = tmp_dir / self._input_root.name
+            self._tmp_folder_to_upload.mkdir(parents=True, exist_ok=True)
         except OSError as e:
-            raise RuntimeError("Temporary upload directory creation failed") from e
+            raise RuntimeError("Could not prepare temporary upload directory") from e
 
-        self._tmp_folder_to_upload = tmp_dir / self._input_root.name
-
+        report = {
+            "total": len(list_dicom_files),
+            "copied": 0,
+            "converted": 0,
+            "failed": [],
+        }
         study_instance_uid_map = {}
+
         for dicom_file in list_dicom_files:
-            if DicomValidatorService.is_valid_dicom_file(dicom_file):
-                FilesystemService.copy_dicom_file(self._input_root, dicom_file,
-                                                  self._tmp_folder_to_upload)
-            else:
+            try:
+                if DicomValidatorService.is_valid_dicom_file(dicom_file):
+                    FilesystemService.copy_dicom_file(self._input_root,
+                                                      dicom_file,
+                                                      self._tmp_folder_to_upload)
+                    report["copied"] += 1
+                    continue
+
                 exp_uid_map = DicomCompatibilityService.update_study_instance_uid_map(
                     dicom_file, study_instance_uid_map)
                 new_dicom_file = DicomCompatibilityService.get_compatible_dicom_file(
                     dicom_file, exp_uid_map)
-                if new_dicom_file:
-                    FilesystemService.save_dicom_file(self._input_root,
-                                                      dicom_file,
-                                                      self._tmp_folder_to_upload,
-                                                      new_dicom_file)
+                if not new_dicom_file:
+                    raise RuntimeError("No compatible DICOM file generated")
+
+                FilesystemService.save_dicom_file(self._input_root,
+                                                  dicom_file,
+                                                  self._tmp_folder_to_upload,
+                                                  new_dicom_file)
+                report["converted"] += 1
+            except (OSError, ValueError, RuntimeError, TypeError) as e:
+                report["failed"].append({"file": str(dicom_file), "reason": str(e)})
+
+        succeeded = report["copied"] + report["converted"]
+        if succeeded == 0:
+            details = "\n".join(
+                f"{entry['file']}: {entry['reason']}" for entry in report["failed"][:5]
+            )
+            if len(report["failed"]) > 5:
+                details += "\n..."
+            raise RuntimeError(
+                "All DICOM files failed validation/conversion. "
+                f"Failures: {len(report['failed'])}\n{details}"
+            )
+
+        self._validation_report = report
+        return report
+
 
     def modify_modality(self, dicom_path, new_modality):
         dicom_files_to_modify = []
@@ -108,3 +149,7 @@ class ModelUploader:
     @tmp_folder_to_upload.setter
     def tmp_folder_to_upload(self, tmp_folder_to_upload):
         self._tmp_folder_to_upload = tmp_folder_to_upload
+
+    @property
+    def validation_report(self):
+        return self._validation_report

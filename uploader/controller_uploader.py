@@ -228,11 +228,18 @@ class ControllerUploader:
         self._model.input_root = path
         try:
             list_dicom_files = self._model.get_dicom_files()
-            self._model.validate_dicom_files(list_dicom_files)
+            validation_report = self._model.validate_dicom_files(list_dicom_files)
         except Exception as e:
             self._view.create_alert(f"Cannot load the {self._model.level}: {e}")
             self._reset_workflow_state()
             return
+
+        if validation_report["failed"]:
+            self._view.create_alert(
+                "Best effort upload prepared. "
+                f"Successful: {validation_report['copied'] + validation_report['converted']}, "
+                f"failed: {len(validation_report['failed'])}."
+            )
 
         self._treeview_controller.populate_tree(
             self._model.tmp_folder_to_upload,
