@@ -490,7 +490,6 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
             spacing=12,
             alignment=ft.MainAxisAlignment.CENTER,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            expand=True,
         )
 
         row_file = ft.ResponsiveRow(
@@ -508,10 +507,9 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
                 ft.Container(
                     col={"xs": 12, "md": 3},
                     alignment=ft.alignment.center,
-                    height=256,
                     content=ft.Container(
                         alignment=ft.alignment.center,
-                        expand=True,
+                        height=200,
                         content=col_tools,
                     ),
                 ),
