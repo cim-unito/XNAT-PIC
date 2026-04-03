@@ -276,14 +276,14 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         # image preview
         self.img_preview = ft.Image(
             src="assets/images/ImagePreview.png",
-            width=220,
-            height=220,
+            width=200,
+            height=200,
             fit=ft.ImageFit.CONTAIN,
             border_radius=12,
         )
         self.img_preview_card = ft.Container(
-            width=260,
-            height=260,
+            width=200,
+            height=200,
             padding=12,
             border_radius=18,
             bgcolor=self.palette.surface,
@@ -613,7 +613,7 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
             bgcolor=self.palette.surface,
             border_radius=16,
             border=ft.border.all(1, self.palette.surface_stronger),
-            height=256,
+            height=200,
             content=ft.Column(
                 spacing=8,
                 controls=[
