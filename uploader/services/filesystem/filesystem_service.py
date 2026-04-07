@@ -45,29 +45,6 @@ class FilesystemService:
         return items
 
     @staticmethod
-    def _find_experiments(path: Path, level: UploaderLevel) -> List[Path]:
-        """
-        Resolve experiment directories according to the selected uploader level.
-        """
-        experiment_list = []
-        if level == UploaderLevel.PROJECT:
-            # project → subject → experiment
-            experiment_list = [
-                exp
-                for sub in path.iterdir() if sub.is_dir()
-                for exp in sub.iterdir() if exp.is_dir()
-            ]
-
-        elif level == UploaderLevel.SUBJECT:
-            # subject → experiment
-            experiment_list = [exp for exp in path.iterdir() if exp.is_dir()]
-
-        elif level == UploaderLevel.EXPERIMENT:
-            experiment_list = [path]
-
-        return experiment_list
-
-    @staticmethod
     def get_list_dicom_files(path: Path, level: UploaderLevel) -> List[Path] | None:
         """
         Collect DICOM files from scans within the detected experiment folders.
@@ -138,3 +115,26 @@ class FilesystemService:
             raise RuntimeError(
                 f"Failed saving converted DICOM file {dicom_file}"
             ) from e
+
+    @staticmethod
+    def _find_experiments(path: Path, level: UploaderLevel) -> List[Path]:
+        """
+        Resolve experiment directories according to the selected uploader level.
+        """
+        experiment_list = []
+        if level == UploaderLevel.PROJECT:
+            # project → subject → experiment
+            experiment_list = [
+                exp
+                for sub in path.iterdir() if sub.is_dir()
+                for exp in sub.iterdir() if exp.is_dir()
+            ]
+
+        elif level == UploaderLevel.SUBJECT:
+            # subject → experiment
+            experiment_list = [exp for exp in path.iterdir() if exp.is_dir()]
+
+        elif level == UploaderLevel.EXPERIMENT:
+            experiment_list = [path]
+
+        return experiment_list

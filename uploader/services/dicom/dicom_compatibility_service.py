@@ -1,11 +1,12 @@
 import copy
+import hashlib
+import socket
+import uuid
 
 import numpy as np
 from pydicom import dcmread
 from pydicom.dataset import FileMetaDataset, FileDataset
-from pydicom.uid import generate_uid, UID, ExplicitVRLittleEndian, \
-    ImplicitVRLittleEndian, SecondaryCaptureImageStorage, \
-    PYDICOM_IMPLEMENTATION_UID
+from pydicom.uid import generate_uid, UID, ExplicitVRLittleEndian, SecondaryCaptureImageStorage
 
 
 class DicomCompatibilityService:
@@ -22,7 +23,10 @@ class DicomCompatibilityService:
     def get_compatible_dicom_file(dicom_file, exp_uid_map):
         ds = dcmread(dicom_file)
 
-        ds.file_meta = DicomCompatibilityService._build_meta_file(ds)
+        try:
+            ds.file_meta = DicomCompatibilityService._build_meta_file(ds)
+        except Exception as e:
+            raise RuntimeError(f"Error creating file meta information: {str(e)}")
 
         manufacturer = getattr(ds, "Manufacturer", "")
         implementation_version_name = getattr(ds.file_meta,
@@ -41,16 +45,21 @@ class DicomCompatibilityService:
 
     @staticmethod
     def _build_meta_file(ds):
-        # --- File Meta Dataset ---
+        # File Meta Dataset
         if not hasattr(ds, "file_meta") or ds.file_meta is None:
             ds.file_meta = FileMetaDataset()
 
-        # --- File Meta Information Version---
+        # File Meta Information Group Length
+        if (not hasattr(ds.file_meta, 'FileMetaInformationGroupLength') or
+                ds.file_meta.FileMetaInformationGroupLength is None):
+            ds.file_meta.FileMetaInformationGroupLength = 202
+
+        # File Meta Information Version
         if (not hasattr(ds.file_meta, 'FileMetaInformationVersion') or
                 ds.file_meta.FileMetaInformationVersion is None):
             ds.file_meta.FileMetaInformationVersion = b"\x00\x01"
 
-        # --- Media Storage SOP Class UID ---
+        # Media Storage SOP Class UID
         if hasattr(ds.file_meta, "MediaStorageSOPClassUID") and \
                 UID(ds.file_meta.MediaStorageSOPClassUID).is_valid:
             pass
@@ -59,7 +68,7 @@ class DicomCompatibilityService:
         else:
             ds.file_meta.MediaStorageSOPClassUID = SecondaryCaptureImageStorage
 
-        # --- Media Storage SOP Instance UID ---
+        # Media Storage SOP Instance UID
         if hasattr(ds.file_meta, "MediaStorageSOPInstanceUID") and \
                 UID(ds.file_meta.MediaStorageSOPInstanceUID).is_valid:
             pass
@@ -69,15 +78,15 @@ class DicomCompatibilityService:
             new_uid = generate_uid()
             ds.file_meta.MediaStorageSOPInstanceUID = new_uid
 
-        # --- Transfer Syntax UID ---
+        # Transfer Syntax UID
         if not hasattr(ds.file_meta, "TransferSyntaxUID") or \
                 not UID(ds.file_meta.TransferSyntaxUID).is_valid:
             ds.file_meta.TransferSyntaxUID = ExplicitVRLittleEndian
 
-        # --- Implementation Class UID ---
+        # Implementation Class UID
         if not hasattr(ds.file_meta, "ImplementationClassUID") or \
                 not UID(ds.file_meta.ImplementationClassUID).is_valid:
-            ds.file_meta.ImplementationClassUID = PYDICOM_IMPLEMENTATION_UID
+            ds.file_meta.ImplementationClassUID = DicomCompatibilityService._generate_implementation_uid()
 
         return ds.file_meta
 
@@ -92,7 +101,7 @@ class DicomCompatibilityService:
         if not hasattr(ds, "Modality"):
             ds.Modality = "OT"
 
-        # --- From multiframe to single frame ---
+        # From multiframe to single frame
         results = []
         pixel_array = ds.pixel_array
         if pixel_array.ndim != 4:
@@ -166,3 +175,23 @@ class DicomCompatibilityService:
         filename = f"{dicom_file.stem}.dcm"
         new_file = ds
         return [(new_file, filename)]
+
+    @staticmethod
+    def _generate_implementation_uid():
+        # MAC-address of computer
+        mac_address = uuid.getnode()
+
+        # Hostname of computer
+        hostname = socket.gethostname()
+
+        # Combination of data in a string
+        unique_string = f"{mac_address}-{hostname}"
+        # use one way function so that you cant get actual information of the system
+        hash_object = hashlib.sha256(unique_string.encode())
+        hex_dig = hash_object.hexdigest()
+        numeric_hash = int(hex_dig, 16)
+        numeric_hash_str = str(numeric_hash)
+        # additional information loss (only 64 digits)
+        implementation_uid = numeric_hash_str[:64]
+
+        return implementation_uid
