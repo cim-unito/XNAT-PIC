@@ -172,7 +172,7 @@ class ControllerUploader:
         self._view.open_directory_picker()
 
     def upload_experiment(self, e: ft.ControlEvent):
-        """Start a experiment-level uploader and open the directory picker."""
+        """Start an experiment-level uploader and open the directory picker."""
         self._set_level(UploaderLevel.EXPERIMENT)
         self._view.open_directory_picker()
 
