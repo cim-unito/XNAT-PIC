@@ -75,6 +75,7 @@ class DicomTagReaderService:
                 elements.append(
                     {
                         "tag": tag_tuple,
+                        "tag_hex": DicomTagReaderService._format_tag(tag_tuple),
                         "name": name,
                         "value": f"Sequence of {len(elem.value)} item(s)",
                         "path": path,
@@ -86,6 +87,7 @@ class DicomTagReaderService:
                 elements.append(
                     {
                         "tag": tag_tuple,
+                        "tag_hex": DicomTagReaderService._format_tag(tag_tuple),
                         "name": name,
                         "value": DicomTagReaderService._safe_string(elem.value),
                         "path": path,
@@ -119,6 +121,11 @@ class DicomTagReaderService:
         """Return `(group, element)` from a DICOM tag without relying on stub-specific attrs."""
         tag_value = int(elem.tag)
         return tag_value >> 16, tag_value & 0xFFFF
+
+    @staticmethod
+    def _format_tag(tag_tuple: tuple[int, int]) -> str:
+        """Render a tag tuple in canonical DICOM hexadecimal notation."""
+        return f"({tag_tuple[0]:04X},{tag_tuple[1]:04X})"
 
     @staticmethod
     def _tag_name(elem: DataElement) -> str:

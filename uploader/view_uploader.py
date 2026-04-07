@@ -163,10 +163,11 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
     def show_dicom_tags_dialog(self, tags):
         rows = []
         for elem in tags:
+            tag_label = elem.get("tag_hex", str(elem["tag"]))
             rows.append(
                 ft.Row(
                     controls=[
-                        ft.Text(str(elem["tag"]), width=140),
+                        ft.Text(tag_label, width=140),
                         ft.Text(elem["name"], width=260, no_wrap=True),
                         ft.Text(elem["value"], width=760, no_wrap=True),
                     ]
