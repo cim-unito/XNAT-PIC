@@ -655,6 +655,7 @@ class ControllerUploader:
             self._view.create_alert("No experiment folders found.")
             return
 
+        failed_uploads = []
         for exp_folder, subject_id, experiment_id in upload_targets:
             try:
                 self._xnat_repo.upload_dicom(
@@ -664,13 +665,38 @@ class ControllerUploader:
                     experiment_id,
                 )
             except Exception as err:
-                self._view.create_alert(f"Upload error: {err}")
-                return
+                failed_uploads.append(
+                    {
+                        "exp_folder": str(exp_folder),
+                        "subject_id": subject_id,
+                        "experiment_id": experiment_id,
+                        "error": str(err),
+                    }
+                )
 
-        # Completed!
         self._view.dlg_upload.open = False
         self._view.update_page()
-        self._view.create_alert("Upload completed successfully!")
+        if not failed_uploads:
+            self._view.create_alert("Upload completed successfully!")
+            return
+
+        failed_count = len(failed_uploads)
+        success_count = len(upload_targets) - failed_count
+        failure_summary = "; ".join(
+            (
+                f"{entry['experiment_id']} (subject {entry['subject_id']}): "
+                f"{entry['error']}"
+            )
+            for entry in failed_uploads[:5]
+        )
+        if failed_count > 5:
+            failure_summary += "; ..."
+
+        self._view.create_alert(
+            "Upload completed with errors "
+            f"({success_count} ok, {failed_count} failed). "
+            f"Failed uploads: {failure_summary}"
+        )
 
     def _set_level(self, level):
         self._model.level = level
