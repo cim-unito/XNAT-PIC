@@ -360,15 +360,38 @@ class ControllerUploader:
         self._view_xnat_new_subject.open()
 
     def on_data_subject_collected(self, data):
-        try:
-            self._xnat_repo.create_subject(data)
-        except Exception as ex:
-            self._view.create_alert(f"Cannot create project: {ex}")
+        project_id = str(data.get("parent_project", "")).strip()
+        requested_subject_id = str(data.get("subject_id", "")).strip()
+        normalized_subject_id = XnatRepository._sanitize_label(requested_subject_id)
+
+        if not project_id or not normalized_subject_id:
+            self._view.create_alert("Cannot create subject: invalid project/subject ID.")
             return
 
-        project_id = data["parent_project"]
-        subject_id = data["subject_id"]
-        subject_label = data.get("subject_name") or subject_id
+        try:
+            existing_subjects = self._xnat_repo.list_subjects(project_id)
+        except Exception as ex:
+            self._view.create_alert(f"Cannot verify existing subjects: {ex}")
+            return
+
+        if any(s["id"] == normalized_subject_id or s["label"] == normalized_subject_id for s in existing_subjects):
+            self._view.dd_xnat_project.value = project_id
+            self._view.populate_subjects(existing_subjects)
+            self._view.dd_xnat_subject.value = normalized_subject_id
+            self._view.create_alert(
+                f"Subject '{normalized_subject_id}' already exists in project '{project_id}'."
+            )
+            self._view.update_page()
+            return
+
+        try:
+            created_subject = self._xnat_repo.create_subject(data)
+        except Exception as ex:
+            self._view.create_alert(f"Cannot create subject: {ex}")
+            return
+
+        project_id = created_subject["project_id"]
+        subject_id = created_subject["subject_id"]
 
         self._view.dd_xnat_project.value = project_id
 
@@ -381,17 +404,8 @@ class ControllerUploader:
             self._view.dd_xnat_project.update()
             return
 
-        subject_exists = any(
-            opt.key == subject_id for opt in self._view.dd_xnat_subject.options
-        )
-
-        if not subject_exists:
-            self._view.dd_xnat_subject.options.append(
-                ft.dropdown.Option(key=subject_id, text=subject_label)
-            )
-
         self._view.dd_xnat_subject.value = subject_id
-        self._view.dd_xnat_project.update()
+        self._view.update_page()
 
     # ==========================================================
     # NEW XNAT EXPERIMENT
