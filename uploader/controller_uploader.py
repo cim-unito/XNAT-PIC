@@ -333,7 +333,7 @@ class ControllerUploader:
         if not exists:
             print("Add new project:", project_id)
             self._view.dd_xnat_project.options.append(
-                ft.dropdown.Option(key=project_id, text=project_label)
+                ft.dropdown.Option(key=project_id, text=project_id)
             )
 
         self._view.dd_xnat_project.value = project_id

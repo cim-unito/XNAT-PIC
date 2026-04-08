@@ -45,7 +45,6 @@ class XnatRepository:
         if project_id in session.projects:
             raise ValueError(f"Project '{project_id}' already exists.")
 
-
         project_name = str(data.get("project_name") or project_id).strip()
         project_description = str(data.get("description") or "").strip()
         project_access = str(data.get("accessibility") or "private").strip().lower()
@@ -57,17 +56,22 @@ class XnatRepository:
                 f"Expected one of: {sorted(valid_access)}"
             )
 
-        project = session.classes.ProjectData(
-            parent=session,
-            secondary_id=project_id,
-            id_=project_id,
-            label=project_id,
-            name=project_name,
-        )
+        try:
+            project = session.classes.ProjectData(
+                parent=session,
+                secondary_id=project_id,
+                id_=project_id,
+                label=project_id,
+                name=project_name,
+            )
 
-        project.description = project_description
-        session.put(f"/data/projects/{project_id}/accessibility/{project_access}")
-        session.clearcache()
+            project.description = project_description
+            session.put(f"/data/projects/{project_id}/accessibility/{project_access}")
+            session.clearcache()
+        except Exception as err:
+            raise RuntimeError(
+                f"Project creation failed for '{project_id}': {err}"
+            ) from err
 
         return {
             "project_id": project_id,
