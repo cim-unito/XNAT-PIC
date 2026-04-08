@@ -217,8 +217,8 @@ class XnatRepository:
 
     def _group_resource_files(self, source_folder: Path,
                               resource_label: str):
-        grouped = {}
-
+        sanitized_label = self._sanitize_resource_label(resource_label)
+        grouped = {sanitized_label: []}
         for local_file in source_folder.rglob("*"):
             if not local_file.is_file():
                 continue
@@ -227,19 +227,14 @@ class XnatRepository:
                 continue
 
             relative_path = local_file.relative_to(source_folder)
-            path_parts = relative_path.parts
+            remote_path = relative_path.as_posix()
 
-            if len(path_parts) > 1:
-                resource_label = self._sanitize_resource_label(path_parts[0])
-                remote_path = "/".join(path_parts[1:])
-            else:
-                resource_label = self._sanitize_resource_label(
-                    resource_label)
-                remote_path = relative_path.name
-
-            grouped.setdefault(resource_label, []).append(
+            grouped[sanitized_label].append(
                 (local_file, remote_path)
             )
+
+        if not grouped[sanitized_label]:
+            return {}
 
         return grouped
 
