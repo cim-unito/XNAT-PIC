@@ -138,55 +138,60 @@ class ModelUploader:
         base_path = Path(self._tmp_folder_to_upload)
         level = self._level
 
-        if level == UploaderLevel.PROJECT:
-            subjects = [p for p in base_path.iterdir() if p.is_dir()]
-            if not subjects:
-                raise ValueError("No subject folders found in selected path.")
+        try:
+            if level == UploaderLevel.PROJECT:
+                subjects = [p for p in base_path.iterdir() if p.is_dir()]
+                if not subjects:
+                    raise ValueError("No subject folders found in selected path.")
 
-            upload_targets = []
-            for subj_folder in subjects:
+                upload_targets = []
+                for subj_folder in subjects:
+                    subject_id = self._selected_or_normalized(
+                        selected_subject_id,
+                        subj_folder.name,
+                    )
+                    experiments = [e for e in subj_folder.iterdir() if e.is_dir()]
+                    for exp_folder in experiments:
+                        experiment_id = self._selected_or_normalized(
+                            selected_experiment_id,
+                            exp_folder.name,
+                        )
+                        upload_targets.append((exp_folder, subject_id, experiment_id))
+                return upload_targets
+
+            if level == UploaderLevel.SUBJECT:
                 subject_id = self._selected_or_normalized(
                     selected_subject_id,
-                    subj_folder.name,
+                    base_path.name,
                 )
-                experiments = [e for e in subj_folder.iterdir() if e.is_dir()]
-                for exp_folder in experiments:
-                    experiment_id = self._selected_or_normalized(
-                        selected_experiment_id,
-                        exp_folder.name,
+                experiments = [e for e in base_path.iterdir() if e.is_dir()]
+                return [
+                    (
+                        exp_folder,
+                        subject_id,
+                        self._selected_or_normalized(selected_experiment_id,
+                                                     exp_folder.name),
                     )
-                    upload_targets.append((exp_folder, subject_id, experiment_id))
-            return upload_targets
+                    for exp_folder in experiments
+                ]
 
-        if level == UploaderLevel.SUBJECT:
-            subject_id = self._selected_or_normalized(
-                selected_subject_id,
-                base_path.name,
-            )
-            experiments = [e for e in base_path.iterdir() if e.is_dir()]
-            return [
-                (
-                    exp_folder,
-                    subject_id,
-                    self._selected_or_normalized(selected_experiment_id,
-                                                 exp_folder.name),
+            if level == UploaderLevel.EXPERIMENT:
+                source_experiment = self._input_root
+                source_subject_name = source_experiment.parent.name
+
+                subject_id = self._selected_or_normalized(
+                    selected_subject_id,
+                    source_subject_name,
                 )
-                for exp_folder in experiments
-            ]
-
-        if level == UploaderLevel.EXPERIMENT:
-            source_experiment = self._input_root
-            source_subject_name = source_experiment.parent.name
-
-            subject_id = self._selected_or_normalized(
-                selected_subject_id,
-                source_subject_name,
-            )
-            experiment_id = self._selected_or_normalized(
-                selected_experiment_id,
-                base_path.name,
-            )
-            return [(base_path, subject_id, experiment_id)]
+                experiment_id = self._selected_or_normalized(
+                    selected_experiment_id,
+                    base_path.name,
+                )
+                return [(base_path, subject_id, experiment_id)]
+        except OSError as err:
+            raise RuntimeError(
+                f"Cannot inspect upload folder structure: {err}"
+            ) from err
 
         raise ValueError("Selected upload level is not supported.")
 

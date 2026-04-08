@@ -616,15 +616,19 @@ class ControllerUploader:
         subject_id = self._view.dd_xnat_subject.value
         experiment_id = self._view.dd_xnat_experiment.value
 
-        uploaded_files = self._xnat_repo.upload_files_resources(
-            source_folder=base_path,
-            project_id=project_id,
-            subject_id=subject_id,
-            experiment_id=experiment_id,
-        )
+        try:
+            uploaded_files = self._xnat_repo.upload_files_resources(
+                source_folder=base_path,
+                project_id=project_id,
+                subject_id=subject_id,
+                experiment_id=experiment_id,
+            )
+        except Exception as err:
+            self._view.create_alert(
+                f"Unexpected error during resources upload: {err}"
+            )
+            return
 
-        self._view.dlg_upload.open = False
-        self._view.update_page()
         self._view.create_alert(
             f"Resources upload completed successfully ({uploaded_files} files)."
         )

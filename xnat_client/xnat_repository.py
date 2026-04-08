@@ -37,7 +37,7 @@ class XnatRepository:
         session = self._session
 
         project_id = str(data.get("project_id") or "").strip()
-        project_id = self._normalize_id(project_id)
+        project_id = self._sanitize_label(project_id)
 
         if not project_id:
             raise ValueError("Project ID is required.")
@@ -81,7 +81,7 @@ class XnatRepository:
 
         project_id = str(data["parent_project"]).strip()
         subject_id = str(data["subject_id"]).strip()
-        subject_id = self._normalize_id(subject_id)
+        subject_id = self._sanitize_label(subject_id)
         if not project_id:
             raise ValueError("parent_project is required.")
         if not subject_id:
@@ -110,7 +110,7 @@ class XnatRepository:
         project_id = str(data["parent_project"]).strip()
         subject_id = str(data["subject_project"]).strip()
         experiment_id = str(data["experiment_id"]).strip()
-        experiment_id = self._normalize_id(experiment_id)
+        experiment_id = self._sanitize_label(experiment_id)
         if not project_id:
             raise ValueError("parent_project is required.")
         if not subject_id:
@@ -196,28 +196,50 @@ class XnatRepository:
             raise ValueError("No non-DICOM files found to upload.")
 
         uploaded_files = 0
+        failed_uploads = []
         for resource_label, resources in files_by_resource.items():
-            resource = self._get_or_create_experiment_resource(
-                project_id,
-                subject_id,
-                experiment_id,
-                resource_label,
-            )
+            try:
+                resource = self._get_or_create_experiment_resource(
+                    project_id,
+                    subject_id,
+                    experiment_id,
+                    resource_label,
+                )
+            except KeyError as err:
+                raise ValueError(
+                    "Invalid XNAT target. Verify project, subject and experiment "
+                    "exist and are accessible."
+                ) from err
 
             for local_file, remote_path in resources:
-                resource.upload_data(
-                    str(local_file),
-                    remotepath=remote_path,
-                    overwrite=True,
-                )
-                uploaded_files += 1
+                try:
+                    resource.upload_data(
+                        str(local_file),
+                        remotepath=remote_path,
+                        overwrite=True,
+                    )
+                    uploaded_files += 1
+                except Exception as err:
+                    failed_uploads.append(
+                        f"{local_file.name}: {err}"
+                    )
 
         self._session.clearcache()
+
+        if failed_uploads:
+            failures_preview = "; ".join(failed_uploads[:5])
+            if len(failed_uploads) > 5:
+                failures_preview += "; ..."
+            raise RuntimeError(
+                "Resources upload completed with errors "
+                f"({uploaded_files} uploaded, {len(failed_uploads)} failed). "
+                f"Failures: {failures_preview}"
+            )
         return uploaded_files
 
     def _group_resource_files(self, source_folder: Path,
                               resource_label: str):
-        sanitized_label = self._sanitize_resource_label(resource_label)
+        sanitized_label = self._sanitize_label(resource_label)
         grouped = {sanitized_label: []}
         for local_file in source_folder.rglob("*"):
             if not local_file.is_file():
@@ -246,7 +268,7 @@ class XnatRepository:
 
         session = self._session
         xnat_experiment = session.projects[project_id].subjects[subject_id].experiments[experiment_id]
-        resource_label = self._normalize_id(resource_label)
+        resource_label = self._sanitize_label(resource_label)
 
         if not resource_label in xnat_experiment.resources:
             self._session.classes.ResourceCatalog(
@@ -259,18 +281,9 @@ class XnatRepository:
         return resource
 
     @staticmethod
-    def _sanitize_resource_label(label: str):
+    def _sanitize_label(label: str):
         cleaned = "".join(
             ch if (ch.isalnum() or ch in {"_", "-"}) else "_"
             for ch in label.strip()
         )
-        return cleaned or "NON_DICOM"
-
-    @staticmethod
-    def _normalize_id(name: str) -> str:
-        normalized = name.strip()
-        normalized = normalized.replace(" ", "_")
-        normalized = normalized.replace(".", "_")
-        normalized = normalized.replace("-", "_")
-        normalized = normalized.replace("/", "_")
-        return normalized
+        return cleaned or None
