@@ -457,7 +457,7 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         self.btn_new_subject.on_click = self._controller.create_new_subject
         self.btn_new_experiment.on_click = self._controller.create_new_experiment
         self.btn_home_back.on_click = self._controller.on_home_back_clicked
-        self.btn_upload.on_click = self._controller.dicom_upload
+        self.btn_upload.on_click = self._controller.dicom_and_not_dicom_upload
 
     def _define_layout(self):
         """Define layout"""

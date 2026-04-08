@@ -163,7 +163,7 @@ class XnatRepository:
         except Exception as e:
             raise RuntimeError(f"Upload failed: {e}")
 
-    def upload_experiment_resources(
+    def upload_files_resources(
             self,
             source_folder,
             project_id,
@@ -181,9 +181,6 @@ class XnatRepository:
                 "Project, subject, and experiment are required "
                 "to upload resources."
             )
-
-        self._session.projects[project_id].subjects[
-            subject_id].experiments[experiment_id]
 
         files_by_resource = self._group_resource_files(
             source_folder,

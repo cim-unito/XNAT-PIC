@@ -310,7 +310,7 @@ class ControllerUploader:
     # ==========================================================
     # NEW XNAT PROJECT
     # ==========================================================
-    def create_new_project(self, e):
+    def create_new_project(self, e: ft.ControlEvent):
         self._controller_xnat_new_project.reset_form()
         self._view_xnat_new_project.open()
 
@@ -342,7 +342,7 @@ class ControllerUploader:
     # ==========================================================
     # NEW XNAT SUBJECT
     # ==========================================================
-    def create_new_subject(self, e):
+    def create_new_subject(self, e: ft.ControlEvent):
         if not self._xnat_repo:
             self._view.create_alert("You must login to XNAT first.")
             return
@@ -401,7 +401,7 @@ class ControllerUploader:
     # ==========================================================
     # NEW XNAT EXPERIMENT
     # ==========================================================
-    def create_new_experiment(self, e):
+    def create_new_experiment(self, e: ft.ControlEvent):
         if not self._xnat_repo:
             self._view.create_alert("You must login to XNAT first.")
             return
@@ -429,7 +429,7 @@ class ControllerUploader:
 
         self._view_xnat_new_experiment.open()
 
-    def on_new_experiment_project_selected(self, e):
+    def on_new_experiment_project_selected(self, e: ft.ControlEvent):
         project_id = self._view_xnat_new_experiment.dd_project.value
         self._view_xnat_new_experiment.set_subject_options([])
 
@@ -512,6 +512,113 @@ class ControllerUploader:
     # ==========================================================
     # UPLOAD
     # ==========================================================
+    def dicom_and_not_dicom_upload(self, e: ft.ControlEvent):
+        if not self._xnat_repo:
+            self._view.create_alert("You must login to XNAT first.")
+            return
+
+        base_path = self._model.tmp_folder_to_upload
+        if not base_path or not base_path.exists():
+            self._view.create_alert("Select a folder to upload.")
+            return
+
+        project_id = self._view.dd_xnat_project.value
+        if not project_id:
+            self._view.create_alert("Select a project in XNAT.")
+            return
+
+        try:
+            self._validate_experiment_resource_upload_context()
+        except ValueError as err:
+            self._view.create_alert(str(err))
+            return
+
+        # t = threading.Thread(
+        #     target=self._upload_project_thread,
+        #     args=(base_path, project_id),
+        #     daemon=True,
+        # )
+        # t.start()
+
+        try:
+            if self._model.level == UploaderLevel.FILE:
+                self._upload_not_dicom_thread(base_path, project_id)
+            else:
+                self._upload_dicom_thread(base_path, project_id)
+        except Exception as err:
+            self._view.create_alert(f"Upload error: {err}")
+
+    def _upload_dicom_thread(self, base_path: Path, project_id: str):
+        try:
+            upload_targets = list(self._iter_upload_targets(base_path))
+        except ValueError as err:
+            self._view.create_alert(str(err))
+            return
+
+        if not upload_targets:
+            self._view.create_alert("No experiment folders found.")
+            return
+
+        failed_uploads = []
+        for exp_folder, subject_id, experiment_id in upload_targets:
+            try:
+                self._xnat_repo.upload_dicom(
+                    exp_folder,
+                    project_id,
+                    subject_id,
+                    experiment_id,
+                )
+            except Exception as err:
+                failed_uploads.append(
+                    {
+                        "exp_folder": str(exp_folder),
+                        "subject_id": subject_id,
+                        "experiment_id": experiment_id,
+                        "error": str(err),
+                    }
+                )
+
+        self._view.dlg_upload.open = False
+        self._view.update_page()
+        if not failed_uploads:
+            self._view.create_alert("Upload completed successfully!")
+            return
+
+        failed_count = len(failed_uploads)
+        success_count = len(upload_targets) - failed_count
+        failure_summary = "; ".join(
+            (
+                f"{entry['experiment_id']} (subject {entry['subject_id']}): "
+                f"{entry['error']}"
+            )
+            for entry in failed_uploads[:5]
+        )
+        if failed_count > 5:
+            failure_summary += "; ..."
+
+        self._view.create_alert(
+            "Upload completed with errors "
+            f"({success_count} ok, {failed_count} failed). "
+            f"Failed uploads: {failure_summary}"
+        )
+
+    def _upload_not_dicom_thread(self, base_path: Path, project_id: str):
+        subject_id = self._view.dd_xnat_subject.value
+        experiment_id = self._view.dd_xnat_experiment.value
+
+        uploaded_files = self._xnat_repo.upload_experiment_resources(
+            source_folder=base_path,
+            project_id=project_id,
+            subject_id=subject_id,
+            experiment_id=experiment_id,
+        )
+
+        self._view.dlg_upload.open = False
+        self._view.update_page()
+        self._view.create_alert(
+            f"Resources upload completed successfully ({uploaded_files} files)."
+        )
+
     def _normalize_id(self, name):
         name = name.strip()
         name = name.replace(" ", "_")
@@ -589,114 +696,11 @@ class ControllerUploader:
                 "Select an XNAT experiment before uploading resources."
             )
 
-    def _upload_file_resources_thread(self, base_path: Path, project_id: str):
-        subject_id = self._view.dd_xnat_subject.value
-        experiment_id = self._view.dd_xnat_experiment.value
 
-        uploaded_files = self._xnat_repo.upload_experiment_resources(
-            source_folder=base_path,
-            project_id=project_id,
-            subject_id=subject_id,
-            experiment_id=experiment_id,
-        )
 
-        self._view.dlg_upload.open = False
-        self._view.update_page()
-        self._view.create_alert(
-            f"Resources upload completed successfully ({uploaded_files} files)."
-        )
 
-    def dicom_upload(self, e):
-        if not self._xnat_repo:
-            self._view.create_alert("You must login to XNAT first.")
-            return
 
-        base_path = self._model.tmp_folder_to_upload
-        if not base_path or not base_path.exists():
-            self._view.create_alert("Select a folder to upload.")
-            return
 
-        project_id = self._view.dd_xnat_project.value
-        if not project_id:
-            self._view.create_alert("Select a project in XNAT.")
-            return
-
-        try:
-            self._validate_experiment_resource_upload_context()
-        except ValueError as err:
-            self._view.create_alert(str(err))
-            return
-
-        # t = threading.Thread(
-        #     target=self._upload_project_thread,
-        #     args=(base_path, project_id),
-        #     daemon=True,
-        # )
-        # t.start()
-
-        try:
-            if self._model.level == UploaderLevel.FILE:
-                self._upload_file_resources_thread(base_path, project_id)
-            else:
-                self._upload_project_thread(base_path, project_id)
-        except Exception as err:
-            self._view.dlg_upload.open = False
-            self._view.update_page()
-            self._view.create_alert(f"Upload error: {err}")
-
-    def _upload_project_thread(self, base_path: Path, project_id: str):
-        try:
-            upload_targets = list(self._iter_upload_targets(base_path))
-        except ValueError as err:
-            self._view.create_alert(str(err))
-            return
-
-        if not upload_targets:
-            self._view.create_alert("No experiment folders found.")
-            return
-
-        failed_uploads = []
-        for exp_folder, subject_id, experiment_id in upload_targets:
-            try:
-                self._xnat_repo.upload_dicom(
-                    exp_folder,
-                    project_id,
-                    subject_id,
-                    experiment_id,
-                )
-            except Exception as err:
-                failed_uploads.append(
-                    {
-                        "exp_folder": str(exp_folder),
-                        "subject_id": subject_id,
-                        "experiment_id": experiment_id,
-                        "error": str(err),
-                    }
-                )
-
-        self._view.dlg_upload.open = False
-        self._view.update_page()
-        if not failed_uploads:
-            self._view.create_alert("Upload completed successfully!")
-            return
-
-        failed_count = len(failed_uploads)
-        success_count = len(upload_targets) - failed_count
-        failure_summary = "; ".join(
-            (
-                f"{entry['experiment_id']} (subject {entry['subject_id']}): "
-                f"{entry['error']}"
-            )
-            for entry in failed_uploads[:5]
-        )
-        if failed_count > 5:
-            failure_summary += "; ..."
-
-        self._view.create_alert(
-            "Upload completed with errors "
-            f"({success_count} ok, {failed_count} failed). "
-            f"Failed uploads: {failure_summary}"
-        )
 
     def _set_level(self, level):
         self._model.level = level
