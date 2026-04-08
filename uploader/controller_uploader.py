@@ -347,6 +347,8 @@ class ControllerUploader:
             self._view.create_alert("You must login to XNAT first.")
             return
 
+        self._controller_xnat_new_subject.reset_form()
+
         try:
             projects = self._xnat_repo.list_projects()
             project_ids = [project["id"] for project in projects]
@@ -355,28 +357,21 @@ class ControllerUploader:
             self._view.create_alert(f"Cannot load projects for new subject: {ex}")
             return
 
-        self._controller_xnat_new_subject.reset_form()
         self._view_xnat_new_subject.open()
 
     def on_data_subject_collected(self, data):
-        self._xnat_repo.create_subject(data)
+        try:
+            self._xnat_repo.create_subject(data)
+        except Exception as ex:
+            self._view.create_alert(f"Cannot create project: {ex}")
+            return
+
         project_id = data["parent_project"]
         subject_id = data["subject_id"]
         subject_label = data.get("subject_name") or subject_id
-        exists = False
-
-        for opt in self._view.dd_xnat_project.options:
-            if opt.key == project_id:
-                exists = True
-                break
-
-        if not exists:
-            print("Add new project:", project_id)
-            self._view.dd_xnat_project.options.append(
-                ft.dropdown.Option(key=project_id, text=project_id)
-            )
 
         self._view.dd_xnat_project.value = project_id
+
         try:
             subjects = self._xnat_repo.list_subjects(project_id)
             self._view.populate_subjects(subjects)
@@ -406,16 +401,16 @@ class ControllerUploader:
             self._view.create_alert("You must login to XNAT first.")
             return
 
+        self._controller_xnat_new_experiment.reset_form()
         try:
             projects = self._xnat_repo.list_projects()
             project_ids = [project["id"] for project in projects]
             self._view_xnat_new_experiment.set_project_options(project_ids)
         except Exception as ex:
-            self._view.create_alert(f"Cannot load projects for new subject: {ex}")
+            self._view.create_alert(f"Cannot load projects for new experiment: {ex}")
             return
 
         selected_project_id = self._view.dd_xnat_project.value
-        self._controller_xnat_new_experiment.reset_form()
 
         if selected_project_id:
             self._view_xnat_new_experiment.dd_project.value = selected_project_id

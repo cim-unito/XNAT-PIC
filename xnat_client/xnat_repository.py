@@ -94,13 +94,19 @@ class XnatRepository:
         subject_name = str(data.get("subject_name", "")).strip()
         subject_label = subject_name or subject_id
 
-        project = session.projects[project_id]
-        subject = session.classes.SubjectData(
-            parent = project,
-            id_ = subject_id,
-            label = subject_id,
-            name = subject_label,
-        )
+        try:
+            project = session.projects[project_id]
+            subject = session.classes.SubjectData(
+                parent = project,
+                id_ = subject_id,
+                label = subject_id,
+                name = subject_label,
+            )
+            session.clearcache()
+        except Exception as err:
+            raise RuntimeError(
+                f"Subject creation failed for '{project_id}': {err}"
+            ) from err
 
         return {
             "project_id": project_id,
