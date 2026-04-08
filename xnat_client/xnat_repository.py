@@ -173,6 +173,8 @@ class XnatRepository:
     ):
         source_folder = Path(source_folder)
 
+        default_resource_label = source_folder.name if source_folder.name else default_resource_label
+
         if not source_folder.exists() or not source_folder.is_dir():
             raise ValueError("Resource source folder is not valid.")
 
@@ -193,6 +195,8 @@ class XnatRepository:
         uploaded_files = 0
         for resource_label, resources in files_by_resource.items():
             resource = self._get_or_create_experiment_resource(
+                project_id,
+                subject_id,
                 experiment_id,
                 resource_label,
             )
@@ -244,19 +248,17 @@ class XnatRepository:
         )
         return cleaned or "NON_DICOM"
 
-    def _get_or_create_experiment_resource(self, experiment_id: str,
+    def _get_or_create_experiment_resource(self,
+                                           project_id: str,
+                                           subject_id: str,
+                                           experiment_id: str,
                                            resource_label: str):
-        resource = self._session.experiments[experiment_id].resources.get(
-            resource_label
-        )
 
-        if resource:
-            return resource
+        xnat_experiment = self._session.projects[project_id].subjects[subject_id].experiments[experiment_id]
 
-        self._session.put(
-            f"/data/experiments/{experiment_id}/resources/{resource_label}"
-        )
-        self._session.clearcache()
+        if resource_label in xnat_experiment.resources:
+            resource = xnat_experiment.resources[resource_label]
+        else:
+            resource = self._session.create_object(f"/data/projects/{project_id}/subjects/{subject_id}/experiments/{experiment_id}/resources/{resource_label}")
 
-        return self._session.experiments[experiment_id].resources[
-            resource_label]
+        return resource

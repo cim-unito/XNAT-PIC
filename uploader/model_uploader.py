@@ -6,6 +6,7 @@ from uploader.services.dicom.dicom_modify_modality import DicomModifyModality
 from uploader.services.dicom.dicom_validator_service import \
     DicomValidatorService
 from uploader.services.filesystem.filesystem_service import FilesystemService
+from enums.uploader_level import UploaderLevel
 
 
 class ModelUploader:
@@ -125,6 +126,94 @@ class ModelUploader:
             raise ValueError("Path does not exist")
 
         DicomModifyModality.modify_modality(dicom_files_to_modify, new_modality)
+
+    def build_upload_targets(self, selected_subject_id: str | None,
+                             selected_experiment_id: str | None):
+        """
+        Build upload targets according to current uploader level.
+        """
+        if not self._tmp_folder_to_upload:
+            raise ValueError("Select a folder to upload.")
+
+        base_path = Path(self._tmp_folder_to_upload)
+        level = self._level
+
+        if level == UploaderLevel.PROJECT:
+            subjects = [p for p in base_path.iterdir() if p.is_dir()]
+            if not subjects:
+                raise ValueError("No subject folders found in selected path.")
+
+            upload_targets = []
+            for subj_folder in subjects:
+                subject_id = self._selected_or_normalized(
+                    selected_subject_id,
+                    subj_folder.name,
+                )
+                experiments = [e for e in subj_folder.iterdir() if e.is_dir()]
+                for exp_folder in experiments:
+                    experiment_id = self._selected_or_normalized(
+                        selected_experiment_id,
+                        exp_folder.name,
+                    )
+                    upload_targets.append((exp_folder, subject_id, experiment_id))
+            return upload_targets
+
+        if level == UploaderLevel.SUBJECT:
+            subject_id = self._selected_or_normalized(
+                selected_subject_id,
+                base_path.name,
+            )
+            experiments = [e for e in base_path.iterdir() if e.is_dir()]
+            return [
+                (
+                    exp_folder,
+                    subject_id,
+                    self._selected_or_normalized(selected_experiment_id,
+                                                 exp_folder.name),
+                )
+                for exp_folder in experiments
+            ]
+
+        if level == UploaderLevel.EXPERIMENT:
+            source_experiment = self._input_root
+            source_subject_name = source_experiment.parent.name
+
+            subject_id = self._selected_or_normalized(
+                selected_subject_id,
+                source_subject_name,
+            )
+            experiment_id = self._selected_or_normalized(
+                selected_experiment_id,
+                base_path.name,
+            )
+            return [(base_path, subject_id, experiment_id)]
+
+        raise ValueError("Selected upload level is not supported.")
+
+    def validate_resource_upload_context(self, selected_subject_id: str | None,
+                                         selected_experiment_id: str | None):
+        if self._level != UploaderLevel.FILE:
+            return
+        if not selected_subject_id:
+            raise ValueError("Select an XNAT subject before uploading resources.")
+        if not selected_experiment_id:
+            raise ValueError(
+                "Select an XNAT experiment before uploading resources."
+            )
+
+    def _selected_or_normalized(self, selected_value: str | None,
+                                fallback_name: str) -> str:
+        if selected_value:
+            return selected_value
+        return self._normalize_id(fallback_name)
+
+    @staticmethod
+    def _normalize_id(name: str) -> str:
+        normalized = name.strip()
+        normalized = normalized.replace(" ", "_")
+        normalized = normalized.replace(".", "_")
+        normalized = normalized.replace("-", "_")
+        return normalized
 
     @property
     def input_root(self):

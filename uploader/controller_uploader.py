@@ -527,12 +527,6 @@ class ControllerUploader:
             self._view.create_alert("Select a project in XNAT.")
             return
 
-        try:
-            self._validate_experiment_resource_upload_context()
-        except ValueError as err:
-            self._view.create_alert(str(err))
-            return
-
         # t = threading.Thread(
         #     target=self._upload_project_thread,
         #     args=(base_path, project_id),
@@ -541,16 +535,22 @@ class ControllerUploader:
         # t.start()
 
         try:
-            if self._model.level == UploaderLevel.FILE:
-                self._upload_not_dicom_thread(base_path, project_id)
-            else:
-                self._upload_dicom_thread(base_path, project_id)
+            self._upload_planner(base_path, project_id,)
         except Exception as err:
             self._view.create_alert(f"Upload error: {err}")
 
-    def _upload_dicom_thread(self, base_path: Path, project_id: str):
+    def _upload_planner(self, base_path, project_id):
+        if self._model.level == UploaderLevel.FILE:
+            self._upload_not_dicom_thread(base_path, project_id)
+        else:
+            self._upload_dicom_thread(project_id)
+
+    def _upload_dicom_thread(self, project_id: str):
         try:
-            upload_targets = list(self._iter_upload_targets(base_path))
+            upload_targets = self._model.build_upload_targets(
+                self._view.dd_xnat_subject.value,
+                self._view.dd_xnat_experiment.value,
+            )
         except ValueError as err:
             self._view.create_alert(str(err))
             return
@@ -603,10 +603,20 @@ class ControllerUploader:
         )
 
     def _upload_not_dicom_thread(self, base_path: Path, project_id: str):
+
+        try:
+            self._model.validate_resource_upload_context(
+                self._view.dd_xnat_subject.value,
+                self._view.dd_xnat_experiment.value,
+            )
+        except ValueError as err:
+            self._view.create_alert(str(err))
+            return
+
         subject_id = self._view.dd_xnat_subject.value
         experiment_id = self._view.dd_xnat_experiment.value
 
-        uploaded_files = self._xnat_repo.upload_experiment_resources(
+        uploaded_files = self._xnat_repo.upload_files_resources(
             source_folder=base_path,
             project_id=project_id,
             subject_id=subject_id,
@@ -618,89 +628,6 @@ class ControllerUploader:
         self._view.create_alert(
             f"Resources upload completed successfully ({uploaded_files} files)."
         )
-
-    def _normalize_id(self, name):
-        name = name.strip()
-        name = name.replace(" ", "_")
-        name = name.replace(".", "_")
-        name = name.replace("-", "_")
-        return name
-
-    def _selected_or_normalized(self, selected_value, fallback_name):
-        if selected_value:
-            return selected_value
-        return self._normalize_id(fallback_name)
-
-    def _iter_upload_targets(self, base_path: Path):
-        level = self._model.level
-
-        if level == UploaderLevel.PROJECT:
-            subjects = [p for p in base_path.iterdir() if p.is_dir()]
-            if not subjects:
-                raise ValueError("No subject folders found in selected path.")
-
-            for subj_folder in subjects:
-                subject_id = self._selected_or_normalized(
-                    self._view.dd_xnat_subject.value,
-                    subj_folder.name,
-                )
-                experiments = [e for e in subj_folder.iterdir() if e.is_dir()]
-                for exp_folder in experiments:
-                    experiment_id = self._selected_or_normalized(
-                        self._view.dd_xnat_experiment.value,
-                        exp_folder.name,
-                    )
-                    yield exp_folder, subject_id, experiment_id
-
-        elif level == UploaderLevel.SUBJECT:
-            subject_id = self._selected_or_normalized(
-                self._view.dd_xnat_subject.value,
-                base_path.name,
-            )
-            experiments = [e for e in base_path.iterdir() if e.is_dir()]
-            for exp_folder in experiments:
-                experiment_id = self._selected_or_normalized(
-                    self._view.dd_xnat_experiment.value,
-                    exp_folder.name,
-                )
-                yield exp_folder, subject_id, experiment_id
-
-        elif level == UploaderLevel.EXPERIMENT:
-            source_experiment = self._model.input_root
-            source_subject_name = source_experiment.parent.name
-
-            subject_id = self._selected_or_normalized(
-                self._view.dd_xnat_subject.value,
-                source_subject_name,
-            )
-            experiment_id = self._selected_or_normalized(
-                self._view.dd_xnat_experiment.value,
-                base_path.name,
-            )
-            yield base_path, subject_id, experiment_id
-
-        else:
-            raise ValueError("Selected upload level is not supported.")
-
-    def _validate_experiment_resource_upload_context(self):
-        if self._model.level != UploaderLevel.FILE:
-            return
-
-        if not self._view.dd_xnat_subject.value:
-            raise ValueError(
-                "Select an XNAT subject before uploading resources."
-            )
-
-        if not self._view.dd_xnat_experiment.value:
-            raise ValueError(
-                "Select an XNAT experiment before uploading resources."
-            )
-
-
-
-
-
-
 
     def _set_level(self, level):
         self._model.level = level
