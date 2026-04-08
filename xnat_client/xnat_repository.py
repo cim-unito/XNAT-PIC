@@ -37,13 +37,14 @@ class XnatRepository:
         session = self._session
 
         project_id = str(data.get("project_id") or "").strip()
+        project_id = self._normalize_id(project_id)
+
         if not project_id:
             raise ValueError("Project ID is required.")
-        if "/" in project_id:
-            raise ValueError("Project ID cannot contain '/'.")
 
         if project_id in session.projects:
             raise ValueError(f"Project '{project_id}' already exists.")
+
 
         project_name = str(data.get("project_name") or project_id).strip()
         project_description = str(data.get("description") or "").strip()
@@ -80,6 +81,7 @@ class XnatRepository:
 
         project_id = str(data["parent_project"]).strip()
         subject_id = str(data["subject_id"]).strip()
+        subject_id = self._normalize_id(subject_id)
         if not project_id:
             raise ValueError("parent_project is required.")
         if not subject_id:
@@ -108,6 +110,7 @@ class XnatRepository:
         project_id = str(data["parent_project"]).strip()
         subject_id = str(data["subject_project"]).strip()
         experiment_id = str(data["experiment_id"]).strip()
+        experiment_id = self._normalize_id(experiment_id)
         if not project_id:
             raise ValueError("parent_project is required.")
         if not subject_id:
@@ -173,7 +176,7 @@ class XnatRepository:
     ):
         source_folder = Path(source_folder)
 
-        default_resource_label = source_folder.name if source_folder.name else default_resource_label
+        resource_label = source_folder.name if source_folder.name else default_resource_label
 
         if not source_folder.exists() or not source_folder.is_dir():
             raise ValueError("Resource source folder is not valid.")
@@ -186,7 +189,7 @@ class XnatRepository:
 
         files_by_resource = self._group_resource_files(
             source_folder,
-            default_resource_label,
+            resource_label,
         )
 
         if not files_by_resource:
@@ -202,7 +205,7 @@ class XnatRepository:
             )
 
             for local_file, remote_path in resources:
-                resource.upload(
+                resource.upload_data(
                     str(local_file),
                     remotepath=remote_path,
                     overwrite=True,
@@ -213,7 +216,7 @@ class XnatRepository:
         return uploaded_files
 
     def _group_resource_files(self, source_folder: Path,
-                              default_resource_label: str):
+                              resource_label: str):
         grouped = {}
 
         for local_file in source_folder.rglob("*"):
@@ -231,7 +234,7 @@ class XnatRepository:
                 remote_path = "/".join(path_parts[1:])
             else:
                 resource_label = self._sanitize_resource_label(
-                    default_resource_label)
+                    resource_label)
                 remote_path = relative_path.name
 
             grouped.setdefault(resource_label, []).append(
@@ -239,6 +242,26 @@ class XnatRepository:
             )
 
         return grouped
+
+    def _get_or_create_experiment_resource(self,
+                                           project_id: str,
+                                           subject_id: str,
+                                           experiment_id: str,
+                                           resource_label: str):
+
+        session = self._session
+        xnat_experiment = session.projects[project_id].subjects[subject_id].experiments[experiment_id]
+        resource_label = self._normalize_id(resource_label)
+
+        if not resource_label in xnat_experiment.resources:
+            self._session.classes.ResourceCatalog(
+                parent=xnat_experiment,
+                label=resource_label,
+            )
+            self._session.clearcache()
+
+        resource = xnat_experiment.resources[resource_label]
+        return resource
 
     @staticmethod
     def _sanitize_resource_label(label: str):
@@ -248,17 +271,11 @@ class XnatRepository:
         )
         return cleaned or "NON_DICOM"
 
-    def _get_or_create_experiment_resource(self,
-                                           project_id: str,
-                                           subject_id: str,
-                                           experiment_id: str,
-                                           resource_label: str):
-
-        xnat_experiment = self._session.projects[project_id].subjects[subject_id].experiments[experiment_id]
-
-        if resource_label in xnat_experiment.resources:
-            resource = xnat_experiment.resources[resource_label]
-        else:
-            resource = self._session.create_object(f"/data/projects/{project_id}/subjects/{subject_id}/experiments/{experiment_id}/resources/{resource_label}")
-
-        return resource
+    @staticmethod
+    def _normalize_id(name: str) -> str:
+        normalized = name.strip()
+        normalized = normalized.replace(" ", "_")
+        normalized = normalized.replace(".", "_")
+        normalized = normalized.replace("-", "_")
+        normalized = normalized.replace("/", "_")
+        return normalized
