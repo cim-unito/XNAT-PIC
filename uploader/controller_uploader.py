@@ -611,7 +611,10 @@ class ControllerUploader:
     def _refresh_subject_dropdown(self, project_id: str, selected_subject_id: str | None = None):
         subjects = self._xnat_repo.list_subjects(project_id)
         self._view.populate_subjects(subjects)
-        self._view.dd_xnat_subject.value = selected_subject_id
+        self._view.dd_xnat_subject.value = self._resolve_dropdown_selection(
+            self._view.dd_xnat_subject,
+            selected_subject_id,
+        )
         self._view.update_page()
         return subjects
 
@@ -621,7 +624,10 @@ class ControllerUploader:
                                      selected_experiment_id: str | None = None):
         experiments = self._xnat_repo.list_experiments(project_id, subject_id)
         self._view.populate_experiments(experiments)
-        self._view.dd_xnat_experiment.value = selected_experiment_id
+        self._view.dd_xnat_experiment.value = self._resolve_dropdown_selection(
+            self._view.dd_xnat_experiment,
+            selected_experiment_id,
+        )
         self._view.update_page()
         return experiments
 
@@ -730,6 +736,24 @@ class ControllerUploader:
     @staticmethod
     def _dropdown_has_option(dropdown: ft.Dropdown, key: str):
         return any(option.key == key for option in dropdown.options)
+
+    @staticmethod
+    def _resolve_dropdown_selection(dropdown: ft.Dropdown, preferred_value: str | None):
+        if not preferred_value:
+            return None
+
+        preferred_value = str(preferred_value).strip()
+        if not preferred_value:
+            return None
+
+        # XNAT can expose internal accession IDs as option keys while the
+        # creation flow tracks user-provided labels. Accept either.
+        for option in dropdown.options:
+            option_key = str(option.key or "").strip()
+            option_text = str(option.text or "").strip()
+            if preferred_value in {option_key, option_text}:
+                return option_key
+        return None
 
     @staticmethod
     def _sanitize_label(label: str):
