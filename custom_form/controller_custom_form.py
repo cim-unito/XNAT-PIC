@@ -82,15 +82,17 @@ class ControllerCustomForm:
     # DROPDOWN PROJECT / SUBJECT / EXPERIMENT XNAT
     # ==========================================================
     def load_projects(self):
+        if not self._xnat_repo:
+            self._view.create_alert("Session not available. Please login again.")
+            return
         try:
             projects = self._xnat_repo.list_projects()
             self._view.populate_projects(projects)
-        except Exception as e:
-            self._view.create_alert(f"Cannot load projects: {e}")
+        except Exception as exc:
+            self._view.create_alert(f"Cannot load projects: {exc}")
 
     def on_project_selected(self, e):
         project_id = self._view.dd_xnat_project.value
-        self._view.populate_subjects([])
         self._view.populate_experiments([])
 
         if not project_id:
@@ -100,8 +102,12 @@ class ControllerCustomForm:
             subjects = self._xnat_repo.list_subjects(project_id)
             self._view.populate_subjects(subjects)
             self._load_custom_fields()
-        except Exception as e:
-            self._view.create_alert(f"Cannot load subjects: {e}")
+        except KeyError:
+            self._view.create_alert(
+                "Selected project is not available anymore. Please reload and try again."
+            )
+        except Exception as exc:
+            self._view.create_alert(f"Cannot load subjects: {exc}")
 
     def on_subject_selected(self, e):
         project_id = self._view.dd_xnat_project.value
@@ -116,8 +122,12 @@ class ControllerCustomForm:
                                                            subject_id)
             self._view.populate_experiments(experiments)
             self._load_custom_fields()
-        except Exception as e:
-            self._view.create_alert(f"Cannot load experiments: {e}")
+        except KeyError:
+            self._view.create_alert(
+                "Selected subject is not available anymore. Please select it again."
+            )
+        except Exception as exc:
+            self._view.create_alert(f"Cannot load experiments: {exc}")
 
     def on_experiment_selected(self, e):
         self._load_custom_fields()

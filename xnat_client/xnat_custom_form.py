@@ -18,18 +18,7 @@ class XnatCustomForm:
             return self._SUBJECT_FORM_ID
         return self._PROJECT_FORM_ID
 
-    def _custom_fields_uri(self, project_id, subject_id=None, experiment_id=None):
-        base_uri = f"/xapi/custom-fields/projects/{project_id}"
 
-        if experiment_id:
-            return (
-                f"{base_uri}/subjects/{subject_id}/experiments/{experiment_id}/fields"
-            )
-
-        if subject_id:
-            return f"{base_uri}/subjects/{subject_id}/fields"
-
-        return f"{base_uri}/fields"
 
     def get_custom_fields(self, project_id, subject_id=None, experiment_id=None):
         """Return custom fields (group, timepoint, dose) for the given level."""
@@ -102,3 +91,17 @@ class XnatCustomForm:
         put_response.raise_for_status()
 
         return payload
+
+    @staticmethod
+    def _custom_fields_uri(project_id, subject_id=None, experiment_id=None):
+        base_uri = f"/xapi/custom-fields/projects/{project_id}"
+
+        if experiment_id:
+            return (
+                f"{base_uri}/subjects/{subject_id}/experiments/{experiment_id}/fields"
+            )
+
+        if subject_id:
+            return f"{base_uri}/subjects/{subject_id}/fields"
+
+        return f"{base_uri}/fields"
