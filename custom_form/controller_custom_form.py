@@ -33,8 +33,10 @@ class ControllerCustomForm:
         self._view.open_auth_dialog(dlg)
 
     def on_exit_route(self):
+        self._reset_workflow_state()
         if self._xnat_session:
             self._xnat_session.disconnect()
+        self._reset_state()
 
     def _on_login_success(self, xnat_session):
         self._xnat_session = xnat_session
@@ -45,6 +47,7 @@ class ControllerCustomForm:
     def _on_login_cancel(self):
         if self._xnat_session:
             self._xnat_session.disconnect()
+        self._reset_state()
         self.go_home()
 
     # ==========================================================
@@ -55,11 +58,10 @@ class ControllerCustomForm:
 
     def on_home_back_clicked(self, e):
         if self._model.level is None:
-            self._view.set_initial_state()
+            self._reset_workflow_state()
             self.go_home()
         else:
-            self._model.reset_level()
-            self._view.set_initial_state()
+            self._reset_workflow_state()
 
     # ==========================================================
     # SET LEVEL (PROJECT / SUBJECT / EXPERIMENT)
@@ -206,3 +208,14 @@ class ControllerCustomForm:
             self._view.set_mode(xnat_subject=True, xnat_experiment=True)
 
         self.load_projects()
+
+    def _reset_workflow_state(self):
+        """Reset custom form workflow state across model, controller, and view."""
+        self._model.reset_state()
+        self._view.set_initial_state()
+
+    def _reset_state(self):
+        self._xnat_session = None
+        self._xnat_repo = None
+        self._xnat_custom_form = None
+
