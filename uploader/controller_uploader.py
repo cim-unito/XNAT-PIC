@@ -322,6 +322,12 @@ class ControllerUploader:
         self._view.dd_xnat_project.value = project_id
         self._view.dd_xnat_project.update()
 
+    def _clear_xnat_target_selection(self):
+        self._view.dd_xnat_project.value = None
+        self._view.reset_dropdown(self._view.dd_xnat_subject)
+        self._view.reset_dropdown(self._view.dd_xnat_experiment)
+        self._view.update_page()
+
     def _refresh_subject_dropdown(self, project_id: str, selected_subject_id: str | None = None):
         subjects = self._xnat_repo.list_subjects(project_id)
         self._view.populate_subjects(subjects)
@@ -348,7 +354,7 @@ class ControllerUploader:
 
         try:
             if self._xnat_repo.project_exists(project_id):
-                self._upsert_and_select_project(project_id, project_name)
+                self._clear_xnat_target_selection()
                 self._view.create_alert(
                     f"Project '{project_id}' already exists on XNAT."
                 )
@@ -397,8 +403,7 @@ class ControllerUploader:
 
         try:
             if self._xnat_repo.subject_exists(project_id, normalized_subject_id):
-                self._view.dd_xnat_project.value = project_id
-                self._refresh_subject_dropdown(project_id, normalized_subject_id)
+                self._clear_xnat_target_selection()
                 self._view.create_alert(
                     f"Subject '{normalized_subject_id}' already exists in project '{project_id}'."
                 )
