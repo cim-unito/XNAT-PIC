@@ -450,10 +450,6 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
                 tight=True,
                 spacing=12,
                 controls=[
-                    ft.Text(
-                        "Loading",
-                        size=14,
-                    ),
                     self.pb_upload,
                 ],
             ),

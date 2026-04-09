@@ -360,32 +360,36 @@ class ControllerUploader:
     def on_data_project_collected(self, data):
         requested_project_id = str(data.get("project_id", "")).strip()
         project_id = self._sanitize_label(requested_project_id)
-        project_name = str(data.get("project_name", "")).strip() or project_id
 
         if not project_id:
             self._view.create_alert("Cannot create project: invalid project ID.")
             return
 
-        try:
-            if self._xnat_repo.project_exists(project_id):
-                self._clear_xnat_target_selection()
-                self._view.create_alert(
-                    f"Project '{project_id}' already exists on XNAT."
-                )
+        with self._upload_progress_dialog():
+            try:
+                if self._xnat_repo.project_exists(project_id):
+                    self._clear_xnat_target_selection()
+                    self._view.create_alert(
+                        f"Project '{project_id}' already exists on XNAT."
+                    )
+                    return
+            except Exception as ex:
+                self._view.create_alert(f"Cannot verify existing projects: {ex}")
                 return
-        except Exception as ex:
-            self._view.create_alert(f"Cannot verify existing projects: {ex}")
-            return
-        try:
-            created_project = self._xnat_repo.create_project(data)
-        except Exception as ex:
-            self._view.create_alert(f"Cannot create project: {ex}")
-            return
 
-        project_id = created_project["project_id"]
-        project_label = created_project["project_name"] or project_id
+            try:
+                created_project = self._xnat_repo.create_project(data)
+            except Exception as ex:
+                self._view.create_alert(f"Cannot create project: {ex}")
+                return
+            project_id = created_project["project_id"]
+            project_label = created_project["project_name"] or project_id
 
-        self._upsert_and_select_project(project_id, project_label)
+            self._upsert_and_select_project(project_id, project_label)
+
+        self._view.create_alert(
+            f"Project '{project_id}' created successfully."
+        )
     # ==========================================================
     # NEW XNAT SUBJECT
     # ==========================================================
@@ -415,36 +419,40 @@ class ControllerUploader:
             self._view.create_alert("Cannot create subject: invalid project/subject ID.")
             return
 
-        try:
-            if self._xnat_repo.subject_exists(project_id, normalized_subject_id):
-                self._clear_xnat_target_selection()
-                self._view.create_alert(
-                    f"Subject '{normalized_subject_id}' already exists in project '{project_id}'."
-                )
+        with self._upload_progress_dialog():
+            try:
+                if self._xnat_repo.subject_exists(project_id, normalized_subject_id):
+                    self._clear_xnat_target_selection()
+                    self._view.create_alert(
+                        f"Subject '{normalized_subject_id}' already exists in project '{project_id}'."
+                    )
+                    return
+            except Exception as ex:
+                self._view.create_alert(f"Cannot verify existing subjects: {ex}")
                 return
-        except Exception as ex:
-            self._view.create_alert(f"Cannot verify existing subjects: {ex}")
-            return
 
-        try:
-            created_subject = self._xnat_repo.create_subject(data)
-        except Exception as ex:
-            self._view.create_alert(f"Cannot create subject: {ex}")
-            return
+            try:
+                created_subject = self._xnat_repo.create_subject(data)
+            except Exception as ex:
+                self._view.create_alert(f"Cannot create subject: {ex}")
+                return
 
-        project_id = created_subject["project_id"]
-        subject_id = created_subject["subject_id"]
+            project_id = created_subject["project_id"]
+            subject_id = created_subject["subject_id"]
 
-        self._view.dd_xnat_project.value = project_id
+            self._view.dd_xnat_project.value = project_id
 
-        try:
-            subjects = self._xnat_repo.list_subjects(project_id)
-            self._refresh_subject_dropdown(project_id, subject_id)
-        except Exception as ex:
-            self._view.create_alert(
-                f"Subject created but list refresh failed: {ex}")
-            self._view.dd_xnat_project.update()
-            return
+            try:
+                self._refresh_subject_dropdown(project_id, subject_id)
+            except Exception as ex:
+                self._view.create_alert(
+                    f"Subject created but list refresh failed: {ex}")
+                self._view.dd_xnat_project.update()
+                return
+
+        self._view.create_alert(
+            f"Subject '{subject_id}' created successfully in project '{project_id}'."
+        )
 
     # ==========================================================
     # NEW XNAT EXPERIMENT
@@ -506,46 +514,51 @@ class ControllerUploader:
             )
             return
 
-        try:
-            if self._xnat_repo.experiment_exists(
-                project_id,
-                subject_id,
-                normalized_experiment_id,
-            ):
-                self._view.create_alert(
-                    f"Experiment '{normalized_experiment_id}' already exists in "
-                    f"subject '{subject_id}' (project '{project_id}')."
-                )
+        with self._upload_progress_dialog():
+            try:
+                if self._xnat_repo.experiment_exists(
+                    project_id,
+                    subject_id,
+                    normalized_experiment_id,
+                ):
+                    self._view.create_alert(
+                        f"Experiment '{normalized_experiment_id}' already exists in "
+                        f"subject '{subject_id}' (project '{project_id}')."
+                    )
+                    return
+            except Exception as ex:
+                self._view.create_alert(f"Cannot verify existing experiments: {ex}")
                 return
-        except Exception as ex:
-            self._view.create_alert(f"Cannot verify existing experiments: {ex}")
-            return
 
-        try:
-            created_experiment = self._xnat_repo.create_experiment(data)
-        except Exception as ex:
-            self._view.create_alert(f"Cannot create experiment: {ex}")
-            return
+            try:
+                created_experiment = self._xnat_repo.create_experiment(data)
+            except Exception as ex:
+                self._view.create_alert(f"Cannot create experiment: {ex}")
+                return
 
-        project_id = created_experiment["project_id"]
-        subject_id = created_experiment["subject_id"]
-        experiment_id = created_experiment["experiment_id"]
+            project_id = created_experiment["project_id"]
+            subject_id = created_experiment["subject_id"]
+            experiment_id = created_experiment["experiment_id"]
 
-        self._upsert_and_select_project(project_id, project_id)
+            self._upsert_and_select_project(project_id, project_id)
 
-        try:
-            self._refresh_subject_dropdown(project_id, subject_id)
-        except Exception as ex:
-            self._view.create_alert(
-                f"Experiment created but subject list refresh failed: {ex}")
-            return
+            try:
+                self._refresh_subject_dropdown(project_id, subject_id)
+            except Exception as ex:
+                self._view.create_alert(
+                    f"Experiment created but subject list refresh failed: {ex}")
+                return
 
-        try:
-            self._refresh_experiment_dropdown(project_id, subject_id, experiment_id)
-        except Exception as ex:
-            self._view.create_alert(
-                f"Experiment created but experiment list refresh failed: {ex}")
-            return
+            try:
+                self._refresh_experiment_dropdown(project_id, subject_id, experiment_id)
+            except Exception as ex:
+                self._view.create_alert(
+                    f"Experiment created but experiment list refresh failed: {ex}")
+                return
+
+        self._view.create_alert(
+            f"Experiment '{experiment_id}' created successfully for subject '{subject_id}'."
+        )
 
     # ==========================================================
     # UPLOAD
@@ -565,17 +578,11 @@ class ControllerUploader:
             self._view.create_alert("Select a project in XNAT.")
             return
 
-        # t = threading.Thread(
-        #     target=self._upload_project_thread,
-        #     args=(base_path, project_id),
-        #     daemon=True,
-        # )
-        # t.start()
-
-        try:
-            self._upload_planner(base_path, project_id,)
-        except Exception as err:
-            self._view.create_alert(f"Upload error: {err}")
+        with self._upload_progress_dialog():
+            try:
+                self._upload_planner(base_path, project_id)
+            except Exception as err:
+                self._view.create_alert(f"Upload error: {err}")
 
     def _upload_planner(self, base_path, project_id):
         if self._model.level == UploaderLevel.FILE:
