@@ -105,25 +105,33 @@ class ModelUploader:
         self._validation_report = report
         return report
 
+    @staticmethod
+    def modify_modality(dicom_path: Path, new_modality: str):
+        if not new_modality or not str(new_modality).strip():
+            raise ValueError("Select a valid modality value.")
 
-    def modify_modality(self, dicom_path, new_modality):
         dicom_files_to_modify = []
 
-        if dicom_path.is_file():
-            if dicom_path.suffix.lower() in [".dcm", ".dicom"]:
-                dicom_files_to_modify.append(dicom_path)
+        try:
+            if dicom_path.is_file():
+                if dicom_path.suffix.lower() in [".dcm", ".dicom"]:
+                    dicom_files_to_modify.append(dicom_path)
+                else:
+                    raise ValueError("It is not a dicom file (.dcm o .dicom)")
+
+            elif dicom_path.is_dir():
+                dicom_files_to_modify = list(dicom_path.rglob("*.dcm")) + list(
+                    dicom_path.rglob("*.dicom"))
+
+                if not dicom_files_to_modify:
+                    raise ValueError("Folder does not contain dicom file")
+
             else:
-                raise ValueError("It is not a dicom file (.dcm o .dicom)")
-
-        elif dicom_path.is_dir():
-            dicom_files_to_modify = list(dicom_path.rglob("*.dcm")) + list(
-                dicom_path.rglob("*.dicom"))
-
-            if not dicom_files_to_modify:
-                raise ValueError("Folder does not contain dicom file")
-
-        else:
-            raise ValueError("Path does not exist")
+                raise ValueError("Path does not exist")
+        except OSError as err:
+            raise RuntimeError(
+                f"Cannot inspect selected path for modality update: {err}"
+            ) from err
 
         DicomModifyModality.modify_modality(dicom_files_to_modify, new_modality)
 

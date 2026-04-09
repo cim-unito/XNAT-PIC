@@ -292,20 +292,22 @@ class ControllerUploader:
         selected_item = self._selected_folder_path if (self._selected_folder_path
                                                       is not None) \
             else self._selected_file_path
-        print(selected_item)
-        self._model.modify_modality(Path(selected_item),
-                                    e.control.value)
-        self._treeview_controller.populate_tree(
-            Path(self._model.tmp_folder_to_upload),
-            TreeType.DICOM
-        )
-        self._preview_cache.clear()
-        self._view.reset_image_preview()
-        self._view.dd_modify_modality.value = None
-        self._view.cnt_modify_modality.controls.clear()
-        self._view.cnt_modify_modality.controls.append(
-            self._view.btn_modify_modality)
-        self._view.page.update()
+        try:
+            self._model.modify_modality(Path(selected_item), e.control.value)
+            self._treeview_controller.populate_tree(
+                Path(self._model.tmp_folder_to_upload),
+                TreeType.DICOM
+            )
+            self._preview_cache.clear()
+            self._view.reset_image_preview()
+        except (ValueError, RuntimeError, OSError) as err:
+            self._view.create_alert(f"Cannot modify DICOM modality: {err}")
+        finally:
+            self._view.dd_modify_modality.value = None
+            self._view.cnt_modify_modality.controls.clear()
+            self._view.cnt_modify_modality.controls.append(
+                self._view.btn_modify_modality)
+            self._view.page.update()
 
     # ==========================================================
     # NEW XNAT PROJECT
