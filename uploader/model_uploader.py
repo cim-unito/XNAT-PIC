@@ -16,6 +16,36 @@ class ModelUploader:
         self._tmp_folder_to_upload = None
         self._validation_report = None
 
+    @property
+    def input_root(self):
+        return self._input_root
+
+    @input_root.setter
+    def input_root(self, input_root):
+        p = Path(input_root)
+        if not p.is_dir():
+            raise ValueError(f"'{p}' is not a valid folder.")
+        self._input_root = p
+
+    @property
+    def level(self):
+        return self._level
+
+    @level.setter
+    def level(self, level):
+        self._level = level
+
+    @property
+    def tmp_folder_to_upload(self):
+        return self._tmp_folder_to_upload
+
+    @tmp_folder_to_upload.setter
+    def tmp_folder_to_upload(self, tmp_folder_to_upload):
+        self._tmp_folder_to_upload = tmp_folder_to_upload
+
+    @property
+    def validation_report(self):
+        return self._validation_report
 
     def reset_state(self):
         """Reset all transient uploader state used by a single workflow."""
@@ -105,36 +135,6 @@ class ModelUploader:
         self._validation_report = report
         return report
 
-    @staticmethod
-    def modify_modality(dicom_path: Path, new_modality: str):
-        if not new_modality or not str(new_modality).strip():
-            raise ValueError("Select a valid modality value.")
-
-        dicom_files_to_modify = []
-
-        try:
-            if dicom_path.is_file():
-                if dicom_path.suffix.lower() in [".dcm", ".dicom"]:
-                    dicom_files_to_modify.append(dicom_path)
-                else:
-                    raise ValueError("It is not a dicom file (.dcm o .dicom)")
-
-            elif dicom_path.is_dir():
-                dicom_files_to_modify = list(dicom_path.rglob("*.dcm")) + list(
-                    dicom_path.rglob("*.dicom"))
-
-                if not dicom_files_to_modify:
-                    raise ValueError("Folder does not contain dicom file")
-
-            else:
-                raise ValueError("Path does not exist")
-        except OSError as err:
-            raise RuntimeError(
-                f"Cannot inspect selected path for modality update: {err}"
-            ) from err
-
-        DicomModifyModality.modify_modality(dicom_files_to_modify, new_modality)
-
     def build_upload_targets(self, selected_subject_id: str | None,
                              selected_experiment_id: str | None):
         """
@@ -214,6 +214,36 @@ class ModelUploader:
                 "Select an XNAT experiment before uploading resources."
             )
 
+    @staticmethod
+    def modify_modality(dicom_path: Path, new_modality: str):
+        if not new_modality or not str(new_modality).strip():
+            raise ValueError("Select a valid modality value.")
+
+        dicom_files_to_modify = []
+
+        try:
+            if dicom_path.is_file():
+                if dicom_path.suffix.lower() in [".dcm", ".dicom"]:
+                    dicom_files_to_modify.append(dicom_path)
+                else:
+                    raise ValueError("It is not a dicom file (.dcm o .dicom)")
+
+            elif dicom_path.is_dir():
+                dicom_files_to_modify = list(dicom_path.rglob("*.dcm")) + list(
+                    dicom_path.rglob("*.dicom"))
+
+                if not dicom_files_to_modify:
+                    raise ValueError("Folder does not contain dicom file")
+
+            else:
+                raise ValueError("Path does not exist")
+        except OSError as err:
+            raise RuntimeError(
+                f"Cannot inspect selected path for modality update: {err}"
+            ) from err
+
+        DicomModifyModality.modify_modality(dicom_files_to_modify, new_modality)
+
     def _selected_or_normalized(self, selected_value: str | None,
                                 fallback_name: str) -> str:
         if selected_value:
@@ -228,33 +258,3 @@ class ModelUploader:
         normalized = normalized.replace("-", "_")
         return normalized
 
-    @property
-    def input_root(self):
-        return self._input_root
-
-    @input_root.setter
-    def input_root(self, input_root):
-        p = Path(input_root)
-        if not p.is_dir():
-            raise ValueError(f"'{p}' is not a valid folder.")
-        self._input_root = p
-
-    @property
-    def level(self):
-        return self._level
-
-    @level.setter
-    def level(self, level):
-        self._level = level
-
-    @property
-    def tmp_folder_to_upload(self):
-        return self._tmp_folder_to_upload
-
-    @tmp_folder_to_upload.setter
-    def tmp_folder_to_upload(self, tmp_folder_to_upload):
-        self._tmp_folder_to_upload = tmp_folder_to_upload
-
-    @property
-    def validation_report(self):
-        return self._validation_report

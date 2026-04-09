@@ -116,48 +116,18 @@ class ControllerUploader:
         self._xnat_session = None
         self._xnat_repo = None
 
-    def _on_login_success(self, xnat_session):
-        self._xnat_session = xnat_session
-        self._xnat_repo = XnatRepository(xnat_session)
-        self._view.set_initial_state()
-
-    def _on_login_cancel(self):
-        if self._xnat_session:
-            self._xnat_session.disconnect()
-        self._xnat_session = None
-        self._xnat_repo = None
-        self.go_home()
-
     # ==========================================================
     # HOME / BACK
     # ==========================================================
     def go_home(self):
         self._view.page.go("/")
 
-    def on_home_back_clicked(self, e):
+    def on_home_back_clicked(self, e: ft.ControlEvent):
         if self._model.level is None:
             self._reset_workflow_state()
             self.go_home()
         else:
             self._reset_workflow_state()
-
-    def _reset_workflow_state(self):
-        """Reset uploader workflow state across model, controller, and view."""
-        self._model.reset_state()
-        self._selected_file_path = None
-        self._selected_folder_path = None
-        self._preview_cache.clear()
-        self._reset_nested_components_state()
-        if self._view.dlg_upload:
-            self._view.close_progress_bar_dialog()
-        self._view.set_initial_state()
-
-    def _reset_nested_components_state(self):
-        """Reset reusable nested components without recreating instances."""
-        self._treeview_view.reset_selection()
-        self._controller_xnat_new_project.reset_form()
-        self._controller_xnat_new_subject.reset_form()
-        self._controller_xnat_new_experiment.reset_form()
 
     # ==========================================================
     # SET LEVEL (PROJECT / SUBJECT / EXPERIMENT / FILE)
@@ -309,41 +279,6 @@ class ControllerUploader:
     # ==========================================================
     # NEW XNAT PROJECT
     # ==========================================================
-    @staticmethod
-    def _dropdown_has_option(dropdown: ft.Dropdown, key: str):
-        return any(option.key == key for option in dropdown.options)
-
-    def _upsert_and_select_project(self, project_id: str, project_label: str):
-        if not self._dropdown_has_option(self._view.dd_xnat_project, project_id):
-            self._view.dd_xnat_project.options.append(
-                ft.dropdown.Option(key=project_id, text=project_label or project_id)
-            )
-        self._view.dd_xnat_project.value = project_id
-        self._view.dd_xnat_project.update()
-
-    def _clear_xnat_target_selection(self):
-        self._view.dd_xnat_project.value = None
-        self._view.reset_dropdown(self._view.dd_xnat_subject)
-        self._view.reset_dropdown(self._view.dd_xnat_experiment)
-        self._view.update_page()
-
-    def _refresh_subject_dropdown(self, project_id: str, selected_subject_id: str | None = None):
-        subjects = self._xnat_repo.list_subjects(project_id)
-        self._view.populate_subjects(subjects)
-        self._view.dd_xnat_subject.value = selected_subject_id
-        self._view.update_page()
-        return subjects
-
-    def _refresh_experiment_dropdown(self,
-                                     project_id: str,
-                                     subject_id: str,
-                                     selected_experiment_id: str | None = None):
-        experiments = self._xnat_repo.list_experiments(project_id, subject_id)
-        self._view.populate_experiments(experiments)
-        self._view.dd_xnat_experiment.value = selected_experiment_id
-        self._view.update_page()
-        return experiments
-
     def create_new_project(self, e: ft.ControlEvent):
         if not self._xnat_repo:
             self._view.create_alert("You must login to XNAT first.")
@@ -579,6 +514,117 @@ class ControllerUploader:
             except Exception as err:
                 self._view.create_alert(f"Upload error: {err}")
 
+    # ==========================================================
+    # PRIVATE METHODS
+    # ==========================================================
+    def _on_login_success(self, xnat_session):
+        self._xnat_session = xnat_session
+        self._xnat_repo = XnatRepository(xnat_session)
+        self._view.set_initial_state()
+
+    def _on_login_cancel(self):
+        if self._xnat_session:
+            self._xnat_session.disconnect()
+        self._xnat_session = None
+        self._xnat_repo = None
+        self.go_home()
+
+    def _reset_workflow_state(self):
+        """Reset uploader workflow state across model, controller, and view."""
+        self._model.reset_state()
+        self._selected_file_path = None
+        self._selected_folder_path = None
+        self._preview_cache.clear()
+        self._reset_nested_components_state()
+        if self._view.dlg_upload:
+            self._view.close_progress_bar_dialog()
+        self._view.set_initial_state()
+
+    def _reset_nested_components_state(self):
+        """Reset reusable nested components without recreating instances."""
+        self._treeview_view.reset_selection()
+        self._controller_xnat_new_project.reset_form()
+        self._controller_xnat_new_subject.reset_form()
+        self._controller_xnat_new_experiment.reset_form()
+
+    def _set_level(self, level):
+        self._model.level = level
+        """Set the uploader level and update the view mode."""
+        if level == UploaderLevel.PROJECT:
+            self._view.set_mode(xnat_subject=False, xnat_experiment=False)
+        elif level == UploaderLevel.SUBJECT:
+            self._view.set_mode(xnat_subject=True, xnat_experiment=False)
+        elif level == UploaderLevel.EXPERIMENT:
+            self._view.set_mode(xnat_subject=True, xnat_experiment=True)
+        elif level == UploaderLevel.FILE:
+            self._view.set_mode(xnat_subject=True, xnat_experiment=True)
+
+        self.load_projects()
+
+    def _on_treeview_collapse(self, node_path, tile):
+        """Handle a treeview node collapse."""
+        self._selected_folder_path = None
+        self._selected_file_path = None
+
+    def _on_treeview_expand(self, node_path, tile):
+        """Handle a treeview node expansion."""
+        self._selected_folder_path = node_path
+        self._selected_file_path = None
+
+    def _on_treeview_file_selected(self, file_path):
+        """Handle a file selection in the treeview."""
+        self._selected_file_path = file_path
+        self._selected_folder_path = None
+        self._show_selected_file_preview()
+
+    def _show_selected_file_preview(self):
+        if not self._selected_file_path:
+            return
+
+        selected_path = Path(self._selected_file_path)
+        if selected_path in self._preview_cache:
+            self._view.set_image_preview(self._preview_cache[selected_path])
+            return
+
+        try:
+            if selected_path.suffix.lower() in (".dcm", ".dicom"):
+                b64 = DicomPreviewService.dicom_to_base64(str(selected_path))
+                self._preview_cache[selected_path] = b64
+                self._view.set_image_preview(b64)
+        except Exception as e:
+            self._view.create_alert(f"Preview failed: {e}")
+
+    def _upsert_and_select_project(self, project_id: str, project_label: str):
+        if not self._dropdown_has_option(self._view.dd_xnat_project, project_id):
+            self._view.dd_xnat_project.options.append(
+                ft.dropdown.Option(key=project_id, text=project_label or project_id)
+            )
+        self._view.dd_xnat_project.value = project_id
+        self._view.dd_xnat_project.update()
+
+    def _clear_xnat_target_selection(self):
+        self._view.dd_xnat_project.value = None
+        self._view.reset_dropdown(self._view.dd_xnat_subject)
+        self._view.reset_dropdown(self._view.dd_xnat_experiment)
+        self._view.update_page()
+
+    def _refresh_subject_dropdown(self, project_id: str, selected_subject_id: str | None = None):
+        subjects = self._xnat_repo.list_subjects(project_id)
+        self._view.populate_subjects(subjects)
+        self._view.dd_xnat_subject.value = selected_subject_id
+        self._view.update_page()
+        return subjects
+
+    def _refresh_experiment_dropdown(self,
+                                     project_id: str,
+                                     subject_id: str,
+                                     selected_experiment_id: str | None = None):
+        experiments = self._xnat_repo.list_experiments(project_id, subject_id)
+        self._view.populate_experiments(experiments)
+        self._view.dd_xnat_experiment.value = selected_experiment_id
+        self._view.update_page()
+        return experiments
+
     def _upload_planner(self, base_path, project_id):
         if self._model.level == UploaderLevel.FILE:
             self._upload_not_dicom_thread(base_path, project_id)
@@ -673,52 +719,17 @@ class ControllerUploader:
             f"Resources upload completed successfully ({uploaded_files} files)."
         )
 
-    def _set_level(self, level):
-        self._model.level = level
-        """Set the uploader level and update the view mode."""
-        if level == UploaderLevel.PROJECT:
-            self._view.set_mode(xnat_subject=False, xnat_experiment=False)
-        elif level == UploaderLevel.SUBJECT:
-            self._view.set_mode(xnat_subject=True, xnat_experiment=False)
-        elif level == UploaderLevel.EXPERIMENT:
-            self._view.set_mode(xnat_subject=True, xnat_experiment=True)
-        elif level == UploaderLevel.FILE:
-            self._view.set_mode(xnat_subject=True, xnat_experiment=True)
-
-        self.load_projects()
-
-    def _on_treeview_collapse(self, node_path, tile):
-        """Handle a treeview node collapse."""
-        self._selected_folder_path = None
-        self._selected_file_path = None
-
-    def _on_treeview_expand(self, node_path, tile):
-        """Handle a treeview node expansion."""
-        self._selected_folder_path = node_path
-        self._selected_file_path = None
-
-    def _on_treeview_file_selected(self, file_path):
-        """Handle a file selection in the treeview."""
-        self._selected_file_path = file_path
-        self._selected_folder_path = None
-        self._show_selected_file_preview()
-
-    def _show_selected_file_preview(self):
-        if not self._selected_file_path:
-            return
-
-        selected_path = Path(self._selected_file_path)
-        if selected_path in self._preview_cache:
-            self._view.set_image_preview(self._preview_cache[selected_path])
-            return
-
+    @contextmanager
+    def _upload_progress_dialog(self):
+        self._view.show_progress_bar_dialog()
         try:
-            if selected_path.suffix.lower() in (".dcm", ".dicom"):
-                b64 = DicomPreviewService.dicom_to_base64(str(selected_path))
-                self._preview_cache[selected_path] = b64
-                self._view.set_image_preview(b64)
-        except Exception as e:
-            self._view.create_alert(f"Preview failed: {e}")
+            yield
+        finally:
+            self._view.close_progress_bar_dialog()
+
+    @staticmethod
+    def _dropdown_has_option(dropdown: ft.Dropdown, key: str):
+        return any(option.key == key for option in dropdown.options)
 
     @staticmethod
     def _sanitize_label(label: str):
@@ -728,10 +739,3 @@ class ControllerUploader:
         )
         return cleaned or None
 
-    @contextmanager
-    def _upload_progress_dialog(self):
-        self._view.show_progress_bar_dialog()
-        try:
-            yield
-        finally:
-            self._view.close_progress_bar_dialog()
