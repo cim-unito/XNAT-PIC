@@ -198,12 +198,20 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
 
     def show_progress_bar_dialog(self):
         """Display the modal progress dialog."""
+        self.pb_upload.value = None
         self._page.open(self.dlg_upload)
         self._page.update()
 
     def update_progress_bar(self, value: float):
         """Update the progress bar value and refresh the page."""
         self.pb_upload.value = value
+        self._page.update()
+
+    def close_progress_bar_dialog(self):
+        """Close the modal progress dialog if it is open."""
+        if self.dlg_upload is None:
+            return
+        self.dlg_upload.open = False
         self._page.update()
 
     def file_picker_result(self, e: ft.FilePickerResultEvent):
@@ -434,11 +442,21 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         )
 
         # progressbar dialog
-        self.pb_upload = ft.ProgressBar(width=300)
+        self.pb_upload = ft.ProgressBar(width=320, value=None)
         self.dlg_upload = ft.AlertDialog(
             modal=True,
             title=ft.Text("Loading..."),
-            content=self.pb_upload,
+            content=ft.Column(
+                tight=True,
+                spacing=12,
+                controls=[
+                    ft.Text(
+                        "Loading",
+                        size=14,
+                    ),
+                    self.pb_upload,
+                ],
+            ),
         )
 
     def _bind_events(self):

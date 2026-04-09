@@ -1,4 +1,5 @@
 from pathlib import Path
+from contextlib import contextmanager
 import flet as ft
 
 from enums.tree_type import TreeType
@@ -148,7 +149,7 @@ class ControllerUploader:
         self._preview_cache.clear()
         self._reset_nested_components_state()
         if self._view.dlg_upload:
-            self._view.dlg_upload.open = False
+            self._view.close_progress_bar_dialog()
         self._view.set_initial_state()
 
     def _reset_nested_components_state(self):
@@ -225,41 +226,42 @@ class ControllerUploader:
     # TREEVIEW DICOM FILES
     # -------------------------------------------------------
     def get_directory_to_upload(self, path: str):
-        try:
-            self._model.input_root = path
-            list_dicom_files = self._model.get_dicom_files()
-            validation_report = self._model.validate_dicom_files(list_dicom_files)
-        except (ValueError, RuntimeError, OSError) as e:
-            self._view.create_alert(f"Cannot load the {self._model.level}: {e}")
-            self._reset_workflow_state()
-            return
-        except Exception as e:
-            self._view.create_alert(
-                f"Unexpected error while preparing {self._model.level}: {e}"
-            )
-            self._reset_workflow_state()
-            return
+        with self._upload_progress_dialog():
+            try:
+                self._model.input_root = path
+                list_dicom_files = self._model.get_dicom_files()
+                validation_report = self._model.validate_dicom_files(list_dicom_files)
+            except (ValueError, RuntimeError, OSError) as e:
+                self._view.create_alert(f"Cannot load the {self._model.level}: {e}")
+                self._reset_workflow_state()
+                return
+            except Exception as e:
+                self._view.create_alert(
+                    f"Unexpected error while preparing {self._model.level}: {e}"
+                )
+                self._reset_workflow_state()
+                return
 
-        if validation_report["failed"]:
-            failed_preview = "\n".join(
-                f"- {Path(entry['file']).name}: {entry['reason']}"
-                for entry in validation_report["failed"][:3]
-            )
-            suffix = "\n..." if len(validation_report["failed"]) > 3 else ""
-            self._view.create_alert(
-                "Best effort upload prepared. "
-                f"Successful: {validation_report['copied'] + validation_report['converted']}, "
-                f"failed: {len(validation_report['failed'])}."
-                f"\nFirst failures:\n{failed_preview}{suffix}"
-            )
+            if validation_report["failed"]:
+                failed_preview = "\n".join(
+                    f"- {Path(entry['file']).name}: {entry['reason']}"
+                    for entry in validation_report["failed"][:3]
+                )
+                suffix = "\n..." if len(validation_report["failed"]) > 3 else ""
+                self._view.create_alert(
+                    "Best effort upload prepared. "
+                    f"Successful: {validation_report['copied'] + validation_report['converted']}, "
+                    f"failed: {len(validation_report['failed'])}."
+                    f"\nFirst failures:\n{failed_preview}{suffix}"
+                )
 
-        try:
-            self._treeview_controller.populate_tree(
-                self._model.tmp_folder_to_upload,
-                TreeType.DICOM)
-        except (ValueError, RuntimeError, OSError) as e:
-            self._view.create_alert(f"Cannot show upload tree: {e}")
-            self._reset_workflow_state()
+            try:
+                self._treeview_controller.populate_tree(
+                    self._model.tmp_folder_to_upload,
+                    TreeType.DICOM)
+            except (ValueError, RuntimeError, OSError) as e:
+                self._view.create_alert(f"Cannot show upload tree: {e}")
+                self._reset_workflow_state()
 
     # ==========================================================
     # SHOW DICOM TAGS
@@ -723,3 +725,11 @@ class ControllerUploader:
             for ch in label.strip()
         )
         return cleaned or None
+
+    @contextmanager
+    def _upload_progress_dialog(self):
+        self._view.show_progress_bar_dialog()
+        try:
+            yield
+        finally:
+            self._view.close_progress_bar_dialog()
