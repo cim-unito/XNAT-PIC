@@ -53,6 +53,24 @@ class XnatRepository:
             for e in subj.experiments.values()
         ]
 
+    def experiment_exists(self, project_id: str, subject_id: str, experiment_id: str):
+        normalized_project_id = self._sanitize_label(str(project_id or "").strip())
+        normalized_subject_id = self._sanitize_label(str(subject_id or "").strip())
+        normalized_experiment_id = self._sanitize_label(str(experiment_id or "").strip())
+
+        if not normalized_project_id or not normalized_subject_id or not normalized_experiment_id:
+            return False
+
+        try:
+            experiments = self.list_experiments(normalized_project_id, normalized_subject_id)
+        except Exception:
+            return False
+
+        return any(
+            e["id"] == normalized_experiment_id or e["label"] == normalized_experiment_id
+            for e in experiments
+        )
+
     def create_project(self, data):
         session = self._session
 
@@ -151,13 +169,19 @@ class XnatRepository:
         experiment_name = str(data.get("experiment_name", "")).strip()
         experiment_label = experiment_name or experiment_id
 
-        subject = session.projects[project_id].subjects[subject_id]
-        session.classes.MrSessionData(
-            parent = subject,
-            id_ = experiment_id,
-            label = experiment_id,
-            name = experiment_label,
-        )
+        try:
+            subject = session.projects[project_id].subjects[subject_id]
+            session.classes.MrSessionData(
+                parent = subject,
+                id_ = experiment_id,
+                label = experiment_id,
+                name = experiment_label,
+            )
+            session.clearcache()
+        except Exception as err:
+            raise RuntimeError(
+                f"Project creation failed for '{project_id}': {err}"
+            ) from err
 
         return {
             "project_id": project_id,

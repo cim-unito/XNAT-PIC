@@ -335,6 +335,16 @@ class ControllerUploader:
         self._view.update_page()
         return subjects
 
+    def _refresh_experiment_dropdown(self,
+                                     project_id: str,
+                                     subject_id: str,
+                                     selected_experiment_id: str | None = None):
+        experiments = self._xnat_repo.list_experiments(project_id, subject_id)
+        self._view.populate_experiments(experiments)
+        self._view.dd_xnat_experiment.value = selected_experiment_id
+        self._view.update_page()
+        return experiments
+
     def create_new_project(self, e: ft.ControlEvent):
         if not self._xnat_repo:
             self._view.create_alert("You must login to XNAT first.")
@@ -481,67 +491,57 @@ class ControllerUploader:
         self._controller_xnat_new_experiment._update_submit()
 
     def on_data_experiment_collected(self, data):
-        self._xnat_repo.create_experiment(data)
-        project_id = data["parent_project"]
-        subject_id = data["subject_project"]
-        experiment_id = data["experiment_id"]
-        experiment_label = data.get("experiment_name") or experiment_id
-        exists = False
+        project_id = str(data.get("parent_project", "")).strip()
+        subject_id = str(data.get("subject_project", "")).strip()
+        requested_experiment_id = str(data.get("experiment_id", "")).strip()
+        normalized_experiment_id = self._sanitize_label(requested_experiment_id)
 
-        for opt in self._view.dd_xnat_project.options:
-            if opt.key == project_id:
-                exists = True
-                break
-
-        if not exists:
-            print("Add new project:", project_id)
-            self._view.dd_xnat_project.options.append(
-                ft.dropdown.Option(key=project_id, text=project_id)
+        if not project_id or not subject_id or not normalized_experiment_id:
+            self._view.create_alert(
+                "Cannot create experiment: invalid project/subject/experiment ID."
             )
+            return
 
-        self._view.dd_xnat_project.value = project_id
         try:
-            subjects = self._xnat_repo.list_subjects(project_id)
-            self._view.populate_subjects(subjects)
+            if self._xnat_repo.experiment_exists(
+                project_id,
+                subject_id,
+                normalized_experiment_id,
+            ):
+                self._view.create_alert(
+                    f"Experiment '{normalized_experiment_id}' already exists in "
+                    f"subject '{subject_id}' (project '{project_id}')."
+                )
+                return
+        except Exception as ex:
+            self._view.create_alert(f"Cannot verify existing experiments: {ex}")
+            return
+
+        try:
+            created_experiment = self._xnat_repo.create_experiment(data)
+        except Exception as ex:
+            self._view.create_alert(f"Cannot create experiment: {ex}")
+            return
+
+        project_id = created_experiment["project_id"]
+        subject_id = created_experiment["subject_id"]
+        experiment_id = created_experiment["experiment_id"]
+
+        self._upsert_and_select_project(project_id, project_id)
+
+        try:
+            self._refresh_subject_dropdown(project_id, subject_id)
         except Exception as ex:
             self._view.create_alert(
                 f"Experiment created but subject list refresh failed: {ex}")
-            self._view.dd_xnat_project.update()
             return
 
-        subject_exists = any(
-            opt.key == subject_id for opt in self._view.dd_xnat_subject.options
-        )
-
-        if not subject_exists:
-            self._view.dd_xnat_subject.options.append(
-                ft.dropdown.Option(key=subject_id, text=subject_id)
-            )
-
-        self._view.dd_xnat_subject.value = subject_id
         try:
-            experiments = self._xnat_repo.list_experiments(project_id,
-                                                           subject_id)
-            self._view.populate_experiments(experiments)
+            self._refresh_experiment_dropdown(project_id, subject_id, experiment_id)
         except Exception as ex:
             self._view.create_alert(
                 f"Experiment created but experiment list refresh failed: {ex}")
-            self._view.dd_xnat_project.update()
             return
-
-        experiment_exists = any(
-            opt.key == experiment_id
-            for opt in self._view.dd_xnat_experiment.options
-        )
-
-        if not experiment_exists:
-            self._view.dd_xnat_experiment.options.append(
-                ft.dropdown.Option(key=experiment_id, text=experiment_label)
-            )
-
-        self._view.dd_xnat_experiment.value = experiment_id
-        self._view.dd_xnat_project.update()
-
 
     # ==========================================================
     # UPLOAD
