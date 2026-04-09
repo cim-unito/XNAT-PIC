@@ -107,9 +107,7 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         self.reset_image_preview()
 
         # Modality dropdown reset
-        self.cnt_modify_modality.controls.clear()
-        self.cnt_modify_modality.controls.append(self.btn_modify_modality)
-        self.dd_modify_modality.value = None
+        self.reset_modality_editor()
 
         self._page.update()
 
@@ -147,6 +145,19 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         # home/back
         self.set_home_back_state("Back", ft.Icons.ARROW_BACK, enabled=True)
 
+        self._page.update()
+
+    def show_modality_dropdown(self):
+        """Switch modality editor UI from button to dropdown selector."""
+        self.cnt_modify_modality.controls.clear()
+        self.cnt_modify_modality.controls.append(self.dd_modify_modality)
+        self._page.update()
+
+    def reset_modality_editor(self):
+        """Restore modality editor UI to default button state."""
+        self.dd_modify_modality.value = None
+        self.cnt_modify_modality.controls.clear()
+        self.cnt_modify_modality.controls.append(self.btn_modify_modality)
         self._page.update()
 
     def reset_image_preview(self):
