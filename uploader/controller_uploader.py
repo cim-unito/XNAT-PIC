@@ -310,11 +310,52 @@ class ControllerUploader:
     # ==========================================================
     # NEW XNAT PROJECT
     # ==========================================================
+    @staticmethod
+    def _dropdown_has_option(dropdown: ft.Dropdown, key: str):
+        return any(option.key == key for option in dropdown.options)
+
+    def _upsert_and_select_project(self, project_id: str, project_label: str):
+        if not self._dropdown_has_option(self._view.dd_xnat_project, project_id):
+            self._view.dd_xnat_project.options.append(
+                ft.dropdown.Option(key=project_id, text=project_label or project_id)
+            )
+        self._view.dd_xnat_project.value = project_id
+        self._view.dd_xnat_project.update()
+
+    def _refresh_subject_dropdown(self, project_id: str, selected_subject_id: str | None = None):
+        subjects = self._xnat_repo.list_subjects(project_id)
+        self._view.populate_subjects(subjects)
+        self._view.dd_xnat_subject.value = selected_subject_id
+        self._view.update_page()
+        return subjects
+
     def create_new_project(self, e: ft.ControlEvent):
+        if not self._xnat_repo:
+            self._view.create_alert("You must login to XNAT first.")
+            return
+
         self._controller_xnat_new_project.reset_form()
         self._view_xnat_new_project.open()
 
     def on_data_project_collected(self, data):
+        requested_project_id = str(data.get("project_id", "")).strip()
+        project_id = self._sanitize_label(requested_project_id)
+        project_name = str(data.get("project_name", "")).strip() or project_id
+
+        if not project_id:
+            self._view.create_alert("Cannot create project: invalid project ID.")
+            return
+
+        try:
+            if self._xnat_repo.project_exists(project_id):
+                self._upsert_and_select_project(project_id, project_name)
+                self._view.create_alert(
+                    f"Project '{project_id}' already exists on XNAT."
+                )
+                return
+        except Exception as ex:
+            self._view.create_alert(f"Cannot verify existing projects: {ex}")
+            return
         try:
             created_project = self._xnat_repo.create_project(data)
         except Exception as ex:
@@ -323,22 +364,8 @@ class ControllerUploader:
 
         project_id = created_project["project_id"]
         project_label = created_project["project_name"] or project_id
-        exists = False
 
-        for opt in self._view.dd_xnat_project.options:
-            if opt.key == project_id:
-                exists = True
-                break
-
-        if not exists:
-            print("Add new project:", project_id)
-            self._view.dd_xnat_project.options.append(
-                ft.dropdown.Option(key=project_id, text=project_id)
-            )
-
-        self._view.dd_xnat_project.value = project_id
-        self._view.dd_xnat_project.update()
-
+        self._upsert_and_select_project(project_id, project_label)
     # ==========================================================
     # NEW XNAT SUBJECT
     # ==========================================================
@@ -362,26 +389,22 @@ class ControllerUploader:
     def on_data_subject_collected(self, data):
         project_id = str(data.get("parent_project", "")).strip()
         requested_subject_id = str(data.get("subject_id", "")).strip()
-        normalized_subject_id = XnatRepository._sanitize_label(requested_subject_id)
+        normalized_subject_id = self._sanitize_label(requested_subject_id)
 
         if not project_id or not normalized_subject_id:
             self._view.create_alert("Cannot create subject: invalid project/subject ID.")
             return
 
         try:
-            existing_subjects = self._xnat_repo.list_subjects(project_id)
+            if self._xnat_repo.subject_exists(project_id, normalized_subject_id):
+                self._view.dd_xnat_project.value = project_id
+                self._refresh_subject_dropdown(project_id, normalized_subject_id)
+                self._view.create_alert(
+                    f"Subject '{normalized_subject_id}' already exists in project '{project_id}'."
+                )
+                return
         except Exception as ex:
             self._view.create_alert(f"Cannot verify existing subjects: {ex}")
-            return
-
-        if any(s["id"] == normalized_subject_id or s["label"] == normalized_subject_id for s in existing_subjects):
-            self._view.dd_xnat_project.value = project_id
-            self._view.populate_subjects(existing_subjects)
-            self._view.dd_xnat_subject.value = normalized_subject_id
-            self._view.create_alert(
-                f"Subject '{normalized_subject_id}' already exists in project '{project_id}'."
-            )
-            self._view.update_page()
             return
 
         try:
@@ -397,15 +420,12 @@ class ControllerUploader:
 
         try:
             subjects = self._xnat_repo.list_subjects(project_id)
-            self._view.populate_subjects(subjects)
+            self._refresh_subject_dropdown(project_id, subject_id)
         except Exception as ex:
             self._view.create_alert(
                 f"Subject created but list refresh failed: {ex}")
             self._view.dd_xnat_project.update()
             return
-
-        self._view.dd_xnat_subject.value = subject_id
-        self._view.update_page()
 
     # ==========================================================
     # NEW XNAT EXPERIMENT
@@ -689,3 +709,10 @@ class ControllerUploader:
         except Exception as e:
             self._view.create_alert(f"Preview failed: {e}")
 
+    @staticmethod
+    def _sanitize_label(label: str):
+        cleaned = "".join(
+            ch if (ch.isalnum() or ch in {"_", "-"}) else "_"
+            for ch in label.strip()
+        )
+        return cleaned or None

@@ -17,6 +17,12 @@ class XnatRepository:
             for p in self._session.projects.values()
         ]
 
+    def project_exists(self, project_id: str):
+        normalized_project_id = self._sanitize_label(str(project_id or "").strip())
+        if not normalized_project_id:
+            return False
+        return normalized_project_id in self._session.projects
+
     def list_subjects(self, project_id):
         prj = self._session.projects[project_id]
 
@@ -24,6 +30,20 @@ class XnatRepository:
             {"id": s.id, "label": s.label or s.id}
             for s in prj.subjects.values()
         ]
+
+    def subject_exists(self, project_id: str, subject_id: str):
+        normalized_project_id = self._sanitize_label(str(project_id or "").strip())
+        normalized_subject_id = self._sanitize_label(str(subject_id or "").strip())
+        if not normalized_project_id or not normalized_subject_id:
+            return False
+        try:
+            subjects = self.list_subjects(normalized_project_id)
+        except Exception:
+            return False
+        return any(
+            s["id"] == normalized_subject_id or s["label"] == normalized_subject_id
+            for s in subjects
+        )
 
     def list_experiments(self, project_id, subject_id):
         subj = self._session.projects[project_id].subjects[subject_id]
