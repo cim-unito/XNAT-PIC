@@ -1,15 +1,22 @@
-import shutil
-import tempfile
-from pathlib import Path
-
 from xnat_client.xnat_session import XnatSession
 
 
 class XnatCustomForm:
+    _PROJECT_FORM_ID = "9ba2982a-eabf-458a-adb7-0277a426c308"
+    _SUBJECT_FORM_ID = "26d74863-12fe-4b4d-bb83-2bd4ec202c54"
+    _EXPERIMENT_FORM_ID = "ca3e738a-ade4-46dc-bd29-83061dcd802d"
+
     def __init__(self, xnat_session: XnatSession):
         if not xnat_session.session:
             raise ValueError("XNAT session not connected.")
         self._session = xnat_session.session
+
+    def _custom_form_id(self, subject_id=None, experiment_id=None):
+        if experiment_id:
+            return self._EXPERIMENT_FORM_ID
+        if subject_id:
+            return self._SUBJECT_FORM_ID
+        return self._PROJECT_FORM_ID
 
     def _custom_fields_uri(self, project_id, subject_id=None, experiment_id=None):
         base_uri = f"/xapi/custom-fields/projects/{project_id}"
@@ -32,24 +39,24 @@ class XnatCustomForm:
         response = self._session.get(uri)
         response.raise_for_status()
 
-        payload = response.json()
+        payload = response.json() or {}
+        form_id = self._custom_form_id(subject_id, experiment_id)
 
-        group = ""
-        timepoint = ""
-        dose = ""
+        selected_form = payload.get(form_id, {})
 
-        if payload:
-            # API returns a dictionary keyed by xnat id; take the last entry
-            # to mirror previous behavior that overwrote the values.
+        if not isinstance(selected_form, dict):
+            selected_form = {}
+
+        if not selected_form:
             for value in payload.values():
-                group = value.get("group", "")
-                timepoint = value.get("timepoint", "")
-                dose = value.get("dose", "")
+                if isinstance(value, dict):
+                    selected_form = value
+                    break
 
         return {
-            "group": group,
-            "timepoint": timepoint,
-            "dose": dose,
+            "group": selected_form.get("group", ""),
+            "timepoint": selected_form.get("timepoint", ""),
+            "dose": selected_form.get("dose", ""),
         }
 
     def update_custom_fields(
@@ -64,8 +71,8 @@ class XnatCustomForm:
     ):
         """Update custom fields for the chosen level.
 
-        Raises a ValueError if XNAT does not already expose the requested
-        fields (so the user can add them first).
+        If XNAT returns an empty payload, create a new entry keyed by the
+        configured form id for the current scope.
         """
 
         uri = self._custom_fields_uri(project_id, subject_id, experiment_id)
@@ -73,32 +80,21 @@ class XnatCustomForm:
         response = self._session.get(uri)
         response.raise_for_status()
 
-        payload = response.json()
-
-        if not payload:
-            raise ValueError("No custom fields found on XNAT to update.")
+        payload = response.json() or {}
+        form_id = self._custom_form_id(subject_id, experiment_id)
 
         updates = {
             "group": group,
             "timepoint": timepoint,
             "dose": dose,
         }
-        missing_fields = set()
 
-        for entry in payload.values():
-            for key, value in updates.items():
-                if key in entry:
-                    entry[key] = value
-                elif value:
-                    missing_fields.add(key)
+        existing_entry = payload.get(form_id)
+        if not isinstance(existing_entry, dict):
+            existing_entry = {}
 
-        if missing_fields:
-            missing = ", ".join(sorted(missing_fields))
-            raise ValueError(
-                "It is not possible to update the following fields because "
-                f"they are not valued on XNAT: {missing}. Please add them on "
-                "XNAT and try again."
-            )
+        existing_entry.update(updates)
+        payload[form_id] = existing_entry
 
         put_response = self._session.put(
             uri, json=payload, headers={"Content-Type": "application/json"}
