@@ -1,4 +1,10 @@
+from requests import RequestException
+
 from xnat_client.xnat_session import XnatSession
+
+
+class XnatCustomFormError(RuntimeError):
+    """Raised when custom form read/write operations fail."""
 
 
 class XnatCustomForm:
@@ -23,12 +29,19 @@ class XnatCustomForm:
     def get_custom_fields(self, project_id, subject_id=None, experiment_id=None):
         """Return custom fields (group, timepoint, dose) for the given level."""
 
+        self._validate_scope(project_id, subject_id, experiment_id)
+
         uri = self._custom_fields_uri(project_id, subject_id, experiment_id)
 
-        response = self._session.get(uri)
-        response.raise_for_status()
+        try:
+            response = self._session.get(uri)
+            response.raise_for_status()
+            payload = response.json() or {}
+        except (RequestException, ValueError) as exc:
+            raise XnatCustomFormError(
+                f"Unable to fetch custom fields for URI '{uri}'."
+            ) from exc
 
-        payload = response.json() or {}
         form_id = self._custom_form_id(subject_id, experiment_id)
 
         selected_form = payload.get(form_id, {})
@@ -58,19 +71,9 @@ class XnatCustomForm:
             timepoint="",
             dose="",
     ):
-        """Update custom fields for the chosen level.
-
-        If XNAT returns an empty payload, create a new entry keyed by the
-        configured form id for the current scope.
-        """
-
+        """Update custom fields for the chosen level."""
+        self._validate_scope(project_id, subject_id, experiment_id)
         uri = self._custom_fields_uri(project_id, subject_id, experiment_id)
-
-        response = self._session.get(uri)
-        response.raise_for_status()
-
-        payload = response.json() or {}
-        form_id = self._custom_form_id(subject_id, experiment_id)
 
         updates = {
             "group": group,
@@ -78,19 +81,35 @@ class XnatCustomForm:
             "dose": dose,
         }
 
-        existing_entry = payload.get(form_id)
-        if not isinstance(existing_entry, dict):
-            existing_entry = {}
+        try:
+            response = self._session.get(uri)
+            response.raise_for_status()
+            payload = response.json() or {}
 
-        existing_entry.update(updates)
-        payload[form_id] = existing_entry
+            form_id = self._custom_form_id(subject_id, experiment_id)
+            existing_entry = payload.get(form_id)
+            if not isinstance(existing_entry, dict):
+                existing_entry = {}
+            existing_entry.update(updates)
+            payload[form_id] = existing_entry
 
-        put_response = self._session.put(
-            uri, json=payload, headers={"Content-Type": "application/json"}
-        )
-        put_response.raise_for_status()
+            put_response = self._session.put(
+                uri, json=payload, headers={"Content-Type": "application/json"}
+            )
+            put_response.raise_for_status()
+        except (RequestException, ValueError) as exc:
+            raise XnatCustomFormError(
+                f"Unable to update custom fields for URI '{uri}'."
+            ) from exc
 
         return payload
+
+    @staticmethod
+    def _validate_scope(project_id, subject_id=None, experiment_id=None):
+        if not project_id:
+            raise ValueError("project_id is required.")
+        if experiment_id and not subject_id:
+            raise ValueError("subject_id is required when experiment_id is set.")
 
     @staticmethod
     def _custom_fields_uri(project_id, subject_id=None, experiment_id=None):

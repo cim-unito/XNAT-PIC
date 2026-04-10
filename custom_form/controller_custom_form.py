@@ -2,7 +2,7 @@ from contextlib import contextmanager
 import flet as ft
 
 from enums.custom_form_level import CustomFormLevel
-from xnat_client.xnat_custom_form import XnatCustomForm
+from xnat_client.xnat_custom_form import XnatCustomForm, XnatCustomFormError
 from xnat_client.xnat_repository import XnatRepository
 
 
@@ -160,8 +160,12 @@ class ControllerCustomForm:
                 return
 
             self._view.set_custom_fields(**fields)
-        except Exception as e:
-            self._view.create_alert(f"Cannot load custom fields: {e}")
+        except ValueError as exc:
+            self._view.create_alert(str(exc))
+        except XnatCustomFormError as exc:
+            self._view.create_alert(f"Cannot load custom fields: {exc}")
+        except Exception as exc:
+            self._view.create_alert(f"Unexpected error while loading custom fields: {exc}")
 
     # -------------------------------------------------------
     # SAVE CUSTOM FIELDS
@@ -204,8 +208,12 @@ class ControllerCustomForm:
                 else:
                     return
                 self._view.create_alert("Custom fields saved successfully.")
-            except Exception as exc:
+            except ValueError as exc:
+                self._view.create_alert(str(exc))
+            except XnatCustomFormError as exc:
                 self._view.create_alert(f"Cannot save custom fields: {exc}")
+            except Exception as exc:
+                self._view.create_alert(f"Unexpected error while saving custom fields: {exc}")
 
     def _set_level(self, level):
         self._model.level = level
