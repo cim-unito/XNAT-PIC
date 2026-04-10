@@ -1,4 +1,4 @@
-from pathlib import Path
+from contextlib import contextmanager
 import flet as ft
 
 from enums.custom_form_level import CustomFormLevel
@@ -177,35 +177,35 @@ class ControllerCustomForm:
             "dose": self._view.txt_dose.value,
         }
 
-        try:
-            if self._model.level == CustomFormLevel.PROJECT:
-                if not project_id:
-                    raise ValueError("Please select a project before saving.")
-                self._xnat_custom_form.update_custom_fields(project_id,
-                                                            **payload)
-            elif self._model.level == CustomFormLevel.SUBJECT:
-                if not project_id or not subject_id:
-                    raise ValueError(
-                        "Please select a project and subject before saving."
+        with self._save_progress_dialog():
+            try:
+                if self._model.level == CustomFormLevel.PROJECT:
+                    if not project_id:
+                        raise ValueError("Please select a project before saving.")
+                    self._xnat_custom_form.update_custom_fields(project_id,
+                                                                **payload)
+                elif self._model.level == CustomFormLevel.SUBJECT:
+                    if not project_id or not subject_id:
+                        raise ValueError(
+                            "Please select a project and subject before saving."
+                        )
+                    self._xnat_custom_form.update_custom_fields(
+                        project_id, subject_id, **payload
                     )
-                self._xnat_custom_form.update_custom_fields(
-                    project_id, subject_id, **payload
-                )
-            elif self._model.level == CustomFormLevel.EXPERIMENT:
-                if not project_id or not subject_id or not experiment_id:
-                    raise ValueError(
-                        "Please select project, subject, and experiment before"
-                        "saving."
+                elif self._model.level == CustomFormLevel.EXPERIMENT:
+                    if not project_id or not subject_id or not experiment_id:
+                        raise ValueError(
+                            "Please select project, subject, and experiment before"
+                            "saving."
+                        )
+                    self._xnat_custom_form.update_custom_fields(
+                        project_id, subject_id, experiment_id, **payload
                     )
-                self._xnat_custom_form.update_custom_fields(
-                    project_id, subject_id, experiment_id, **payload
-                )
-            else:
-                return
-
-            self._view.create_alert("Custom fields saved successfully.")
-        except Exception as exc:
-            self._view.create_alert(f"Cannot save custom fields: {exc}")
+                else:
+                    return
+                self._view.create_alert("Custom fields saved successfully.")
+            except Exception as exc:
+                self._view.create_alert(f"Cannot save custom fields: {exc}")
 
     def _set_level(self, level):
         self._model.level = level
@@ -222,10 +222,20 @@ class ControllerCustomForm:
     def _reset_workflow_state(self):
         """Reset custom form workflow state across model, controller, and view."""
         self._model.reset_state()
+        if self._view.dlg_custom_form:
+            self._view.close_progress_bar_dialog()
         self._view.set_initial_state()
 
     def _reset_state(self):
         self._xnat_session = None
         self._xnat_repo = None
         self._xnat_custom_form = None
+
+    @contextmanager
+    def _save_progress_dialog(self):
+        self._view.show_progress_bar_dialog()
+        try:
+            yield
+        finally:
+            self._view.close_progress_bar_dialog()
 
