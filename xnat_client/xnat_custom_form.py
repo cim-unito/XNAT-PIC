@@ -24,8 +24,6 @@ class XnatCustomForm:
             return self._SUBJECT_FORM_ID
         return self._PROJECT_FORM_ID
 
-
-
     def get_custom_fields(self, project_id, subject_id=None, experiment_id=None):
         """Return custom fields (group, timepoint, dose) for the given level."""
 

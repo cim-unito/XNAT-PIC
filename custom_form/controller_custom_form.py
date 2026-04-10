@@ -38,18 +38,6 @@ class ControllerCustomForm:
             self._xnat_session.disconnect()
         self._reset_state()
 
-    def _on_login_success(self, xnat_session):
-        self._xnat_session = xnat_session
-        self._xnat_repo = XnatRepository(xnat_session)
-        self._xnat_custom_form = XnatCustomForm(xnat_session)
-        self._view.set_initial_state()
-
-    def _on_login_cancel(self):
-        if self._xnat_session:
-            self._xnat_session.disconnect()
-        self._reset_state()
-        self.go_home()
-
     # ==========================================================
     # HOME / BACK
     # ==========================================================
@@ -132,41 +120,6 @@ class ControllerCustomForm:
     def on_experiment_selected(self, e):
         self._load_custom_fields()
 
-    # ==========================================================
-    # LOAD CUSTOM FIELD
-    # ==========================================================
-    def _load_custom_fields(self):
-        project_id = self._view.dd_xnat_project.value
-        subject_id = self._view.dd_xnat_subject.value
-        experiment_id = self._view.dd_xnat_experiment.value
-
-        try:
-            if self._model.level == CustomFormLevel.PROJECT:
-                if not project_id:
-                    return
-                fields = self._xnat_custom_form.get_custom_fields(project_id)
-            elif self._model.level == CustomFormLevel.SUBJECT:
-                if not project_id or not subject_id:
-                    return
-                fields = self._xnat_custom_form.get_custom_fields(project_id,
-                                                                  subject_id)
-            elif self._model.level == CustomFormLevel.EXPERIMENT:
-                if not project_id or not subject_id or not experiment_id:
-                    return
-                fields = self._xnat_custom_form.get_custom_fields(project_id,
-                                                                  subject_id,
-                                                                  experiment_id)
-            else:
-                return
-
-            self._view.set_custom_fields(**fields)
-        except ValueError as exc:
-            self._view.create_alert(str(exc))
-        except XnatCustomFormError as exc:
-            self._view.create_alert(f"Cannot load custom fields: {exc}")
-        except Exception as exc:
-            self._view.create_alert(f"Unexpected error while loading custom fields: {exc}")
-
     # -------------------------------------------------------
     # SAVE CUSTOM FIELDS
     # -------------------------------------------------------
@@ -215,6 +168,21 @@ class ControllerCustomForm:
             except Exception as exc:
                 self._view.create_alert(f"Unexpected error while saving custom fields: {exc}")
 
+    # -------------------------------------------------------
+    # PRIVATE METHODS
+    # -------------------------------------------------------
+    def _on_login_success(self, xnat_session):
+        self._xnat_session = xnat_session
+        self._xnat_repo = XnatRepository(xnat_session)
+        self._xnat_custom_form = XnatCustomForm(xnat_session)
+        self._view.set_initial_state()
+
+    def _on_login_cancel(self):
+        if self._xnat_session:
+            self._xnat_session.disconnect()
+        self._reset_state()
+        self.go_home()
+
     def _set_level(self, level):
         self._model.level = level
         """Set the custom form level and update the view mode."""
@@ -238,6 +206,38 @@ class ControllerCustomForm:
         self._xnat_session = None
         self._xnat_repo = None
         self._xnat_custom_form = None
+
+    def _load_custom_fields(self):
+        project_id = self._view.dd_xnat_project.value
+        subject_id = self._view.dd_xnat_subject.value
+        experiment_id = self._view.dd_xnat_experiment.value
+
+        try:
+            if self._model.level == CustomFormLevel.PROJECT:
+                if not project_id:
+                    return
+                fields = self._xnat_custom_form.get_custom_fields(project_id)
+            elif self._model.level == CustomFormLevel.SUBJECT:
+                if not project_id or not subject_id:
+                    return
+                fields = self._xnat_custom_form.get_custom_fields(project_id,
+                                                                  subject_id)
+            elif self._model.level == CustomFormLevel.EXPERIMENT:
+                if not project_id or not subject_id or not experiment_id:
+                    return
+                fields = self._xnat_custom_form.get_custom_fields(project_id,
+                                                                  subject_id,
+                                                                  experiment_id)
+            else:
+                return
+
+            self._view.set_custom_fields(**fields)
+        except ValueError as exc:
+            self._view.create_alert(str(exc))
+        except XnatCustomFormError as exc:
+            self._view.create_alert(f"Cannot load custom fields: {exc}")
+        except Exception as exc:
+            self._view.create_alert(f"Unexpected error while loading custom fields: {exc}")
 
     @contextmanager
     def _save_progress_dialog(self):
