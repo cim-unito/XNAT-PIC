@@ -38,7 +38,7 @@ class ControllerConverter:
 
     def on_home_back_clicked(self, e: ft.ControlEvent):
         """Handle the home/back click by restoring the initial UI state."""
-        if self._model.level is None:
+        if self._model.level is None and self._model.conversion_type is None:
             self._model.reset_level()
             self._view.set_initial_state()
             self.go_home()
@@ -68,7 +68,7 @@ class ControllerConverter:
         """Update the conversion type selected by the user."""
         self._view.txt_conversion_type.value = conversion_type.value
         self._model.conversion_type = conversion_type
-        self._view.update_page()
+        self._view.enable_post_type_selection_state()
 
     # -------------------------------------------------------
     # TREEVIEW RAW DATA/DICOM FILES
