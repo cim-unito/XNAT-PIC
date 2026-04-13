@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from requests import RequestException
 
 from xnat_client.xnat_session import XnatSession
@@ -6,23 +8,50 @@ from xnat_client.xnat_session import XnatSession
 class XnatCustomFormError(RuntimeError):
     """Raised when custom form read/write operations fail."""
 
-
 class XnatCustomForm:
-    _PROJECT_FORM_ID = "555c1a1e-71e4-4395-a26a-0ca2368b75c2"
-    _SUBJECT_FORM_ID = "1abe633d-26bb-4aed-bb0e-abf90f8afa93"
-    _EXPERIMENT_FORM_ID = "49cc3bd9-28c1-496b-8efb-5984f901980e"
+    _DEFAULT_FORM_IDS = {
+        "project": "555c1a1e-71e4-4395-a26a-0ca2368b75c2",
+        "subject": "1abe633d-26bb-4aed-bb0e-abf90f8afa93",
+        "experiment": "49cc3bd9-28c1-496b-8efb-5984f901980e",
+    }
+
+    _FORM_IDS_BY_SERVER = {
+        "eubi": {
+            "project": "555c1a1e-71e4-4395-a26a-0ca2368b75c2",
+            "subject": "1abe633d-26bb-4aed-bb0e-abf90f8afa93",
+            "experiment": "49cc3bd9-28c1-496b-8efb-5984f901980e",
+        },
+        "ibb": {
+            "project": "9ba2982a-eabf-458a-adb7-0277a426c308",
+            "subject": "26d74863-12fe-4b4d-bb83-2bd4ec202c54",
+            "experiment": "ca3e738a-ade4-46dc-bd29-83061dcd802d",
+        },
+    }
 
     def __init__(self, xnat_session: XnatSession):
         if not xnat_session.session:
             raise ValueError("XNAT session not connected.")
         self._session = xnat_session.session
+        self._form_ids = self._resolve_form_ids(xnat_session.address)
+
+    @classmethod
+    def _resolve_form_ids(cls, address: str):
+        host = urlparse(address).hostname or ""
+        host = host.lower()
+
+        for server_key, form_ids in cls._FORM_IDS_BY_SERVER.items():
+            if server_key in host:
+                return form_ids
+
+        return cls._DEFAULT_FORM_IDS
 
     def _custom_form_id(self, subject_id=None, experiment_id=None):
         if experiment_id:
-            return self._EXPERIMENT_FORM_ID
+            return self._form_ids["experiment"]
         if subject_id:
-            return self._SUBJECT_FORM_ID
-        return self._PROJECT_FORM_ID
+            return self._form_ids["subject"]
+
+        return self._form_ids["project"]
 
     def get_custom_fields(self, project_id, subject_id=None, experiment_id=None):
         """Return custom fields (group, timepoint, dose) for the given level."""
