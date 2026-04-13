@@ -212,7 +212,7 @@ class XnatRepository:
                     experiment=experiment_id,
                     import_handler="DICOM-zip",
                     overwrite="append",
-                    quarantine="false"
+                    quarantine=False,
                 )
 
                 self._session.clearcache()
