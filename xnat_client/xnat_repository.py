@@ -267,11 +267,7 @@ class XnatRepository:
 
             for local_file, remote_path in resources:
                 try:
-                    resource.upload_data(
-                        str(local_file),
-                        remotepath=remote_path,
-                        overwrite=True,
-                    )
+                    self._upload_resource_file(resource, local_file, remote_path)
                     uploaded_files += 1
                 except Exception as err:
                     failed_uploads.append(
@@ -333,6 +329,21 @@ class XnatRepository:
 
         resource = xnat_experiment.resources[resource_label]
         return resource
+
+    @staticmethod
+    def _upload_resource_file(resource, local_file: Path, remote_path: str) -> None:
+        """Upload ``local_file`` preserving binary content."""
+        upload_method = getattr(resource, "upload", None)
+        if callable(upload_method):
+            upload_method(str(local_file), remotepath=remote_path, overwrite=True)
+            return
+
+        with local_file.open("rb") as file_stream:
+            resource.upload_data(
+                file_stream.read(),
+                remotepath=remote_path,
+                overwrite=True,
+            )
 
     @staticmethod
     def _sanitize_label(label: str):
