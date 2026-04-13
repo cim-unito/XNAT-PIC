@@ -83,38 +83,65 @@ class ControllerConverter:
     def on_convert_clicked(self, e):
         """Start the conversion and show the progress dialog."""
         self._view.show_progress_bar_dialog()
-        # threading.Thread(target=self.run_conversion, daemon=True).start()
         self._run_conversion()
 
     def _run_conversion(self):
         """Run the conversion by preparing, executing, and finalizing steps."""
         try:
             self._prepare_conversion()
-            self._perform_conversion()
+            failed_scans = self._perform_conversion()
             self._finalize_conversion()
-        except Exception as e:
+            self._notify_conversion_outcome(failed_scans)
+        except (ValueError, FileNotFoundError, NotADirectoryError,
+                PermissionError, RuntimeError) as e:
             self._view.dlg_conversion.open = False
             self._view.create_alert(str(e))
             self._view.update_page()
+        except Exception as e:
+            self._view.dlg_conversion.open = False
+            self._view.create_alert(
+                f"Unexpected error during conversion: {e}"
+            )
+            self._view.update_page()
+            raise
 
     def _prepare_conversion(self):
         """Prepare the model for conversion and load scans."""
         if self._model.conversion_type is None:
             raise ValueError("Please select a conversion type.")
+        if self._model.input_root is None:
+            raise ValueError("Please select an input folder before converting.")
+        if self._model.level is None:
+            raise ValueError("Please select a conversion level.")
         overwrite = self._view.sw_overwrite.value
         self._model.output_root = self._model.input_root
         self._model.create_dicom_output_folder(overwrite)
         self._model.get_input_scans()
+        if not self._model.input_scans:
+            raise ValueError("No valid scans found for the selected conversion.")
         self._model.get_output_scans()
+        if len(self._model.input_scans) != len(self._model.output_scans):
+            raise RuntimeError(
+                "Internal error: source and destination scan lists differ."
+            )
 
     def _perform_conversion(self):
-        """Execute the DICOM conversion while updating progress."""
+        """Execute conversion for all scans and return failures."""
+        failed_scans = []
         total_scans = len(self._model.input_scans)
 
         for idx, (src, dst) in enumerate(
                 zip(self._model.input_scans, self._model.output_scans)
         ):
-            self._model.dicom_converter([str(src), str(dst)])
+            try:
+                self._model.dicom_converter([str(src), str(dst)])
+            except (ValueError, FileNotFoundError, PermissionError,
+                    RuntimeError, OSError) as exc:
+                failed_scans.append((idx + 1, src, exc))
+            finally:
+                self._view.update_progress_bar((idx + 1) / total_scans)
+
+        return failed_scans
 
     def _finalize_conversion(self):
         """Update the UI after the conversion completes."""
@@ -127,6 +154,20 @@ class ControllerConverter:
         """Set the conversion level and update the view mode."""
         self._model.level = level
         self._view.set_mode()
+
+    def _notify_conversion_outcome(self, failed_scans):
+        """Notify the user about conversion result after finalization."""
+        if not failed_scans:
+            return
+
+        first_idx, first_src, first_exc = failed_scans[0]
+        successful_conversions = len(self._model.input_scans) - len(failed_scans)
+        self._view.create_alert(
+            f"Conversion completed with partial failures: "
+            f"{successful_conversions} succeeded, {len(failed_scans)} failed. "
+            f"First failure at scan #{first_idx} ({first_src}): {first_exc}"
+        )
+        self._view.update_page()
 
     def _on_treeview_collapse(self, node_path, tile):
         """Handle a treeview node collapse."""

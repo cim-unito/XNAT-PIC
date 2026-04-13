@@ -8,9 +8,9 @@ class XnatCustomFormError(RuntimeError):
 
 
 class XnatCustomForm:
-    _PROJECT_FORM_ID = "9ba2982a-eabf-458a-adb7-0277a426c308"
-    _SUBJECT_FORM_ID = "26d74863-12fe-4b4d-bb83-2bd4ec202c54"
-    _EXPERIMENT_FORM_ID = "ca3e738a-ade4-46dc-bd29-83061dcd802d"
+    _PROJECT_FORM_ID = "555c1a1e-71e4-4395-a26a-0ca2368b75c2"
+    _SUBJECT_FORM_ID = "1abe633d-26bb-4aed-bb0e-abf90f8afa93"
+    _EXPERIMENT_FORM_ID = "49cc3bd9-28c1-496b-8efb-5984f901980e"
 
     def __init__(self, xnat_session: XnatSession):
         if not xnat_session.session:
