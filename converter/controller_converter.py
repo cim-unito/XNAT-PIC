@@ -100,7 +100,7 @@ class ControllerConverter:
         except Exception as e:
             self._view.dlg_conversion.open = False
             self._view.create_alert(
-                f"Unexpected error during conversion: {e}"
+                f"Error during conversion: {e}"
             )
             self._view.update_page()
             raise
@@ -118,12 +118,13 @@ class ControllerConverter:
         self._model.create_dicom_output_folder(overwrite)
         self._model.get_input_scans()
         if not self._model.input_scans:
-            raise ValueError("No valid scans found for the selected conversion.")
-        self._model.get_output_scans()
-        if len(self._model.input_scans) != len(self._model.output_scans):
-            raise RuntimeError(
-                "Internal error: source and destination scan lists differ."
+            raise ValueError(
+                "No valid scans found for the selected conversion. "
+                f"Type: '{self._model.conversion_type.value}', "
+                f"level: '{self._model.level.value}', "
+                f"input folder: '{self._model.input_root}'."
             )
+        self._model.get_output_scans()
 
     def _perform_conversion(self):
         """Execute conversion for all scans and return failures."""
