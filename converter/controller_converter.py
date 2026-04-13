@@ -1,4 +1,5 @@
 from pathlib import Path
+from contextlib import contextmanager
 
 import flet as ft
 
@@ -82,8 +83,8 @@ class ControllerConverter:
     # -------------------------------------------------------
     def on_convert_clicked(self, e):
         """Start the conversion and show the progress dialog."""
-        self._view.show_progress_bar_dialog()
-        self._run_conversion()
+        with self._conversion_progress_dialog():
+            self._run_conversion()
 
     def _run_conversion(self):
         """Run the conversion by preparing, executing, and finalizing steps."""
@@ -94,11 +95,9 @@ class ControllerConverter:
             self._notify_conversion_outcome(failed_scans)
         except (ValueError, FileNotFoundError, NotADirectoryError,
                 PermissionError, RuntimeError) as e:
-            self._view.dlg_conversion.open = False
             self._view.create_alert(str(e))
             self._view.update_page()
         except Exception as e:
-            self._view.dlg_conversion.open = False
             self._view.create_alert(
                 f"Error during conversion: {e}"
             )
@@ -148,7 +147,6 @@ class ControllerConverter:
         """Update the UI after the conversion completes."""
         self._treeview_controller.populate_tree(self._model.output_root,
                                                 TreeType.DICOM)
-        self._view.dlg_conversion.open = False
         self._view.update_page()
 
     def _set_level(self, level):
@@ -184,3 +182,11 @@ class ControllerConverter:
         """Handle a file selection in the treeview."""
         self.file_path_selected = file_path
         self.folder_path_selected = None
+
+    @contextmanager
+    def _conversion_progress_dialog(self):
+        self._view.show_progress_bar_dialog()
+        try:
+            yield
+        finally:
+            self._view.close_progress_bar_dialog()

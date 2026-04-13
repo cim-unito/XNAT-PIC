@@ -134,12 +134,20 @@ class ViewConverter(BaseView):
 
     def show_progress_bar_dialog(self):
         """Display the modal progress dialog."""
+        self.pb_conversion.value = None
         self._page.open(self.dlg_conversion)
         self._page.update()
 
     def update_progress_bar(self, value: float):
         """Update the progress bar value and refresh the page."""
         self.pb_conversion.value = value
+        self._page.update()
+
+    def close_progress_bar_dialog(self):
+        """Close the modal progress dialog if it is open."""
+        if self.dlg_conversion is None:
+            return
+        self.dlg_conversion.open = False
         self._page.update()
 
     def file_picker_result(self, e: ft.FilePickerResultEvent):
@@ -289,11 +297,15 @@ class ViewConverter(BaseView):
             icon=ft.Icon(ft.Icons.CHANGE_CIRCLE, size=26),
         )
         # progressbar dialog
-        self.pb_conversion = ft.ProgressBar(width=300)
+        self.pb_conversion = ft.ProgressBar(width=320, value=None)
         self.dlg_conversion = ft.AlertDialog(
             modal=True,
             title=ft.Text("Loading..."),
-            content=self.pb_conversion,
+            content=ft.Column(
+                tight=True,
+                spacing=12,
+                controls=[self.pb_conversion],
+            ),
         )
 
     def _bind_events(self):
