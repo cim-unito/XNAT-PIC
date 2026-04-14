@@ -359,6 +359,7 @@ class XnatRepository:
 
         last_status = "unknown"
         last_state_class = "unknown"
+        last_action_error = None
         fetch_failures = 0
         max_fetch_failures = max(3, min(6, max_attempts))
         max_rebuild_requests = min(max_attempts, 3)
@@ -384,6 +385,7 @@ class XnatRepository:
                     fetch_failures = 0
                 except Exception as err:
                     fetch_failures += 1
+                    last_action_error = err
                     if fetch_failures >= max_fetch_failures:
                         raise RuntimeError(
                             "Repeated failures while fetching prearchive session state; "
@@ -419,7 +421,7 @@ class XnatRepository:
                     raise RuntimeError(
                         "Prearchive session remained in RECEIVING after "
                         f"{rebuild_requests} rebuild request(s)."
-                    )
+                    ) from last_action_error
 
                 try:
                     rebuild_requests += 1
@@ -427,6 +429,7 @@ class XnatRepository:
                     rebuild_dispatched = True
                 except Exception as err:
                     rebuild_dispatched = True
+                    last_action_error = err
 
                 self._session.clearcache()
                 if attempt < max_attempts:
@@ -460,6 +463,7 @@ class XnatRepository:
                     archive_dispatched = True
                 except Exception as err:
                     archive_dispatched = True
+                    last_action_error = err
 
                 self._session.clearcache()
             elif last_state_class in {"error", "unknown"}:
@@ -487,7 +491,16 @@ class XnatRepository:
             return
 
         if rebuild_dispatched or archive_dispatched:
-            return
+            if last_action_error is None:
+                return
+
+            raise RuntimeError(
+                "Import session action(s) may have been accepted server-side, "
+                "but the local client observed errors and could not verify completion. "
+                f"Last prearchive status: {last_status}. "
+                f"Last state class: {last_state_class}. "
+                f"rebuild_requests={rebuild_requests}, archive_requests={archive_requests}."
+            ) from last_action_error
 
         raise RuntimeError(
             "Unable to archive imported session after "
@@ -560,6 +573,10 @@ class XnatRepository:
             "archiving now",
             "rebuild pending",
             "rebuilding now",
+            "delete pending",
+            "deleting now",
+            "move pending",
+            "moving now",
         }
         return normalized_status in transient_statuses
 
