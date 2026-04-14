@@ -191,8 +191,13 @@ class XnatRepository:
             "experiment_name": experiment_label,
         }
 
-    def upload_dicom(self, exp_folder, project_id, subject_id,
-                     experiment_id):
+    def upload_dicom(self,
+                     exp_folder,
+                     project_id,
+                     subject_id,
+                     experiment_id,
+                     max_attempts=8,
+                     poll_interval_seconds=2.0):
 
         exp_folder = Path(exp_folder)
 
@@ -222,11 +227,11 @@ class XnatRepository:
                     subject_id=subject_id,
                     experiment_id=experiment_id,
                     imported_session=imported_session,
-                    max_attempts=8,
-                    poll_interval_seconds=2.0,
+                    max_attempts=max_attempts,
+                    poll_interval_seconds=poll_interval_seconds,
                 )
         except Exception as e:
-            raise RuntimeError(f"Upload failed: {e}")
+            raise RuntimeError(f"Upload failed: {e}") from e
 
     def upload_files_resources(
             self,
@@ -355,6 +360,11 @@ class XnatRepository:
         last_status = None
         rebuild_requested = False
         archive_requested = False
+        rebuild_failures = 0
+        archive_failures = 0
+        max_rebuild_failures = 2
+        max_archive_failures = 2
+
         reusable_session = self._as_prearchive_session(imported_session)
         for attempt in range(1, max_attempts + 1):
             prearchive_session = reusable_session
@@ -369,6 +379,12 @@ class XnatRepository:
                 if self.experiment_exists(project_id, subject_id, experiment_id):
                     return
 
+                if archive_requested or rebuild_requested:
+                    if attempt < max_attempts:
+                        time.sleep(poll_interval_seconds)
+                        continue
+                    return
+
                 if attempt < max_attempts:
                     time.sleep(poll_interval_seconds)
                     continue
@@ -380,9 +396,15 @@ class XnatRepository:
 
             if "receiv" in status:
                 if not rebuild_requested:
-                    prearchive_session.rebuild(asynchronous=False)
-                    rebuild_requested = True
-                    archive_requested = False
+                    try:
+                        prearchive_session.rebuild(asynchronous=False)
+                    except Exception:
+                        rebuild_failures += 1
+                        if rebuild_failures >= max_rebuild_failures:
+                            raise
+                    else:
+                        rebuild_requested = True
+                        archive_requested = False
                 self._session.clearcache()
                 reusable_session = None
                 if attempt < max_attempts:
@@ -398,14 +420,20 @@ class XnatRepository:
                 return
 
             if not archive_requested:
-                prearchive_session.archive(
-                    overwrite="append",
-                    quarantine=False,
-                    project=project_id,
-                    subject=subject_id,
-                    experiment=experiment_id,
-                )
-                archive_requested = True
+                try:
+                    prearchive_session.archive(
+                        overwrite="append",
+                        quarantine=False,
+                        project=project_id,
+                        subject=subject_id,
+                        experiment=experiment_id,
+                    )
+                except Exception:
+                    archive_failures += 1
+                    if archive_failures >= max_archive_failures:
+                        raise
+                else:
+                    archive_requested = True
                 self._session.clearcache()
                 reusable_session = None
 
@@ -434,14 +462,15 @@ class XnatRepository:
 
         normalized_subject = str(subject_id or "").strip()
         normalized_experiment = str(experiment_id or "").strip()
+        normalized_project = str(project_id or "").strip()
 
         for prearchive_session in sessions:
             session_project = str(getattr(prearchive_session, "project", "") or "").strip()
-            if session_project and session_project != project_id:
+            if normalized_project and session_project != normalized_project:
                 continue
 
             session_subject = str(getattr(prearchive_session, "subject", "") or "").strip()
-            if session_subject and session_subject != normalized_subject:
+            if normalized_subject and session_subject != normalized_subject:
                 continue
 
             session_keys = {
@@ -450,7 +479,10 @@ class XnatRepository:
                 str(getattr(prearchive_session, "folder_name", "") or "").strip(),
                 str(getattr(prearchive_session, "id", "") or "").strip(),
             }
-            if normalized_experiment in session_keys:
+            if normalized_experiment and normalized_experiment not in session_keys:
+                continue
+
+            if normalized_subject or normalized_experiment:
                 return prearchive_session
 
         return None
