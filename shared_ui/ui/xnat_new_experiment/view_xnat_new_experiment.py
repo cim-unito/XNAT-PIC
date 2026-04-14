@@ -69,6 +69,8 @@ class ViewXnatNewExperiment(BaseView):
         self._page.update()
 
     def reset_form(self):
+        self.dd_project.options = []
+        self.dd_subject.options = []
         self.set_initial_state()
         self._page.update()
 

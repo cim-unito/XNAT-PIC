@@ -1,16 +1,13 @@
 import flet as ft
 
+from shared_ui.ui.base_view import BaseView
 from shared_ui.ui.button import Button
-from shared_ui.ui.palette import Palette
+from shared_ui.ui.palette import Palette, default_palette
 
 
-class ViewMainInterface(ft.Control):
+class ViewMainInterface(BaseView):
     def __init__(self, page: ft.Page):
-        super().__init__()
-        self._page = page
-        # controller (it is not initialized. Must be initialized in the main,
-        # after the controller is created)
-        self._controller = None
+        super().__init__(page)
 
         # graphical elements
         self.img_euro_bioimaging = None
@@ -30,7 +27,7 @@ class ViewMainInterface(ft.Control):
         self._main_layout = None
 
         # palette
-        self.palette = self._create_default_palette()
+        self.palette = default_palette()
 
     def build_interface(self):
         """Create and return the main layout for the main interface view.
@@ -50,21 +47,6 @@ class ViewMainInterface(ft.Control):
         self.btn_converter.disabled = False
         self.btn_uploader.disabled = False
         self.btn_custom_form.disabled = False
-
-    @property
-    def controller(self):
-        return self._controller
-
-    @controller.setter
-    def controller(self, controller):
-        self._controller = controller
-
-    @property
-    def page(self):
-        return self._page
-
-    def set_controller(self, controller):
-        self._controller = controller
 
     def _build_controls(self):
         """Instantiate and configure all UI controls used by the view."""
@@ -256,18 +238,6 @@ class ViewMainInterface(ft.Control):
                 ],
                 expand=True,
             ),
-        )
-
-    @staticmethod
-    def _create_default_palette() -> Palette:
-        return Palette(
-            primary=ft.Colors.BLUE_600,
-            primary_hover=ft.Colors.BLUE_700,
-            primary_pressed=ft.Colors.BLUE_800,
-            primary_text=ft.Colors.BLUE_900,
-            surface=ft.Colors.BLUE_50,
-            surface_stronger=ft.Colors.BLUE_100,
-            subtle_text="#475569",
         )
 
     @staticmethod

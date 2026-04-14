@@ -130,6 +130,19 @@ class ViewCustomForm(BaseView, AuthDialogMixin, XnatDropdownMixin):
         self.txt_dose.value = dose or ""
         self._page.update()
 
+    def show_progress_bar_dialog(self):
+        """Display the modal progress dialog."""
+        self.pb_custom_form.value = None
+        self._page.open(self.dlg_custom_form)
+        self._page.update()
+
+    def close_progress_bar_dialog(self):
+        """Close the modal progress dialog if it is open."""
+        if self.dlg_custom_form is None:
+            return
+        self.dlg_custom_form.open = False
+        self._page.update()
+
     def _build_controls(self):
         """Instantiate and configure all UI controls used by the view."""
         # button style
@@ -230,6 +243,20 @@ class ViewCustomForm(BaseView, AuthDialogMixin, XnatDropdownMixin):
             "Save",
             btn_style,
             icon=ft.Icon(ft.Icons.DATASET, size=26),
+        )
+
+        # progressbar dialog
+        self.pb_custom_form = ft.ProgressBar(width=320, value=None)
+        self.dlg_custom_form = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Saving custom form..."),
+            content=ft.Column(
+                tight=True,
+                spacing=12,
+                controls=[
+                    self.pb_custom_form,
+                ],
+            ),
         )
 
     def _bind_events(self):

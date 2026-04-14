@@ -107,9 +107,7 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         self.reset_image_preview()
 
         # Modality dropdown reset
-        self.cnt_modify_modality.controls.clear()
-        self.cnt_modify_modality.controls.append(self.btn_modify_modality)
-        self.dd_modify_modality.value = None
+        self.reset_modality_editor()
 
         self._page.update()
 
@@ -149,6 +147,19 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
 
         self._page.update()
 
+    def show_modality_dropdown(self):
+        """Switch modality editor UI from button to dropdown selector."""
+        self.cnt_modify_modality.controls.clear()
+        self.cnt_modify_modality.controls.append(self.dd_modify_modality)
+        self._page.update()
+
+    def reset_modality_editor(self):
+        """Restore modality editor UI to default button state."""
+        self.dd_modify_modality.value = None
+        self.cnt_modify_modality.controls.clear()
+        self.cnt_modify_modality.controls.append(self.btn_modify_modality)
+        self._page.update()
+
     def reset_image_preview(self):
         """Restore the default image preview placeholder."""
         self.img_preview.src_base64 = None
@@ -163,10 +174,11 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
     def show_dicom_tags_dialog(self, tags):
         rows = []
         for elem in tags:
+            tag_label = elem.get("tag_hex", str(elem["tag"]))
             rows.append(
                 ft.Row(
                     controls=[
-                        ft.Text(str(elem["tag"]), width=140),
+                        ft.Text(tag_label, width=140),
                         ft.Text(elem["name"], width=260, no_wrap=True),
                         ft.Text(elem["value"], width=760, no_wrap=True),
                     ]
@@ -197,12 +209,20 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
 
     def show_progress_bar_dialog(self):
         """Display the modal progress dialog."""
+        self.pb_upload.value = None
         self._page.open(self.dlg_upload)
         self._page.update()
 
     def update_progress_bar(self, value: float):
         """Update the progress bar value and refresh the page."""
         self.pb_upload.value = value
+        self._page.update()
+
+    def close_progress_bar_dialog(self):
+        """Close the modal progress dialog if it is open."""
+        if self.dlg_upload is None:
+            return
+        self.dlg_upload.open = False
         self._page.update()
 
     def file_picker_result(self, e: ft.FilePickerResultEvent):
@@ -247,9 +267,9 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
             tooltip="Select the experiment to upload",
         )
         self.btn_file = Button.build_text_button(
-            "Upload File",
+            "Upload non-DICOM files",
             btn_style,
-            tooltip="Select the file to upload",
+            tooltip="Select the folder containing the non-DICOM files to upload",
         )
 
         # file picker
@@ -276,14 +296,14 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         # image preview
         self.img_preview = ft.Image(
             src="assets/images/ImagePreview.png",
-            width=220,
-            height=220,
+            width=200,
+            height=200,
             fit=ft.ImageFit.CONTAIN,
             border_radius=12,
         )
         self.img_preview_card = ft.Container(
-            width=260,
-            height=260,
+            width=200,
+            height=200,
             padding=12,
             border_radius=18,
             bgcolor=self.palette.surface,
@@ -433,11 +453,17 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         )
 
         # progressbar dialog
-        self.pb_upload = ft.ProgressBar(width=300)
+        self.pb_upload = ft.ProgressBar(width=320, value=None)
         self.dlg_upload = ft.AlertDialog(
             modal=True,
             title=ft.Text("Loading..."),
-            content=self.pb_upload,
+            content=ft.Column(
+                tight=True,
+                spacing=12,
+                controls=[
+                    self.pb_upload,
+                ],
+            ),
         )
 
     def _bind_events(self):
@@ -456,7 +482,7 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         self.btn_new_subject.on_click = self._controller.create_new_subject
         self.btn_new_experiment.on_click = self._controller.create_new_experiment
         self.btn_home_back.on_click = self._controller.on_home_back_clicked
-        self.btn_upload.on_click = self._controller.dicom_upload
+        self.btn_upload.on_click = self._controller.dicom_and_not_dicom_upload
 
     def _define_layout(self):
         """Define layout"""
@@ -490,7 +516,6 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
             spacing=12,
             alignment=ft.MainAxisAlignment.CENTER,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            expand=True,
         )
 
         row_file = ft.ResponsiveRow(
@@ -508,10 +533,9 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
                 ft.Container(
                     col={"xs": 12, "md": 3},
                     alignment=ft.alignment.center,
-                    height=256,
                     content=ft.Container(
                         alignment=ft.alignment.center,
-                        expand=True,
+                        height=200,
                         content=col_tools,
                     ),
                 ),
@@ -613,7 +637,7 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
             bgcolor=self.palette.surface,
             border_radius=16,
             border=ft.border.all(1, self.palette.surface_stronger),
-            height=256,
+            height=200,
             content=ft.Column(
                 spacing=8,
                 controls=[

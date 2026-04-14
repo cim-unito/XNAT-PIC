@@ -65,6 +65,12 @@ class ViewTreeview:
     def get_selected_control(self):
         return self._selected_control
 
+    def reset_selection(self):
+        """Clear the current selected control highlight, if any."""
+        if self._selected_control:
+            self._clear_selection(self._selected_control)
+        self._selected_control = None
+
     def _build_node(self,
                     item: Dict,
                     expand_callback: Callable[

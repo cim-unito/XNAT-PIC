@@ -1,17 +1,19 @@
 import copy
+import hashlib
+import socket
+import uuid
 
 import numpy as np
 from pydicom import dcmread
 from pydicom.dataset import FileMetaDataset, FileDataset
-from pydicom.uid import generate_uid, UID, ExplicitVRLittleEndian, \
-    ImplicitVRLittleEndian, SecondaryCaptureImageStorage, \
-    PYDICOM_IMPLEMENTATION_UID
+from pydicom.errors import InvalidDicomError
+from pydicom.uid import generate_uid, UID, ExplicitVRLittleEndian, SecondaryCaptureImageStorage
 
 
 class DicomCompatibilityService:
     @staticmethod
     def update_study_instance_uid_map(dicom_file, study_instance_uid_map):
-        sub_exp = dicom_file.parents[2].name + "_" + dicom_file.parents[1].name
+        sub_exp = DicomCompatibilityService._get_sub_exp(dicom_file)
 
         if sub_exp not in study_instance_uid_map:
             study_instance_uid_map[sub_exp] = generate_uid()
@@ -20,37 +22,51 @@ class DicomCompatibilityService:
 
     @staticmethod
     def get_compatible_dicom_file(dicom_file, exp_uid_map):
-        ds = dcmread(dicom_file)
+        try:
+            ds = dcmread(dicom_file)
+        except InvalidDicomError as e:
+            raise RuntimeError(f"Invalid DICOM file: {dicom_file}") from e
+        except OSError as e:
+            raise RuntimeError(f"Unable to read DICOM file: {dicom_file}") from e
 
-        ds.file_meta = DicomCompatibilityService._build_meta_file(ds)
+        try:
+            ds.file_meta = DicomCompatibilityService._build_meta_file(ds)
+        except Exception as e:
+            raise RuntimeError("Error creating file meta information") from e
 
-        manufacturer = getattr(ds, "Manufacturer", "")
-        implementation_version_name = getattr(ds.file_meta,
-                                              "ImplementationVersionName", "")
+        manufacturer = str(getattr(ds, "Manufacturer", "")).strip()
+        implementation_version_name = str(
+            getattr(ds.file_meta, "ImplementationVersionName", "")
+        ).strip()
 
-        if manufacturer == "FUJIFILM VisualSonics, Inc.":
-            return DicomCompatibilityService._compatible_fujifilm(ds,
-                                                                  dicom_file,
-                                                                  exp_uid_map)
-        elif implementation_version_name == "Living Image":
-            return DicomCompatibilityService._compatible_ivis(ds, dicom_file,
-                                                              exp_uid_map)
-        else:
-            print("It is not a dicom file from ivis or fujifilm")
-            return None
+        if manufacturer.lower() == "fujifilm visualsonics, inc.":
+            return DicomCompatibilityService._compatible_fujifilm(ds, dicom_file, exp_uid_map)
+        if implementation_version_name.lower() == "living image":
+            return DicomCompatibilityService._compatible_ivis(ds, dicom_file, exp_uid_map)
+
+        raise ValueError(
+            "Unsupported DICOM vendor: "
+            f"Manufacturer='{manufacturer}', "
+            f"ImplementationVersionName='{implementation_version_name}'"
+        )
 
     @staticmethod
     def _build_meta_file(ds):
-        # --- File Meta Dataset ---
+        # File Meta Dataset
         if not hasattr(ds, "file_meta") or ds.file_meta is None:
             ds.file_meta = FileMetaDataset()
 
-        # --- File Meta Information Version---
+        # File Meta Information Group Length
+        if (not hasattr(ds.file_meta, 'FileMetaInformationGroupLength') or
+                ds.file_meta.FileMetaInformationGroupLength is None):
+            ds.file_meta.FileMetaInformationGroupLength = 202
+
+        # File Meta Information Version
         if (not hasattr(ds.file_meta, 'FileMetaInformationVersion') or
                 ds.file_meta.FileMetaInformationVersion is None):
             ds.file_meta.FileMetaInformationVersion = b"\x00\x01"
 
-        # --- Media Storage SOP Class UID ---
+        # Media Storage SOP Class UID
         if hasattr(ds.file_meta, "MediaStorageSOPClassUID") and \
                 UID(ds.file_meta.MediaStorageSOPClassUID).is_valid:
             pass
@@ -59,7 +75,7 @@ class DicomCompatibilityService:
         else:
             ds.file_meta.MediaStorageSOPClassUID = SecondaryCaptureImageStorage
 
-        # --- Media Storage SOP Instance UID ---
+        # Media Storage SOP Instance UID
         if hasattr(ds.file_meta, "MediaStorageSOPInstanceUID") and \
                 UID(ds.file_meta.MediaStorageSOPInstanceUID).is_valid:
             pass
@@ -69,35 +85,42 @@ class DicomCompatibilityService:
             new_uid = generate_uid()
             ds.file_meta.MediaStorageSOPInstanceUID = new_uid
 
-        # --- Transfer Syntax UID ---
+        # Transfer Syntax UID
         if not hasattr(ds.file_meta, "TransferSyntaxUID") or \
                 not UID(ds.file_meta.TransferSyntaxUID).is_valid:
             ds.file_meta.TransferSyntaxUID = ExplicitVRLittleEndian
 
-        # --- Implementation Class UID ---
+        # Implementation Class UID
         if not hasattr(ds.file_meta, "ImplementationClassUID") or \
                 not UID(ds.file_meta.ImplementationClassUID).is_valid:
-            ds.file_meta.ImplementationClassUID = PYDICOM_IMPLEMENTATION_UID
+            ds.file_meta.ImplementationClassUID = DicomCompatibilityService._generate_implementation_uid()
 
         return ds.file_meta
 
     @staticmethod
     def _compatible_fujifilm(ds, dicom_file, exp_uid_map):
-        sub_exp = dicom_file.parents[2].name + "_" + dicom_file.parents[1].name
+        sub_exp = DicomCompatibilityService._get_sub_exp(dicom_file)
+        study_instance_uid = exp_uid_map.get(sub_exp)
+        if not study_instance_uid:
+            raise KeyError(f"Missing StudyInstanceUID mapping for key '{sub_exp}'")
 
         ds.SOPClassUID = ds.file_meta.MediaStorageSOPClassUID
         ds.PatientID = sub_exp
-        ds.StudyInstanceUID = exp_uid_map.get(sub_exp)
+        ds.StudyInstanceUID = study_instance_uid
         ds.SeriesInstanceUID = generate_uid()
         if not hasattr(ds, "Modality"):
             ds.Modality = "OT"
 
-        # --- From multiframe to single frame ---
+        # From multiframe to single frame
         results = []
         pixel_array = ds.pixel_array
         if pixel_array.ndim != 4:
             raise ValueError("Unsupported pixel array shape")
-        n_frames = int(ds.NumberOfFrames)
+        n_frames = int(getattr(ds, "NumberOfFrames", 0))
+        if n_frames <= 0:
+            raise ValueError("Invalid NumberOfFrames in FUJIFILM dataset")
+        if pixel_array.shape[0] != n_frames:
+            raise ValueError("NumberOfFrames does not match pixel array")
         # Tag to remove
         tags_to_remove = [
             (0x0028, 0x0008),  # Number of Frames
@@ -155,9 +178,12 @@ class DicomCompatibilityService:
         ds.SOPClassUID = ds.file_meta.MediaStorageSOPClassUID
         ds.SOPInstanceUID = ds.file_meta.MediaStorageSOPInstanceUID
 
-        sub_exp = dicom_file.parents[2].name + "_" + dicom_file.parents[1].name
+        sub_exp = DicomCompatibilityService._get_sub_exp(dicom_file)
+        study_instance_uid = exp_uid_map.get(sub_exp)
+        if not study_instance_uid:
+            raise KeyError(f"Missing StudyInstanceUID mapping for key '{sub_exp}'")
         ds.PatientID = sub_exp
-        ds.StudyInstanceUID = exp_uid_map.get(sub_exp)
+        ds.StudyInstanceUID = study_instance_uid
         ds.SeriesInstanceUID = generate_uid()
         if not hasattr(ds, "Modality"):
             ds.Modality = "OT"
@@ -166,3 +192,32 @@ class DicomCompatibilityService:
         filename = f"{dicom_file.stem}.dcm"
         new_file = ds
         return [(new_file, filename)]
+
+    @staticmethod
+    def _generate_implementation_uid():
+        # MAC-address of computer
+        mac_address = uuid.getnode()
+
+        # Hostname of computer
+        hostname = socket.gethostname()
+
+        # Combination of data in a string
+        unique_string = f"{mac_address}-{hostname}"
+        # use one way function so that you cant get actual information of the system
+        hash_object = hashlib.sha256(unique_string.encode())
+        hex_dig = hash_object.hexdigest()
+        numeric_hash = int(hex_dig, 16)
+        numeric_hash_str = str(numeric_hash)
+        # additional information loss (only 64 digits)
+        implementation_uid = numeric_hash_str[:64]
+
+        return implementation_uid
+
+    @staticmethod
+    def _get_sub_exp(dicom_file):
+        try:
+            return dicom_file.parents[2].name + "_" + dicom_file.parents[1].name
+        except IndexError as e:
+            raise ValueError(
+                f"Unexpected dicom path structure for file: {dicom_file}"
+            ) from e

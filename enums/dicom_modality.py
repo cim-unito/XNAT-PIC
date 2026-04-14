@@ -5,3 +5,6 @@ class DicomModality(Enum):
     US = "us"
     OI = "oi"
     PAI = "pai"
+
+    def __str__(self) -> str:
+        return self.value

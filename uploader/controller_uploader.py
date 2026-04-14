@@ -1,4 +1,5 @@
 from pathlib import Path
+from contextlib import contextmanager
 import flet as ft
 
 from enums.tree_type import TreeType
@@ -109,32 +110,24 @@ class ControllerUploader:
         self._view.open_auth_dialog(dlg)
 
     def on_exit_route(self):
+        self._reset_workflow_state()
         if self._xnat_session:
             self._xnat_session.disconnect()
-
-    def _on_login_success(self, xnat_session):
-        self._xnat_session = xnat_session
-        self._xnat_repo = XnatRepository(xnat_session)
-        self._view.set_initial_state()
-
-    def _on_login_cancel(self):
-        if self._xnat_session:
-            self._xnat_session.disconnect()
-        self.go_home()
+        self._xnat_session = None
+        self._xnat_repo = None
 
     # ==========================================================
     # HOME / BACK
     # ==========================================================
     def go_home(self):
-        self._view._page.go("/")
+        self._view.page.go("/")
 
-    def on_home_back_clicked(self, e):
+    def on_home_back_clicked(self, e: ft.ControlEvent):
         if self._model.level is None:
-            self._view.set_initial_state()
+            self._reset_workflow_state()
             self.go_home()
         else:
-            self._model.reset_level()
-            self._view.set_initial_state()
+            self._reset_workflow_state()
 
     # ==========================================================
     # SET LEVEL (PROJECT / SUBJECT / EXPERIMENT / FILE)
@@ -150,7 +143,7 @@ class ControllerUploader:
         self._view.open_directory_picker()
 
     def upload_experiment(self, e: ft.ControlEvent):
-        """Start a experiment-level uploader and open the directory picker."""
+        """Start an experiment-level uploader and open the directory picker."""
         self._set_level(UploaderLevel.EXPERIMENT)
         self._view.open_directory_picker()
 
@@ -168,6 +161,7 @@ class ControllerUploader:
             self._view.populate_projects(projects)
         except Exception as e:
             self._view.create_alert(f"Cannot load projects: {e}")
+            return
 
     def on_project_selected(self, e: ft.ControlEvent):
         project_id = self._view.dd_xnat_project.value
@@ -202,12 +196,42 @@ class ControllerUploader:
     # TREEVIEW DICOM FILES
     # -------------------------------------------------------
     def get_directory_to_upload(self, path: str):
-        self._model.input_root = path
-        self._model.validate_dicom_files()
+        with self._upload_progress_dialog():
+            try:
+                self._model.input_root = path
+                list_dicom_files = self._model.get_dicom_files()
+                validation_report = self._model.validate_dicom_files(list_dicom_files)
+            except (ValueError, RuntimeError, OSError) as e:
+                self._view.create_alert(f"Cannot load the {self._model.level}: {e}")
+                self._reset_workflow_state()
+                return
+            except Exception as e:
+                self._view.create_alert(
+                    f"Unexpected error while preparing {self._model.level}: {e}"
+                )
+                self._reset_workflow_state()
+                return
 
-        self._treeview_controller.populate_tree(
-            self._model.tmp_folder_to_upload,
-            TreeType.DICOM)
+            if validation_report["failed"]:
+                failed_preview = "\n".join(
+                    f"- {Path(entry['file']).name}: {entry['reason']}"
+                    for entry in validation_report["failed"][:3]
+                )
+                suffix = "\n..." if len(validation_report["failed"]) > 3 else ""
+                self._view.create_alert(
+                    "Best effort upload prepared. "
+                    f"Successful: {validation_report['copied'] + validation_report['converted']}, "
+                    f"failed: {len(validation_report['failed'])}."
+                    f"\nFirst failures:\n{failed_preview}{suffix}"
+                )
+
+            try:
+                self._treeview_controller.populate_tree(
+                    self._model.tmp_folder_to_upload,
+                    TreeType.DICOM)
+            except (ValueError, RuntimeError, OSError) as e:
+                self._view.create_alert(f"Cannot show upload tree: {e}")
+                self._reset_workflow_state()
 
     # ==========================================================
     # SHOW DICOM TAGS
@@ -227,73 +251,84 @@ class ControllerUploader:
     # MODIFY MODALITY
     # ==========================================================
     def modify_modality(self, e: ft.ControlEvent):
-        self._view.cnt_modify_modality.controls.clear()
-        self._view.cnt_modify_modality.controls.append(
-            self._view.dd_modify_modality)
-        self._view.page.update()
+        self._view.show_modality_dropdown()
 
     def on_select_modality(self, e: ft.ControlEvent):
-        if self._selected_folder_path is None and self._selected_file_path is None:
-            self._view.create_alert("No file selected.")
-            return
+        try:
+            if self._selected_folder_path is None and self._selected_file_path is None:
+                self._view.create_alert("No file selected.")
+                return
 
-        selected_item = self._selected_folder_path if (self._selected_folder_path
-                                                      is not None) \
-            else self._selected_file_path
-        print(selected_item)
-        self._model.modify_modality(Path(selected_item),
-                                    e.control.value)
-        self._treeview_controller.populate_tree(
-            Path(self._model.tmp_folder_to_upload),
-            TreeType.DICOM
-        )
-        self._preview_cache.clear()
-        self._view.reset_image_preview()
-        self._view.dd_modify_modality.value = None
-        self._view.cnt_modify_modality.controls.clear()
-        self._view.cnt_modify_modality.controls.append(
-            self._view.btn_modify_modality)
-        self._view.page.update()
+            selected_item = self._selected_folder_path if (
+                self._selected_folder_path is not None
+            ) else self._selected_file_path
+            with self._upload_progress_dialog():
+                self._model.modify_modality(Path(selected_item), e.control.value)
+                self._treeview_controller.populate_tree(
+                    Path(self._model.tmp_folder_to_upload),
+                    TreeType.DICOM
+                )
+                self._preview_cache.clear()
+                self._view.reset_image_preview()
+            self._view.create_alert("DICOM modality changed successfully.")
+        except (ValueError, RuntimeError, OSError) as err:
+            self._view.create_alert(f"Cannot modify DICOM modality: {err}")
+        finally:
+            self._view.reset_modality_editor()
 
     # ==========================================================
     # NEW XNAT PROJECT
     # ==========================================================
-    def create_new_project(self, e):
+    def create_new_project(self, e: ft.ControlEvent):
+        if not self._xnat_repo:
+            self._view.create_alert("You must login to XNAT first.")
+            return
+
         self._controller_xnat_new_project.reset_form()
         self._view_xnat_new_project.open()
 
     def on_data_project_collected(self, data):
-        try:
-            created_project = self._xnat_repo.create_project(data)
-        except Exception as ex:
-            self._view.create_alert(f"Cannot create project: {ex}")
+        requested_project_id = str(data.get("project_id", "")).strip()
+        project_id = self._sanitize_label(requested_project_id)
+
+        if not project_id:
+            self._view.create_alert("Cannot create project: invalid project ID.")
             return
 
-        project_id = created_project["project_id"]
-        project_label = created_project["project_name"] or project_id
-        exists = False
+        with self._upload_progress_dialog():
+            try:
+                if self._xnat_repo.project_exists(project_id):
+                    self._clear_xnat_target_selection()
+                    self._view.create_alert(
+                        f"Project '{project_id}' already exists on XNAT."
+                    )
+                    return
+            except Exception as ex:
+                self._view.create_alert(f"Cannot verify existing projects: {ex}")
+                return
 
-        for opt in self._view.dd_xnat_project.options:
-            if opt.key == project_id:
-                exists = True
-                break
+            try:
+                created_project = self._xnat_repo.create_project(data)
+            except Exception as ex:
+                self._view.create_alert(f"Cannot create project: {ex}")
+                return
+            project_id = created_project["project_id"]
+            project_label = created_project["project_name"] or project_id
 
-        if not exists:
-            print("Add new project:", project_id)
-            self._view.dd_xnat_project.options.append(
-                ft.dropdown.Option(key=project_id, text=project_label)
-            )
+            self._upsert_and_select_project(project_id, project_label)
 
-        self._view.dd_xnat_project.value = project_id
-        self._view.dd_xnat_project.update()
-
+        self._view.create_alert(
+            f"Project '{project_id}' created successfully."
+        )
     # ==========================================================
     # NEW XNAT SUBJECT
     # ==========================================================
-    def create_new_subject(self, e):
+    def create_new_subject(self, e: ft.ControlEvent):
         if not self._xnat_repo:
             self._view.create_alert("You must login to XNAT first.")
             return
+
+        self._controller_xnat_new_subject.reset_form()
 
         try:
             projects = self._xnat_repo.list_projects()
@@ -303,67 +338,70 @@ class ControllerUploader:
             self._view.create_alert(f"Cannot load projects for new subject: {ex}")
             return
 
-        self._controller_xnat_new_subject.reset_form()
         self._view_xnat_new_subject.open()
 
     def on_data_subject_collected(self, data):
-        self._xnat_repo.create_subject(data)
-        project_id = data["parent_project"]
-        subject_id = data["subject_id"]
-        subject_label = data.get("subject_name") or subject_id
-        exists = False
+        project_id = str(data.get("parent_project", "")).strip()
+        requested_subject_id = str(data.get("subject_id", "")).strip()
+        normalized_subject_id = self._sanitize_label(requested_subject_id)
 
-        for opt in self._view.dd_xnat_project.options:
-            if opt.key == project_id:
-                exists = True
-                break
-
-        if not exists:
-            print("Add new project:", project_id)
-            self._view.dd_xnat_project.options.append(
-                ft.dropdown.Option(key=project_id, text=project_id)
-            )
-
-        self._view.dd_xnat_project.value = project_id
-        try:
-            subjects = self._xnat_repo.list_subjects(project_id)
-            self._view.populate_subjects(subjects)
-        except Exception as ex:
-            self._view.create_alert(
-                f"Subject created but list refresh failed: {ex}")
-            self._view.dd_xnat_project.update()
+        if not project_id or not normalized_subject_id:
+            self._view.create_alert("Cannot create subject: invalid project/subject ID.")
             return
 
-        subject_exists = any(
-            opt.key == subject_id for opt in self._view.dd_xnat_subject.options
+        with self._upload_progress_dialog():
+            try:
+                if self._xnat_repo.subject_exists(project_id, normalized_subject_id):
+                    self._clear_xnat_target_selection()
+                    self._view.create_alert(
+                        f"Subject '{normalized_subject_id}' already exists in project '{project_id}'."
+                    )
+                    return
+            except Exception as ex:
+                self._view.create_alert(f"Cannot verify existing subjects: {ex}")
+                return
+
+            try:
+                created_subject = self._xnat_repo.create_subject(data)
+            except Exception as ex:
+                self._view.create_alert(f"Cannot create subject: {ex}")
+                return
+
+            project_id = created_subject["project_id"]
+            subject_id = created_subject["subject_id"]
+
+            self._view.dd_xnat_project.value = project_id
+
+            try:
+                self._refresh_subject_dropdown(project_id, subject_id)
+            except Exception as ex:
+                self._view.create_alert(
+                    f"Subject created but list refresh failed: {ex}")
+                self._view.dd_xnat_project.update()
+                return
+
+        self._view.create_alert(
+            f"Subject '{subject_id}' created successfully in project '{project_id}'."
         )
-
-        if not subject_exists:
-            self._view.dd_xnat_subject.options.append(
-                ft.dropdown.Option(key=subject_id, text=subject_label)
-            )
-
-        self._view.dd_xnat_subject.value = subject_id
-        self._view.dd_xnat_project.update()
 
     # ==========================================================
     # NEW XNAT EXPERIMENT
     # ==========================================================
-    def create_new_experiment(self, e):
+    def create_new_experiment(self, e: ft.ControlEvent):
         if not self._xnat_repo:
             self._view.create_alert("You must login to XNAT first.")
             return
 
+        self._controller_xnat_new_experiment.reset_form()
         try:
             projects = self._xnat_repo.list_projects()
             project_ids = [project["id"] for project in projects]
             self._view_xnat_new_experiment.set_project_options(project_ids)
         except Exception as ex:
-            self._view.create_alert(f"Cannot load projects for new subject: {ex}")
+            self._view.create_alert(f"Cannot load projects for new experiment: {ex}")
             return
 
         selected_project_id = self._view.dd_xnat_project.value
-        self._controller_xnat_new_experiment.reset_form()
 
         if selected_project_id:
             self._view_xnat_new_experiment.dd_project.value = selected_project_id
@@ -377,7 +415,7 @@ class ControllerUploader:
 
         self._view_xnat_new_experiment.open()
 
-    def on_new_experiment_project_selected(self, e):
+    def on_new_experiment_project_selected(self, e: ft.ControlEvent):
         project_id = self._view_xnat_new_experiment.dd_project.value
         self._view_xnat_new_experiment.set_subject_options([])
 
@@ -395,166 +433,67 @@ class ControllerUploader:
         self._controller_xnat_new_experiment._update_submit()
 
     def on_data_experiment_collected(self, data):
-        self._xnat_repo.create_experiment(data)
-        project_id = data["parent_project"]
-        subject_id = data["subject_project"]
-        experiment_id = data["experiment_id"]
-        experiment_label = data.get("experiment_name") or experiment_id
-        exists = False
+        project_id = str(data.get("parent_project", "")).strip()
+        subject_id = str(data.get("subject_project", "")).strip()
+        requested_experiment_id = str(data.get("experiment_id", "")).strip()
+        normalized_experiment_id = self._sanitize_label(requested_experiment_id)
 
-        for opt in self._view.dd_xnat_project.options:
-            if opt.key == project_id:
-                exists = True
-                break
-
-        if not exists:
-            print("Add new project:", project_id)
-            self._view.dd_xnat_project.options.append(
-                ft.dropdown.Option(key=project_id, text=project_id)
-            )
-
-        self._view.dd_xnat_project.value = project_id
-        try:
-            subjects = self._xnat_repo.list_subjects(project_id)
-            self._view.populate_subjects(subjects)
-        except Exception as ex:
+        if not project_id or not subject_id or not normalized_experiment_id:
             self._view.create_alert(
-                f"Experiment created but subject list refresh failed: {ex}")
-            self._view.dd_xnat_project.update()
+                "Cannot create experiment: invalid project/subject/experiment ID."
+            )
             return
 
-        subject_exists = any(
-            opt.key == subject_id for opt in self._view.dd_xnat_subject.options
+        with self._upload_progress_dialog():
+            try:
+                if self._xnat_repo.experiment_exists(
+                    project_id,
+                    subject_id,
+                    normalized_experiment_id,
+                ):
+                    self._view.create_alert(
+                        f"Experiment '{normalized_experiment_id}' already exists in "
+                        f"subject '{subject_id}' (project '{project_id}')."
+                    )
+                    return
+            except Exception as ex:
+                self._view.create_alert(f"Cannot verify existing experiments: {ex}")
+                return
+
+            try:
+                created_experiment = self._xnat_repo.create_experiment(data)
+            except Exception as ex:
+                self._view.create_alert(f"Cannot create experiment: {ex}")
+                return
+
+            project_id = created_experiment["project_id"]
+            subject_id = created_experiment["subject_id"]
+            experiment_id = created_experiment["experiment_id"]
+
+            self._upsert_and_select_project(project_id, project_id)
+
+            try:
+                self._refresh_subject_dropdown(project_id, subject_id)
+            except Exception as ex:
+                self._view.create_alert(
+                    f"Experiment created but subject list refresh failed: {ex}")
+                return
+
+            try:
+                self._refresh_experiment_dropdown(project_id, subject_id, experiment_id)
+            except Exception as ex:
+                self._view.create_alert(
+                    f"Experiment created but experiment list refresh failed: {ex}")
+                return
+
+        self._view.create_alert(
+            f"Experiment '{experiment_id}' created successfully for subject '{subject_id}'."
         )
-
-        if not subject_exists:
-            self._view.dd_xnat_subject.options.append(
-                ft.dropdown.Option(key=subject_id, text=subject_id)
-            )
-
-        self._view.dd_xnat_subject.value = subject_id
-        try:
-            experiments = self._xnat_repo.list_experiments(project_id,
-                                                           subject_id)
-            self._view.populate_experiments(experiments)
-        except Exception as ex:
-            self._view.create_alert(
-                f"Experiment created but experiment list refresh failed: {ex}")
-            self._view.dd_xnat_project.update()
-            return
-
-        experiment_exists = any(
-            opt.key == experiment_id
-            for opt in self._view.dd_xnat_experiment.options
-        )
-
-        if not experiment_exists:
-            self._view.dd_xnat_experiment.options.append(
-                ft.dropdown.Option(key=experiment_id, text=experiment_label)
-            )
-
-        self._view.dd_xnat_experiment.value = experiment_id
-        self._view.dd_xnat_project.update()
-
 
     # ==========================================================
     # UPLOAD
     # ==========================================================
-    def _normalize_id(self, name):
-        name = name.strip()
-        name = name.replace(" ", "_")
-        name = name.replace(".", "_")
-        name = name.replace("-", "_")
-        return name
-
-    def _selected_or_normalized(self, selected_value, fallback_name):
-        if selected_value:
-            return selected_value
-        return self._normalize_id(fallback_name)
-
-    def _iter_upload_targets(self, base_path: Path):
-        level = self._model.level
-
-        if level == UploaderLevel.PROJECT:
-            subjects = [p for p in base_path.iterdir() if p.is_dir()]
-            if not subjects:
-                raise ValueError("No subject folders found in selected path.")
-
-            for subj_folder in subjects:
-                subject_id = self._selected_or_normalized(
-                    self._view.dd_xnat_subject.value,
-                    subj_folder.name,
-                )
-                experiments = [e for e in subj_folder.iterdir() if e.is_dir()]
-                for exp_folder in experiments:
-                    experiment_id = self._selected_or_normalized(
-                        self._view.dd_xnat_experiment.value,
-                        exp_folder.name,
-                    )
-                    yield exp_folder, subject_id, experiment_id
-
-        elif level == UploaderLevel.SUBJECT:
-            subject_id = self._selected_or_normalized(
-                self._view.dd_xnat_subject.value,
-                base_path.name,
-            )
-            experiments = [e for e in base_path.iterdir() if e.is_dir()]
-            for exp_folder in experiments:
-                experiment_id = self._selected_or_normalized(
-                    self._view.dd_xnat_experiment.value,
-                    exp_folder.name,
-                )
-                yield exp_folder, subject_id, experiment_id
-
-        elif level == UploaderLevel.EXPERIMENT:
-            source_experiment = self._model.input_root
-            source_subject_name = source_experiment.parent.name
-
-            subject_id = self._selected_or_normalized(
-                self._view.dd_xnat_subject.value,
-                source_subject_name,
-            )
-            experiment_id = self._selected_or_normalized(
-                self._view.dd_xnat_experiment.value,
-                base_path.name,
-            )
-            yield base_path, subject_id, experiment_id
-
-        else:
-            raise ValueError("Selected upload level is not supported.")
-
-    def _validate_experiment_resource_upload_context(self):
-        if self._model.level != UploaderLevel.FILE:
-            return
-
-        if not self._view.dd_xnat_subject.value:
-            raise ValueError(
-                "Select an XNAT subject before uploading resources."
-            )
-
-        if not self._view.dd_xnat_experiment.value:
-            raise ValueError(
-                "Select an XNAT experiment before uploading resources."
-            )
-
-    def _upload_file_resources_thread(self, base_path: Path, project_id: str):
-        subject_id = self._view.dd_xnat_subject.value
-        experiment_id = self._view.dd_xnat_experiment.value
-
-        uploaded_files = self._xnat_repo.upload_experiment_resources(
-            source_folder=base_path,
-            project_id=project_id,
-            subject_id=subject_id,
-            experiment_id=experiment_id,
-        )
-
-        self._view.dlg_upload.open = False
-        self._view.update_page()
-        self._view.create_alert(
-            f"Resources upload completed successfully ({uploaded_files} files)."
-        )
-
-    def dicom_upload(self, e):
+    def dicom_and_not_dicom_upload(self, e: ft.ControlEvent):
         if not self._xnat_repo:
             self._view.create_alert("You must login to XNAT first.")
             return
@@ -569,56 +508,44 @@ class ControllerUploader:
             self._view.create_alert("Select a project in XNAT.")
             return
 
-        try:
-            self._validate_experiment_resource_upload_context()
-        except ValueError as err:
-            self._view.create_alert(str(err))
-            return
-
-        # t = threading.Thread(
-        #     target=self._upload_project_thread,
-        #     args=(base_path, project_id),
-        #     daemon=True,
-        # )
-        # t.start()
-
-        try:
-            if self._model.level == UploaderLevel.FILE:
-                self._upload_file_resources_thread(base_path, project_id)
-            else:
-                self._upload_project_thread(base_path, project_id)
-        except Exception as err:
-            self._view.dlg_upload.open = False
-            self._view.update_page()
-            self._view.create_alert(f"Upload error: {err}")
-
-    def _upload_project_thread(self, base_path: Path, project_id: str):
-        try:
-            upload_targets = list(self._iter_upload_targets(base_path))
-        except ValueError as err:
-            self._view.create_alert(str(err))
-            return
-
-        if not upload_targets:
-            self._view.create_alert("No experiment folders found.")
-            return
-
-        for exp_folder, subject_id, experiment_id in upload_targets:
+        with self._upload_progress_dialog():
             try:
-                self._xnat_repo.upload_dicom(
-                    exp_folder,
-                    project_id,
-                    subject_id,
-                    experiment_id,
-                )
+                self._upload_planner(base_path, project_id)
             except Exception as err:
                 self._view.create_alert(f"Upload error: {err}")
-                return
 
-        # ---- Completed! ----
-        self._view.dlg_upload.open = False
-        self._view.update_page()
-        self._view.create_alert("Upload completed successfully!")
+    # ==========================================================
+    # PRIVATE METHODS
+    # ==========================================================
+    def _on_login_success(self, xnat_session):
+        self._xnat_session = xnat_session
+        self._xnat_repo = XnatRepository(xnat_session)
+        self._view.set_initial_state()
+
+    def _on_login_cancel(self):
+        if self._xnat_session:
+            self._xnat_session.disconnect()
+        self._xnat_session = None
+        self._xnat_repo = None
+        self.go_home()
+
+    def _reset_workflow_state(self):
+        """Reset uploader workflow state across model, controller, and view."""
+        self._model.reset_state()
+        self._selected_file_path = None
+        self._selected_folder_path = None
+        self._preview_cache.clear()
+        self._reset_nested_components_state()
+        if self._view.dlg_upload:
+            self._view.close_progress_bar_dialog()
+        self._view.set_initial_state()
+
+    def _reset_nested_components_state(self):
+        """Reset reusable nested components without recreating instances."""
+        self._treeview_view.reset_selection()
+        self._controller_xnat_new_project.reset_form()
+        self._controller_xnat_new_subject.reset_form()
+        self._controller_xnat_new_experiment.reset_form()
 
     def _set_level(self, level):
         self._model.level = level
@@ -666,4 +593,173 @@ class ControllerUploader:
                 self._view.set_image_preview(b64)
         except Exception as e:
             self._view.create_alert(f"Preview failed: {e}")
+
+    def _upsert_and_select_project(self, project_id: str, project_label: str):
+        if not self._dropdown_has_option(self._view.dd_xnat_project, project_id):
+            self._view.dd_xnat_project.options.append(
+                ft.dropdown.Option(key=project_id, text=project_label or project_id)
+            )
+        self._view.dd_xnat_project.value = project_id
+        self._view.dd_xnat_project.update()
+
+    def _clear_xnat_target_selection(self):
+        self._view.dd_xnat_project.value = None
+        self._view.reset_dropdown(self._view.dd_xnat_subject)
+        self._view.reset_dropdown(self._view.dd_xnat_experiment)
+        self._view.update_page()
+
+    def _refresh_subject_dropdown(self, project_id: str, selected_subject_id: str | None = None):
+        subjects = self._xnat_repo.list_subjects(project_id)
+        self._view.populate_subjects(subjects)
+        self._view.dd_xnat_subject.value = self._resolve_dropdown_selection(
+            self._view.dd_xnat_subject,
+            selected_subject_id,
+        )
+        self._view.update_page()
+        return subjects
+
+    def _refresh_experiment_dropdown(self,
+                                     project_id: str,
+                                     subject_id: str,
+                                     selected_experiment_id: str | None = None):
+        experiments = self._xnat_repo.list_experiments(project_id, subject_id)
+        self._view.populate_experiments(experiments)
+        self._view.dd_xnat_experiment.value = self._resolve_dropdown_selection(
+            self._view.dd_xnat_experiment,
+            selected_experiment_id,
+        )
+        self._view.update_page()
+        return experiments
+
+    def _upload_planner(self, base_path, project_id):
+        if self._model.level == UploaderLevel.FILE:
+            self._upload_not_dicom_thread(base_path, project_id)
+        else:
+            self._upload_dicom_thread(project_id)
+
+    def _upload_dicom_thread(self, project_id: str):
+        try:
+            upload_targets = self._model.build_upload_targets(
+                self._view.dd_xnat_subject.value,
+                self._view.dd_xnat_experiment.value,
+            )
+        except ValueError as err:
+            self._view.create_alert(str(err))
+            return
+
+        if not upload_targets:
+            self._view.create_alert("No experiment folders found.")
+            return
+
+        failed_uploads = []
+        for exp_folder, subject_id, experiment_id in upload_targets:
+            try:
+                self._xnat_repo.upload_dicom(
+                    exp_folder,
+                    project_id,
+                    subject_id,
+                    experiment_id,
+                )
+            except Exception as err:
+                failed_uploads.append(
+                    {
+                        "exp_folder": str(exp_folder),
+                        "subject_id": subject_id,
+                        "experiment_id": experiment_id,
+                        "error": str(err),
+                    }
+                )
+
+        self._view.dlg_upload.open = False
+        self._view.update_page()
+        if not failed_uploads:
+            self._view.create_alert("Upload completed successfully!")
+            return
+
+        failed_count = len(failed_uploads)
+        success_count = len(upload_targets) - failed_count
+        failure_summary = "; ".join(
+            (
+                f"{entry['experiment_id']} (subject {entry['subject_id']}): "
+                f"{entry['error']}"
+            )
+            for entry in failed_uploads[:5]
+        )
+        if failed_count > 5:
+            failure_summary += "; ..."
+
+        self._view.create_alert(
+            "Upload completed with errors "
+            f"({success_count} ok, {failed_count} failed). "
+            f"Failed uploads: {failure_summary}"
+        )
+
+    def _upload_not_dicom_thread(self, base_path: Path, project_id: str):
+
+        try:
+            self._model.validate_resource_upload_context(
+                self._view.dd_xnat_subject.value,
+                self._view.dd_xnat_experiment.value,
+            )
+        except ValueError as err:
+            self._view.create_alert(str(err))
+            return
+
+        subject_id = self._view.dd_xnat_subject.value
+        experiment_id = self._view.dd_xnat_experiment.value
+
+        try:
+            uploaded_files = self._xnat_repo.upload_files_resources(
+                source_folder=base_path,
+                project_id=project_id,
+                subject_id=subject_id,
+                experiment_id=experiment_id,
+            )
+        except Exception as err:
+            self._view.create_alert(
+                f"Unexpected error during resources upload: {err}"
+            )
+            return
+
+        self._view.create_alert(
+            f"Resources upload completed successfully ({uploaded_files} files)."
+        )
+
+    @contextmanager
+    def _upload_progress_dialog(self):
+        self._view.show_progress_bar_dialog()
+        try:
+            yield
+        finally:
+            self._view.close_progress_bar_dialog()
+
+    @staticmethod
+    def _dropdown_has_option(dropdown: ft.Dropdown, key: str):
+        return any(option.key == key for option in dropdown.options)
+
+    @staticmethod
+    def _resolve_dropdown_selection(dropdown: ft.Dropdown, preferred_value: str | None):
+        if not preferred_value:
+            return None
+
+        preferred_value = str(preferred_value).strip()
+        if not preferred_value:
+            return None
+
+        # XNAT can expose internal accession IDs as option keys while the
+        # creation flow tracks user-provided labels. Accept either.
+        for option in dropdown.options:
+            option_key = str(option.key or "").strip()
+            option_text = str(option.text or "").strip()
+            if preferred_value in {option_key, option_text}:
+                return option_key
+        return None
+
+    @staticmethod
+    def _sanitize_label(label: str):
+        cleaned = "".join(
+            ch if (ch.isalnum() or ch in {"_", "-"}) else "_"
+            for ch in label.strip()
+        )
+        return cleaned or None
 

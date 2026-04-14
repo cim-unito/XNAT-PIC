@@ -17,9 +17,9 @@ class ViewConverter(BaseView):
         self.title = None
         # top level
         self.mbar_conversion_type = None
-        self.mitem_milabs_2_dicom = None
+        self.mitem_bruker_2_dicom = None
         self.mitem_ivis_2_dicom = None
-        self.mi_milabs_2_dicom = None
+        #self.mitem_milabs_2_dicom = None
         self.txt_conversion_type = None
         self.sw_overwrite = None
         self.file_picker = None
@@ -65,20 +65,19 @@ class ViewConverter(BaseView):
     def set_initial_state(self):
         """Reset the UI to the default idle state.
 
-        Enables the top-level controls, disables the convert button, resets
-        the home/back label and icon, clears tree views, ...
+        Entry state of the converter flow:
+        - conversion type selector enabled
+        - all other setup/actions disabled
+        - Home button visible
+        - no selected conversion type
         """
-        # enable top-level
-        for c in [
-            self.mbar_conversion_type,
-            self.sw_overwrite,
-            self.btn_project,
-            self.btn_subject,
-            self.btn_experiment,
-        ]:
-            c.disabled = False
+        # keep only conversion type selectable
+        self.mbar_conversion_type.disabled = False
+        for c in [self.sw_overwrite, self.btn_project, self.btn_subject,
+                  self.btn_experiment]:
+            c.disabled = True
 
-        # disable the other controls
+        # disable conversion action until level + folder are selected
         self.btn_convert.disabled = True
 
         # reset home/back
@@ -96,6 +95,22 @@ class ViewConverter(BaseView):
         if self.tree_view_dcm_list:
             self.tree_view_dcm_list.controls.clear()
 
+        self._page.update()
+
+    def enable_post_type_selection_state(self):
+        """Unlock controls after conversion type selection.
+
+        Called when the user picks a conversion type:
+        - enable level buttons + overwrite switch
+        - keep convert disabled until a level is chosen
+        - switch Home -> Back (to return to converter initial state)
+        """
+        for c in [self.sw_overwrite, self.btn_project, self.btn_subject,
+                  self.btn_experiment]:
+            c.disabled = False
+
+        self.btn_convert.disabled = True
+        self.set_home_back_state("Back", ft.Icons.ARROW_BACK, enabled=True)
         self._page.update()
 
     def set_mode(self):
@@ -134,12 +149,20 @@ class ViewConverter(BaseView):
 
     def show_progress_bar_dialog(self):
         """Display the modal progress dialog."""
+        self.pb_conversion.value = None
         self._page.open(self.dlg_conversion)
         self._page.update()
 
     def update_progress_bar(self, value: float):
         """Update the progress bar value and refresh the page."""
         self.pb_conversion.value = value
+        self._page.update()
+
+    def close_progress_bar_dialog(self):
+        """Close the modal progress dialog if it is open."""
+        if self.dlg_conversion is None:
+            return
+        self.dlg_conversion.open = False
         self._page.update()
 
     def file_picker_result(self, e: ft.FilePickerResultEvent):
@@ -171,15 +194,15 @@ class ViewConverter(BaseView):
             "Conversion type",
             weight=ft.FontWeight.W_600,
         )
-        self.mitem_milabs_2_dicom = ft.MenuItemButton(
+        self.mitem_bruker_2_dicom = ft.MenuItemButton(
             content=ft.Text(ConverterType.BRUKER2DICOM.value),
         )
         self.mitem_ivis_2_dicom = ft.MenuItemButton(
             content=ft.Text(ConverterType.IVIS2DICOM.value),
         )
-        self.mi_milabs_2_dicom = ft.MenuItemButton(
-            content=ft.Text(ConverterType.MILABS2DICOM.value),
-        )
+        # self.mitem_milabs_2_dicom = ft.MenuItemButton(
+        #     content=ft.Text(ConverterType.MILABS2DICOM.value),
+        # )
         self.mbar_conversion_type = ft.MenuBar(
             expand=True,
             controls=[
@@ -195,14 +218,14 @@ class ViewConverter(BaseView):
                         ft.SubmenuButton(
                             content=ft.Text("MR"),
                             controls=[
-                                self.mitem_milabs_2_dicom,
+                                self.mitem_bruker_2_dicom,
                             ],
                         ),
                         ft.SubmenuButton(
                             content=ft.Text("OI"),
                             controls=[
                                 self.mitem_ivis_2_dicom,
-                                self.mi_milabs_2_dicom,
+                                #self.mitem_milabs_2_dicom,
                             ],
                         ),
                     ],
@@ -289,11 +312,15 @@ class ViewConverter(BaseView):
             icon=ft.Icon(ft.Icons.CHANGE_CIRCLE, size=26),
         )
         # progressbar dialog
-        self.pb_conversion = ft.ProgressBar(width=300)
+        self.pb_conversion = ft.ProgressBar(width=320, value=None)
         self.dlg_conversion = ft.AlertDialog(
             modal=True,
             title=ft.Text("Loading..."),
-            content=self.pb_conversion,
+            content=ft.Column(
+                tight=True,
+                spacing=12,
+                controls=[self.pb_conversion],
+            ),
         )
 
     def _bind_events(self):
@@ -301,9 +328,9 @@ class ViewConverter(BaseView):
         self.btn_project.on_click = self._controller.convert_project
         self.btn_subject.on_click = self._controller.convert_subject
         self.btn_experiment.on_click = self._controller.convert_experiment
-        self.mitem_milabs_2_dicom.on_click = self._on_bruker_2_dicom_selected
+        self.mitem_bruker_2_dicom.on_click = self._on_bruker_2_dicom_selected
         self.mitem_ivis_2_dicom.on_click = self._on_ivis_2_dicom_selected
-        self.mi_milabs_2_dicom.on_click = self._on_milabs_2_dicom_selected
+        #self.mitem_milabs_2_dicom.on_click = self._on_milabs_2_dicom_selected
         self.file_picker.on_result = self.file_picker_result
         self.btn_home_back.on_click = self._controller.on_home_back_clicked
         self.btn_convert.on_click = self._controller.on_convert_clicked
@@ -419,8 +446,8 @@ class ViewConverter(BaseView):
     def _on_ivis_2_dicom_selected(self, _event: ft.ControlEvent):
         self._controller.set_conversion_type(ConverterType.IVIS2DICOM)
 
-    def _on_milabs_2_dicom_selected(self, _event: ft.ControlEvent):
-        self._controller.set_conversion_type(ConverterType.MILABS2DICOM)
+    # def _on_milabs_2_dicom_selected(self, _event: ft.ControlEvent):
+    #     self._controller.set_conversion_type(ConverterType.MILABS2DICOM)
 
 
     def _build_tree_panel(
