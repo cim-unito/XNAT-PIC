@@ -10,8 +10,9 @@
 
 XNAT-PIC and Quality Control (QC) tools are presented during the **Image Data Community Days 2026**, organized by Euro-BioImaging.
 
-## When
-Thursday, April 16, from 13:00–15:00 CEST
+## Workshop Schedule
+
+Thursday, April 16, 13:00–15:00 CEST
 
 ## Workshop description
 This workshop provides instruction on how to use XNAT-PIC and QC Tools within the XNAT platform. Participants will learn how to create projects, upload imaging data, and run image quality control tools. The session will include hands-on exercises to help users become familiar with the XNAT-PIC and XNAT platform’s main functionalities
