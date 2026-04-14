@@ -4,13 +4,6 @@
 
 ---
 
-# XNAT-PIC
-
-XNAT for Preclinical Imaging Centers (XNAT-PIC) is a free and open-source Windows desktop application, which offers several tools to expand the XNAT core functionalities to support
-the preclinical imaging community and to promote open science practices.
-
----
-
 # Image Data Community Days 2026 – XNAT-PIC and QC Tools
 
 XNAT-PIC and related Quality Control (QC) tools are presented during the **Image Data Community Days 2026**, organized by Euro-BioImaging.
@@ -22,19 +15,11 @@ XNAT-PIC and related Quality Control (QC) tools are presented during the **Image
 - **XNAT-PIC for Windows (.msi installer):**  
   [Download XNAT-PIC v2.1 beta 1](https://github.com/cim-unito/XNAT-PIC/releases/download/v2.1-beta.1/XNAT-PIC-2-1-0-beta-1.msi)
 
-- **User Instructions (PDF):**  
-  [Download User Guide](docs/XNAT-PIC_User_Guide.pdf)
-
-- **Workshop Material (Word document):**  
-  [Download Workshop Notes](docs/XNAT-PIC_Workshop.docx)
-
-## Included Tools
-
-- XNAT-PIC Converter  
-- XNAT Uploader  
-- QC utilities for preclinical imaging workflows  
-
 ---
+# XNAT-PIC
+
+XNAT for Preclinical Imaging Centers (XNAT-PIC) is a free and open-source Windows desktop application, which offers several tools to expand the XNAT core functionalities to support
+the preclinical imaging community and to promote open science practices.
 
 ---
 
