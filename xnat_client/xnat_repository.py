@@ -365,14 +365,15 @@ class XnatRepository:
         max_archive_requests = 1
         rebuild_requests = 0
         archive_requests = 0
-        rebuild_in_flight = False
-        archive_in_flight = False
+        rebuild_dispatched = False
+        archive_dispatched = False
 
         reusable_session = self._as_prearchive_session(imported_session)
         for attempt in range(1, max_attempts + 1):
             if self.experiment_exists(project_id, subject_id, experiment_id):
                 return
             prearchive_session = reusable_session
+            reusable_session = None
             if prearchive_session is None:
                 try:
                     prearchive_session = self._find_prearchive_session(
@@ -393,13 +394,13 @@ class XnatRepository:
                     continue
 
             if prearchive_session is None:
-                if last_status and self._is_in_progress_prearchive_status(last_status):
+                if last_status and (
+                    self._is_in_progress_prearchive_status(last_status)
+                    or self._is_transient_prearchive_status(last_status)
+                ):
                     return
 
-                if archive_in_flight or rebuild_in_flight:
-                    if attempt < max_attempts:
-                        time.sleep(poll_interval_seconds)
-                        continue
+                if rebuild_dispatched or archive_dispatched:
                     return
 
                 if attempt < max_attempts:
@@ -420,20 +421,14 @@ class XnatRepository:
                         f"{rebuild_requests} rebuild request(s)."
                     )
 
-                if rebuild_in_flight and attempt < max_attempts:
-                    reusable_session = None
-                    time.sleep(poll_interval_seconds)
-                    continue
-
                 try:
                     rebuild_requests += 1
                     prearchive_session.rebuild(asynchronous=False)
-                    rebuild_in_flight = True
-                except Exception:
-                    rebuild_in_flight = True
+                    rebuild_dispatched = True
+                except Exception as err:
+                    rebuild_dispatched = True
 
                 self._session.clearcache()
-                reusable_session = None
                 if attempt < max_attempts:
                     time.sleep(poll_interval_seconds)
                 continue
@@ -442,7 +437,6 @@ class XnatRepository:
                 return
 
             if last_state_class == "in_progress":
-                reusable_session = None
                 if attempt < max_attempts:
                     time.sleep(poll_interval_seconds)
                     continue
@@ -450,7 +444,6 @@ class XnatRepository:
 
             if last_state_class == "archivable":
                 if archive_requests >= max_archive_requests:
-                    reusable_session = None
                     if attempt < max_attempts:
                         time.sleep(poll_interval_seconds)
                         continue
@@ -464,12 +457,11 @@ class XnatRepository:
                         subject=subject_id,
                         experiment=experiment_id,
                     )
-                    archive_in_flight = True
-                except Exception:
-                    archive_in_flight = True
+                    archive_dispatched = True
+                except Exception as err:
+                    archive_dispatched = True
 
                 self._session.clearcache()
-                reusable_session = None
             elif last_state_class in {"error", "unknown"}:
                 raise RuntimeError(
                     "Prearchive session reached a terminal/non-actionable status "
@@ -488,7 +480,13 @@ class XnatRepository:
             if attempt < max_attempts:
                 time.sleep(poll_interval_seconds)
 
-        if last_status and self._is_in_progress_prearchive_status(last_status):
+        if last_status and (
+            self._is_in_progress_prearchive_status(last_status)
+            or self._is_transient_prearchive_status(last_status)
+        ):
+            return
+
+        if rebuild_dispatched or archive_dispatched:
             return
 
         raise RuntimeError(
