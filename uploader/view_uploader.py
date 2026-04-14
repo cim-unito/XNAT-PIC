@@ -267,9 +267,9 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
             tooltip="Select the experiment to upload",
         )
         self.btn_file = Button.build_text_button(
-            "Upload File",
+            "Upload non-DICOM files",
             btn_style,
-            tooltip="Select the file to upload",
+            tooltip="Select the folder containing the non-DICOM files to upload",
         )
 
         # file picker
