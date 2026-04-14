@@ -357,27 +357,46 @@ class XnatRepository:
         if poll_interval_seconds < 0:
             raise ValueError("poll_interval_seconds must be >= 0")
 
-        last_status = None
-        rebuild_failures = 0
-        archive_failures = 0
-        max_rebuild_failures = 2
-        max_archive_failures = 2
+        last_status = "unknown"
+        last_state_class = "unknown"
+        fetch_failures = 0
+        max_fetch_failures = max(3, min(6, max_attempts))
+        max_rebuild_requests = min(max_attempts, 3)
+        max_archive_requests = 1
+        rebuild_requests = 0
+        archive_requests = 0
+        rebuild_in_flight = False
+        archive_in_flight = False
 
         reusable_session = self._as_prearchive_session(imported_session)
         for attempt in range(1, max_attempts + 1):
+            if self.experiment_exists(project_id, subject_id, experiment_id):
+                return
             prearchive_session = reusable_session
             if prearchive_session is None:
-                prearchive_session = self._find_prearchive_session(
-                    project_id=project_id,
-                    subject_id=subject_id,
-                    experiment_id=experiment_id,
-                )
+                try:
+                    prearchive_session = self._find_prearchive_session(
+                        project_id=project_id,
+                        subject_id=subject_id,
+                        experiment_id=experiment_id,
+                    )
+                    fetch_failures = 0
+                except Exception as err:
+                    fetch_failures += 1
+                    if fetch_failures >= max_fetch_failures:
+                        raise RuntimeError(
+                            "Repeated failures while fetching prearchive session state; "
+                            f"aborting after {fetch_failures} failures."
+                        ) from err
+                    if attempt < max_attempts:
+                        time.sleep(poll_interval_seconds)
+                    continue
 
             if prearchive_session is None:
-                if self.experiment_exists(project_id, subject_id, experiment_id):
+                if last_status and self._is_in_progress_prearchive_status(last_status):
                     return
 
-                if last_status and self._is_in_progress_prearchive_status(last_status):
+                if archive_in_flight or rebuild_in_flight:
                     if attempt < max_attempts:
                         time.sleep(poll_interval_seconds)
                         continue
@@ -392,28 +411,52 @@ class XnatRepository:
             status = str(getattr(prearchive_session, "status", "") or "").strip().lower()
             last_status = status or "unknown"
 
-            if self._is_receiving_prearchive_status(status):
+            last_state_class = self._classify_prearchive_status(last_status)
+
+            if last_state_class == "receiving":
+                if rebuild_requests >= max_rebuild_requests:
+                    raise RuntimeError(
+                        "Prearchive session remained in RECEIVING after "
+                        f"{rebuild_requests} rebuild request(s)."
+                    )
+
+                if rebuild_in_flight and attempt < max_attempts:
+                    reusable_session = None
+                    time.sleep(poll_interval_seconds)
+                    continue
+
                 try:
+                    rebuild_requests += 1
                     prearchive_session.rebuild(asynchronous=False)
+                    rebuild_in_flight = True
                 except Exception:
-                    rebuild_failures += 1
-                    if rebuild_failures >= max_rebuild_failures:
-                        raise
+                    rebuild_in_flight = True
+
                 self._session.clearcache()
                 reusable_session = None
                 if attempt < max_attempts:
                     time.sleep(poll_interval_seconds)
                 continue
 
-            if self._is_in_progress_prearchive_status(status):
+            if last_state_class == "transient":
+                return
+
+            if last_state_class == "in_progress":
                 reusable_session = None
                 if attempt < max_attempts:
                     time.sleep(poll_interval_seconds)
                     continue
                 return
 
-            if self._is_archivable_prearchive_status(status):
+            if last_state_class == "archivable":
+                if archive_requests >= max_archive_requests:
+                    reusable_session = None
+                    if attempt < max_attempts:
+                        time.sleep(poll_interval_seconds)
+                        continue
+                    break
                 try:
+                    archive_requests += 1
                     prearchive_session.archive(
                         overwrite="append",
                         quarantine=False,
@@ -421,15 +464,21 @@ class XnatRepository:
                         subject=subject_id,
                         experiment=experiment_id,
                     )
+                    archive_in_flight = True
                 except Exception:
-                    archive_failures += 1
-                    if archive_failures >= max_archive_failures:
-                        raise
+                    archive_in_flight = True
+
                 self._session.clearcache()
                 reusable_session = None
+            elif last_state_class in {"error", "unknown"}:
+                raise RuntimeError(
+                    "Prearchive session reached a terminal/non-actionable status "
+                    f"'{last_status}' for project '{project_id}', subject '{subject_id}', "
+                    f"experiment '{experiment_id}'."
+                )
             else:
                 raise RuntimeError(
-                    "Prearchive session reached a non-archivable status "
+                    "Prearchive session reached an unsupported status "
                     f"'{last_status}' for project '{project_id}', subject '{subject_id}', "
                     f"experiment '{experiment_id}'."
                 )
@@ -444,7 +493,9 @@ class XnatRepository:
 
         raise RuntimeError(
             "Unable to archive imported session after "
-            f"{max_attempts} attempts. Last prearchive status: {last_status}."
+            f"{max_attempts} attempts. Last prearchive status: {last_status}. "
+            f"Last state class: {last_state_class}. rebuild_requests={rebuild_requests}, "
+            f"archive_requests={archive_requests}."
         )
 
     def _find_prearchive_session(self,
@@ -500,6 +551,41 @@ class XnatRepository:
             return imported_session
 
         return None
+
+    @staticmethod
+    def _is_transient_prearchive_status(status: str) -> bool:
+        normalized_status = str(status or "").strip().lower()
+        transient_statuses = {
+            "build pending",
+            "building now",
+            "archive pending",
+            "archiving now",
+            "rebuild pending",
+            "rebuilding now",
+        }
+        return normalized_status in transient_statuses
+
+    @staticmethod
+    def _is_error_prearchive_status(status: str) -> bool:
+        normalized_status = str(status or "").strip().lower()
+        error_tokens = {"error", "failed", "fail"}
+        return any(token in normalized_status for token in error_tokens)
+
+    def _classify_prearchive_status(self, status: str) -> str:
+        normalized_status = str(status or "").strip().lower()
+        if not normalized_status:
+            return "unknown"
+        if self._is_transient_prearchive_status(normalized_status):
+            return "transient"
+        if self._is_receiving_prearchive_status(normalized_status):
+            return "receiving"
+        if self._is_archivable_prearchive_status(normalized_status):
+            return "archivable"
+        if self._is_error_prearchive_status(normalized_status):
+            return "error"
+        if self._is_in_progress_prearchive_status(normalized_status):
+            return "in_progress"
+        return "unknown"
 
     @staticmethod
     def _is_receiving_prearchive_status(status: str) -> bool:
