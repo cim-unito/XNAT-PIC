@@ -354,6 +354,7 @@ class XnatRepository:
 
         last_status = None
         rebuild_requested = False
+        archive_requested = False
         reusable_session = self._as_prearchive_session(imported_session)
         for attempt in range(1, max_attempts + 1):
             prearchive_session = reusable_session
@@ -381,6 +382,7 @@ class XnatRepository:
                 if not rebuild_requested:
                     prearchive_session.rebuild(asynchronous=False)
                     rebuild_requested = True
+                    archive_requested = False
                 self._session.clearcache()
                 reusable_session = None
                 if attempt < max_attempts:
@@ -395,15 +397,17 @@ class XnatRepository:
                     continue
                 return
 
-            prearchive_session.archive(
-                overwrite="append",
-                quarantine=False,
-                project=project_id,
-                subject=subject_id,
-                experiment=experiment_id,
-            )
-            self._session.clearcache()
-            reusable_session = None
+            if not archive_requested:
+                prearchive_session.archive(
+                    overwrite="append",
+                    quarantine=False,
+                    project=project_id,
+                    subject=subject_id,
+                    experiment=experiment_id,
+                )
+                archive_requested = True
+                self._session.clearcache()
+                reusable_session = None
 
             if self.experiment_exists(project_id, subject_id, experiment_id):
                 return
