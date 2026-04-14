@@ -358,8 +358,6 @@ class XnatRepository:
             raise ValueError("poll_interval_seconds must be >= 0")
 
         last_status = None
-        rebuild_requested = False
-        archive_requested = False
         rebuild_failures = 0
         archive_failures = 0
         max_rebuild_failures = 2
@@ -379,7 +377,7 @@ class XnatRepository:
                 if self.experiment_exists(project_id, subject_id, experiment_id):
                     return
 
-                if archive_requested or rebuild_requested:
+                if last_status and self._is_in_progress_prearchive_status(last_status):
                     if attempt < max_attempts:
                         time.sleep(poll_interval_seconds)
                         continue
@@ -394,32 +392,27 @@ class XnatRepository:
             status = str(getattr(prearchive_session, "status", "") or "").strip().lower()
             last_status = status or "unknown"
 
-            if "receiv" in status:
-                if not rebuild_requested:
-                    try:
-                        prearchive_session.rebuild(asynchronous=False)
-                    except Exception:
-                        rebuild_failures += 1
-                        if rebuild_failures >= max_rebuild_failures:
-                            raise
-                    else:
-                        rebuild_requested = True
-                        archive_requested = False
+            if self._is_receiving_prearchive_status(status):
+                try:
+                    prearchive_session.rebuild(asynchronous=False)
+                except Exception:
+                    rebuild_failures += 1
+                    if rebuild_failures >= max_rebuild_failures:
+                        raise
                 self._session.clearcache()
                 reusable_session = None
                 if attempt < max_attempts:
                     time.sleep(poll_interval_seconds)
                 continue
 
-            if any(in_progress in status for in_progress in {"rebuild", "archiv", "process", "queue"}):
-                self._session.clearcache()
+            if self._is_in_progress_prearchive_status(status):
                 reusable_session = None
                 if attempt < max_attempts:
                     time.sleep(poll_interval_seconds)
                     continue
                 return
 
-            if not archive_requested:
+            if self._is_archivable_prearchive_status(status):
                 try:
                     prearchive_session.archive(
                         overwrite="append",
@@ -432,18 +425,21 @@ class XnatRepository:
                     archive_failures += 1
                     if archive_failures >= max_archive_failures:
                         raise
-                else:
-                    archive_requested = True
                 self._session.clearcache()
                 reusable_session = None
-
+            else:
+                raise RuntimeError(
+                    "Prearchive session reached a non-archivable status "
+                    f"'{last_status}' for project '{project_id}', subject '{subject_id}', "
+                    f"experiment '{experiment_id}'."
+                )
             if self.experiment_exists(project_id, subject_id, experiment_id):
                 return
 
             if attempt < max_attempts:
                 time.sleep(poll_interval_seconds)
 
-        if last_status and any(in_progress in last_status for in_progress in {"rebuild", "archiv", "process", "queue"}):
+        if last_status and self._is_in_progress_prearchive_status(last_status):
             return
 
         raise RuntimeError(
@@ -456,9 +452,15 @@ class XnatRepository:
                                  subject_id: str,
                                  experiment_id: str):
         try:
-            sessions = self._session.prearchive.sessions(project=project_id)
+            sessions = self._session.prearchive.sessions(
+                project=project_id,
+                allow_receiving=True,
+            )
         except TypeError:
-            sessions = self._session.prearchive.sessions()
+            try:
+                sessions = self._session.prearchive.sessions(project=project_id)
+            except TypeError:
+                sessions = self._session.prearchive.sessions()
 
         normalized_subject = str(subject_id or "").strip()
         normalized_experiment = str(experiment_id or "").strip()
@@ -498,6 +500,29 @@ class XnatRepository:
             return imported_session
 
         return None
+
+    @staticmethod
+    def _is_receiving_prearchive_status(status: str) -> bool:
+        normalized_status = str(status or "").strip().lower()
+        return "receiv" in normalized_status
+
+    @staticmethod
+    def _is_archivable_prearchive_status(status: str) -> bool:
+        normalized_status = str(status or "").strip().lower()
+        return normalized_status in {"ready", "conflict"}
+
+    @staticmethod
+    def _is_in_progress_prearchive_status(status: str) -> bool:
+        normalized_status = str(status or "").strip().lower()
+        in_progress_tokens = {
+            "rebuild",
+            "build",
+            "archiv",
+            "process",
+            "queue",
+            "mov",
+        }
+        return any(token in normalized_status for token in in_progress_tokens)
 
     @staticmethod
     def _upload_resource_file(resource, local_file: Path, remote_path: str) -> None:
