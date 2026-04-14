@@ -11,9 +11,30 @@ the preclinical imaging community and to promote open science practices.
 
 ---
 
-# Image Data Community Days 2026 - XNAT-PIC and QC tools 
+# Image Data Community Days 2026 – XNAT-PIC and QC Tools
 
-- **Direct XNAT-PIC download (Windows):** [XNAT-PIC-2-1-0-beta-1.msi](https://github.com/cim-unito/XNAT-PIC/releases/download/v2.1-beta.1/XNAT-PIC-2-1-0-beta-1.msi)
+XNAT-PIC and related Quality Control (QC) tools are presented during the **Image Data Community Days 2026**, organized by Euro-BioImaging.
+
+🔗 **Event page:** https://www.eurobioimaging.eu/events/image-data-community-days-2026/
+
+## Downloads
+
+- **XNAT-PIC for Windows (.msi installer):**  
+  [Download XNAT-PIC v2.1 beta 1](https://github.com/cim-unito/XNAT-PIC/releases/download/v2.1-beta.1/XNAT-PIC-2-1-0-beta-1.msi)
+
+- **User Instructions (PDF):**  
+  [Download User Guide](docs/XNAT-PIC_User_Guide.pdf)
+
+- **Workshop Material (Word document):**  
+  [Download Workshop Notes](docs/XNAT-PIC_Workshop.docx)
+
+## Included Tools
+
+- XNAT-PIC Converter  
+- XNAT Uploader  
+- QC utilities for preclinical imaging workflows  
+
+---
 
 ---
 
