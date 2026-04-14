@@ -1,5 +1,6 @@
 import shutil
 import tempfile
+import time
 from pathlib import Path
 
 from xnat_client.xnat_session import XnatSession
@@ -205,7 +206,7 @@ class XnatRepository:
                     root_dir=str(exp_folder)
                 )
 
-                self._session.services.import_(
+                imported_session = self._session.services.import_(
                     zip_dst,
                     project=project_id,
                     subject=subject_id,
@@ -216,7 +217,14 @@ class XnatRepository:
                 )
 
                 self._session.clearcache()
-
+                self._rebuild_and_archive_imported_session(
+                    project_id=project_id,
+                    subject_id=subject_id,
+                    experiment_id=experiment_id,
+                    imported_session=imported_session,
+                    max_attempts=8,
+                    poll_interval_seconds=2.0,
+                )
         except Exception as e:
             raise RuntimeError(f"Upload failed: {e}")
 
@@ -329,6 +337,117 @@ class XnatRepository:
 
         resource = xnat_experiment.resources[resource_label]
         return resource
+
+    def _rebuild_and_archive_imported_session(
+            self,
+            project_id: str,
+            subject_id: str,
+            experiment_id: str,
+            imported_session,
+            max_attempts: int,
+            poll_interval_seconds: float,
+    ) -> None:
+        if max_attempts < 1:
+            raise ValueError("max_attempts must be >= 1")
+        if poll_interval_seconds < 0:
+            raise ValueError("poll_interval_seconds must be >= 0")
+
+        last_status = None
+        reusable_session = self._as_prearchive_session(imported_session)
+        for attempt in range(1, max_attempts + 1):
+            prearchive_session = reusable_session
+            if prearchive_session is None:
+                prearchive_session = self._find_prearchive_session(
+                    project_id=project_id,
+                    subject_id=subject_id,
+                    experiment_id=experiment_id,
+                )
+
+            if prearchive_session is None:
+                if self.experiment_exists(project_id, subject_id, experiment_id):
+                    return
+
+                if attempt < max_attempts:
+                    time.sleep(poll_interval_seconds)
+                    continue
+
+                break
+
+            status = str(getattr(prearchive_session, "status", "") or "").strip().lower()
+            last_status = status or "unknown"
+
+            if "receiv" in status:
+                prearchive_session.rebuild(asynchronous=False)
+                self._session.clearcache()
+                reusable_session = None
+                if attempt < max_attempts:
+                    time.sleep(poll_interval_seconds)
+                continue
+
+            prearchive_session.archive(
+                overwrite="append",
+                quarantine=False,
+                project=project_id,
+                subject=subject_id,
+                experiment=experiment_id,
+            )
+            self._session.clearcache()
+            reusable_session = None
+
+            if self.experiment_exists(project_id, subject_id, experiment_id):
+                return
+
+            if attempt < max_attempts:
+                time.sleep(poll_interval_seconds)
+
+        raise RuntimeError(
+            "Unable to archive imported session after "
+            f"{max_attempts} attempts. Last prearchive status: {last_status}."
+        )
+
+    def _find_prearchive_session(self,
+                                 project_id: str,
+                                 subject_id: str,
+                                 experiment_id: str):
+        try:
+            sessions = self._session.prearchive.sessions(project=project_id)
+        except TypeError:
+            sessions = self._session.prearchive.sessions()
+
+        normalized_subject = str(subject_id or "").strip()
+        normalized_experiment = str(experiment_id or "").strip()
+
+        for prearchive_session in sessions:
+            session_project = str(getattr(prearchive_session, "project", "") or "").strip()
+            if session_project and session_project != project_id:
+                continue
+
+            session_subject = str(getattr(prearchive_session, "subject", "") or "").strip()
+            if session_subject and session_subject != normalized_subject:
+                continue
+
+            session_keys = {
+                str(getattr(prearchive_session, "name", "") or "").strip(),
+                str(getattr(prearchive_session, "label", "") or "").strip(),
+                str(getattr(prearchive_session, "folder_name", "") or "").strip(),
+                str(getattr(prearchive_session, "id", "") or "").strip(),
+            }
+            if normalized_experiment in session_keys:
+                return prearchive_session
+
+        return None
+
+    @staticmethod
+    def _as_prearchive_session(imported_session):
+        if imported_session is None:
+            return None
+
+        has_archive = callable(getattr(imported_session, "archive", None))
+        has_rebuild = callable(getattr(imported_session, "rebuild", None))
+        if has_archive and has_rebuild:
+            return imported_session
+
+        return None
 
     @staticmethod
     def _upload_resource_file(resource, local_file: Path, remote_path: str) -> None:
