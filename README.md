@@ -91,8 +91,7 @@ This launches the desktop UI via Flet.
 ## Releases
 You can download XNAT-PIC from the GitHub Releases page:
 
-- **Latest release notes:** [v2.1-beta.0](https://github.com/cim-unito/XNAT-PIC/releases/tag/v2.1-beta.0)
-- **Direct MSI download (Windows):** [XNAT-PIC-2.1-beta.0.msi](https://github.com/cim-unito/XNAT-PIC/releases/download/v2.1-beta.0/XNAT-PIC-2.1-beta.0.msi)
+- **Direct MSI download (Windows):** [XNAT-PIC-2-1-0-beta-1.msi](https://github.com/cim-unito/XNAT-PIC/releases/download/v2.1-beta.1/XNAT-PIC-2-1-0-beta-1.msi)
 - **All releases:** [GitHub Releases](https://github.com/cim-unito/XNAT-PIC/releases)
 
 
