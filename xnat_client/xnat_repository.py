@@ -353,6 +353,7 @@ class XnatRepository:
             raise ValueError("poll_interval_seconds must be >= 0")
 
         last_status = None
+        rebuild_requested = False
         reusable_session = self._as_prearchive_session(imported_session)
         for attempt in range(1, max_attempts + 1):
             prearchive_session = reusable_session
@@ -377,12 +378,22 @@ class XnatRepository:
             last_status = status or "unknown"
 
             if "receiv" in status:
-                prearchive_session.rebuild(asynchronous=False)
+                if not rebuild_requested:
+                    prearchive_session.rebuild(asynchronous=False)
+                    rebuild_requested = True
                 self._session.clearcache()
                 reusable_session = None
                 if attempt < max_attempts:
                     time.sleep(poll_interval_seconds)
                 continue
+
+            if any(in_progress in status for in_progress in {"rebuild", "archiv", "process", "queue"}):
+                self._session.clearcache()
+                reusable_session = None
+                if attempt < max_attempts:
+                    time.sleep(poll_interval_seconds)
+                    continue
+                return
 
             prearchive_session.archive(
                 overwrite="append",
@@ -399,6 +410,9 @@ class XnatRepository:
 
             if attempt < max_attempts:
                 time.sleep(poll_interval_seconds)
+
+        if last_status and any(in_progress in last_status for in_progress in {"rebuild", "archiv", "process", "queue"}):
+            return
 
         raise RuntimeError(
             "Unable to archive imported session after "
