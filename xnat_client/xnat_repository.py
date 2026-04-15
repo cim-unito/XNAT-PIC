@@ -196,8 +196,8 @@ class XnatRepository:
                      project_id,
                      subject_id,
                      experiment_id,
-                     max_attempts=8,
-                     poll_interval_seconds=2.0):
+                     max_attempts=9,
+                     poll_interval_seconds=10.0):
 
         exp_folder = Path(exp_folder)
 
