@@ -24,6 +24,9 @@ This workshop provides instruction on how to use XNAT-PIC and QC Tools within th
 
 - **XNAT-PIC for Windows (.msi installer):**  
   [Download XNAT-PIC v2.1 beta 1](https://github.com/cim-unito/XNAT-PIC/releases/download/v2.1-beta.1/XNAT-PIC-2-1-0-beta-1.msi)
+  
+- **Material (.pptx):**  
+[Download slides](https://raw.githubusercontent.com/cim-unito/XNAT-PIC/main/ImageDataCommunityDays2026/UserInstruction/ImageDataCommunityDays2026_FG.pptx)
 
 ---
 # XNAT-PIC
