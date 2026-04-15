@@ -26,7 +26,7 @@ class DicomPreviewService:
                 frame_index = n_frames // 2
                 pixels = pixels[frame_index]
 
-            #pixels = DicomPreviewService._apply_modality_lut_safe(pixels, dicom)
+            pixels = DicomPreviewService._apply_modality_lut_safe(pixels, dicom)
             planar_config = int(getattr(dicom, "PlanarConfiguration", 0))
             voi_applied = False
 
