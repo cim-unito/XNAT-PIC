@@ -31,6 +31,9 @@ This workshop provides instruction on how to use XNAT-PIC and QC Tools within th
 - **Bruker example raw data (.zip):**  
   [Download example Bruker raw data](https://github.com/cim-unito/XNAT-PIC/releases/download/v2.1-beta.1/project_bruker_raw_data.zip)
 
+- **DICOM example data (.zip):**
+  [Downoload DICOM example data](https://github.com/cim-unito/XNAT-PIC/releases/download/v2.1-beta.1/Project1_BLEP.zip)
+
 - **Example folder of non-DICOM files (.zip):**  
   [Download example folder of non-DICOM files](https://github.com/cim-unito/XNAT-PIC/releases/download/v2.1-beta.1/Non_DICOM_folder.zip)
 
