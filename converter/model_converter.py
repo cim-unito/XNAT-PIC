@@ -25,7 +25,7 @@ class ModelConverter:
         self._input_scans = []
         self._output_scans = []
 
-    def create_dicom_output_folder(self, overwrite):
+    def create_dicom_output_folder(self, overwrite: bool):
         FilesystemService.create_dicom_output_folder(self._output_root,
                                                      overwrite)
 
@@ -39,12 +39,16 @@ class ModelConverter:
             self._input_root,
             self._output_root)
 
-    def dicom_converter(self, src_dst):
+    def dicom_converter(self, src_dst: list[str]):
         if self.conversion_type == ConverterType.BRUKER2DICOM:
             Bruker2DicomConverter.convert(src_dst)
         elif self.conversion_type == ConverterType.IVIS2DICOM:
             ivis2dicom = Ivis2DicomConverter()
             ivis2dicom.convert(src_dst)
+
+    @staticmethod
+    def delete_scan_folder_failed(dst: Path):
+        FilesystemService.delete_folder(dst)
 
     @property
     def input_root(self):

@@ -12,17 +12,22 @@ class Ivis2DicomConverter:
         self._src = None
         self._dst = None
 
-    def convert(self, src_dst):
-        self._src = Path(src_dst[0])
-        self._dst = Path(src_dst[1])
+    def convert(self, src_dst: list[str]):
+        try:
+            self._src = Path(src_dst[0])
+            self._dst = Path(src_dst[1])
 
-        metadata_file = self._find_metadata_file()
-        if not metadata_file:
-            print("ClickInfo metadata file not found")
+            path_metadata_file = self._find_metadata_file()
+            if not path_metadata_file:
+                raise ValueError(
+                    f"ClickInfo metadata file not found."
+                )
 
-        metadata_parse = IvisMetadataParser(metadata_file).parse()
+            metadata_parser = IvisMetadataParser(path_metadata_file).parse()
 
-        IvisDicomGenerator(metadata_parse).generate_dicom(self._dst)
+            IvisDicomGenerator(metadata_parser).generate_dicom(self._dst)
+        except Exception:
+            raise
 
     def _find_metadata_file(self) -> Path | None:
         """
