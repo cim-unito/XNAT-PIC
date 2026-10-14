@@ -34,7 +34,7 @@ class FilesystemService:
                                                conversion_type)
 
     @staticmethod
-    def get_output_scans(input_scans, input_root, output_root):
+    def get_output_scans(input_scans: list, input_root: Path, output_root: Path):
         if output_root is None or input_root is None:
             raise ValueError("Paths not set.")
         scan_converted = [
