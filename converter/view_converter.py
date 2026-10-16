@@ -159,7 +159,7 @@ class ViewConverter(BaseView):
         """Update the progress bar value and refresh the page."""
         value = (idx + 1) / total_scans
         self.pb_conversion.value = value
-        self.txt_pb.value = f"Scan conversion: {idx + 1} / {total_scans}"
+        self.txt_pb.value = f"Scan conversion: {((idx + 1) / total_scans) * 100:.1f}%"
         self._page.update()
 
     def close_progress_bar_dialog(self):

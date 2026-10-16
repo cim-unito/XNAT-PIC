@@ -90,10 +90,10 @@ class ControllerConverter:
         """Run the conversion by preparing, executing, and finalizing steps."""
         try:
             self._prepare_conversion()
-            failed_scans = self._perform_conversion()
+            total_scans, failed_scans = self._perform_conversion()
             self._populate_dicom_treeview()
-            self._notify_conversion_outcome(failed_scans)
-            self._delete_failed_folders(failed_scans)
+            self._notify_conversion_outcome(total_scans, failed_scans)
+            self._delete_failed_folders(total_scans, failed_scans)
         except Exception as e:
             self._model.delete_scan_folder_failed(self._model.output_root)
             self._view.create_alert(
@@ -123,22 +123,22 @@ class ControllerConverter:
             )
         self._model.get_output_scans()
 
-    def _perform_conversion(self) -> list[tuple[int, Path, Exception]]:
+    def _perform_conversion(self) -> tuple[int, list[tuple[Path, Exception]]]:
         """Execute conversion for all scans and return failures."""
         failed_scans = []
-        total_scans = len(self._model.input_scans)
+        total_scans = 0
 
         for idx, (src, dst) in enumerate(
                 zip(self._model.input_scans, self._model.output_scans)
         ):
-            try:
-                self._model.dicom_converter([str(src), str(dst)])
-            except Exception as exc:
-                failed_scans.append((idx + 1, src, exc))
-            finally:
-                self._view.update_progress_bar(idx, total_scans)
 
-        return failed_scans
+            total_scans_tmp, failed_scans_tmp = self._model.dicom_converter([str(src), str(dst)])
+            total_scans += total_scans_tmp
+            failed_scans.extend(failed_scans_tmp)
+
+            self._view.update_progress_bar(idx, len(self._model.input_scans))
+
+        return total_scans, failed_scans
 
     def _populate_dicom_treeview(self):
         """Update the UI after the conversion completes."""
@@ -146,17 +146,23 @@ class ControllerConverter:
                                                 TreeType.DICOM)
         self._view.update_page()
 
-    def _notify_conversion_outcome(self, failed_scans: list[tuple[int, Path, Exception]]):
-        """Notify the user about conversion result after finalization."""
-        total_scans = len(self._model.input_scans)
+    def _notify_conversion_outcome(
+            self,
+            total_scans: int,
+            failed_scans: list[tuple[Path, Exception]],
+    ):
+        """Notify the user about conversion results after finalization."""
         successful_conversions = total_scans - len(failed_scans)
 
         if not failed_scans:
-            message = f"Conversion completed: {successful_conversions} scans out of {total_scans} converted."
+            message = (
+                f"Conversion completed: "
+                f"{successful_conversions} scans out of {total_scans} converted."
+            )
         else:
             failed_scan_lines = "\n".join(
-                f"- {src}"
-                for _, src, _ in failed_scans
+                f"- {src}: {exc}"
+                for src, exc in failed_scans
             )
 
             message = (
@@ -170,9 +176,8 @@ class ControllerConverter:
         self._view.create_alert(message)
         self._view.update_page()
 
-    def _delete_failed_folders(self, failed_scans: list[tuple[int, Path, Exception]]):
+    def _delete_failed_folders(self, total_scans: int, failed_scans: list[tuple[Path, Exception]]):
         """Delete the empty folders where the conversion failed."""
-        total_scans = len(self._model.input_scans)
         if total_scans == len(failed_scans):
             self._model.delete_scan_folder_failed(self._model.output_root)
 

@@ -39,12 +39,13 @@ class ModelConverter:
             self._input_root,
             self._output_root)
 
-    def dicom_converter(self, src_dst: list[str]):
+    def dicom_converter(self, src_dst: list[str]) -> tuple[int, list[tuple[Path, Exception]]] | None:
         if self.conversion_type == ConverterType.BRUKER2DICOM:
-            Bruker2DicomConverter.convert(src_dst)
+            return Bruker2DicomConverter.convert(src_dst)
         elif self.conversion_type == ConverterType.IVIS2DICOM:
             ivis2dicom = Ivis2DicomConverter()
-            ivis2dicom.convert(src_dst)
+            return ivis2dicom.convert(src_dst)
+        return None
 
     @staticmethod
     def delete_scan_folder_failed(dst: Path):

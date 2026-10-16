@@ -10,6 +10,7 @@ import os
 import re
 from glob import glob
 import shutil
+from pathlib import Path
 
 import dateutil.parser
 import numpy as np
@@ -24,13 +25,17 @@ from converter.dicom_converter.bruker_2_dicom.utils.read_visupars import read_vi
 class Bruker2DicomConverter:
 
     @staticmethod
-    def convert(dirs):
+    def convert(dirs: list[str]) -> tuple[int, list[tuple[Path, Exception]]]:
+        total_scans_tmp = 0
+        failed_scans_tmp = []
+
+        convert_path = dirs[0]
+        dst_path = dirs[1]
 
         try:
             print("Starting with " + str(dirs[0].split("/")[-1]))
 
-            convert_path = dirs[0]
-            dst_path = dirs[1]
+            total_scans_tmp += 1
 
             if "Results".lower() in dirs[0].split("/")[-1].lower():
                 pass
@@ -900,5 +905,8 @@ class Bruker2DicomConverter:
                     ds_temp.save_as(outfile)
 
             print(str(dirs[0].split("/")[-1]) + " done!")
-        except Exception as e:
-            raise
+        except Exception as exc:
+            failed_scans_tmp.append((Path(convert_path), exc))
+            pass
+
+        return total_scans_tmp, failed_scans_tmp

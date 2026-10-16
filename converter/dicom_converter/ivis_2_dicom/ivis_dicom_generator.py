@@ -17,7 +17,9 @@ class IvisDicomGenerator:
     def __init__(self, metadata_parse: IvisMetadata):
         self._metadata_parse = metadata_parse
 
-    def generate_dicom(self, dst: Path):
+    def generate_dicom(self, dst: Path) -> tuple[int, list[tuple[Path, Exception]]]:
+        total_scans_tmp = 0
+        failed_scans_tmp = []
         image_list = self._metadata_parse.get_images()
         study_instance_uid = generate_uid()
 
@@ -25,30 +27,35 @@ class IvisDicomGenerator:
 
         for ind, image in enumerate(image_list):
             try:
-                file_meta = self._build_meta_file()
-                ds = self._build_dataset(file_meta, study_instance_uid)
+                if self._is_valid_scan(image.file_path):
+                    total_scans_tmp += 1
 
-                ds = self._set_patient_info(dst, ds)
+                    file_meta = self._build_meta_file()
+                    ds = self._build_dataset(file_meta, study_instance_uid)
 
-                img = self._load_image(image.file_path)
-                ds = self._set_photometric_interpretation(img, ds)
-                ds = self._set_bits_allocated(img, ds)
-                ds = self._set_windowing_configuration(img, ds)
-                ds.PixelData = img.tobytes()
+                    ds = self._set_patient_info(dst, ds)
 
-                ds = self._set_section_tag(section_tags, ds)
+                    img = self._load_image(image.file_path)
+                    ds = self._set_photometric_interpretation(img, ds)
+                    ds = self._set_bits_allocated(img, ds)
+                    ds = self._set_windowing_configuration(img, ds)
+                    ds.PixelData = img.tobytes()
 
-                if image.metadata:
-                    # Private tags for IVIS
-                    ds.add_new((0x0011, 0x0010), "LO", "IVIS_PERKINELMER")
-                    ds = self._set_image_tag(image, ds)
+                    ds = self._set_section_tag(section_tags, ds)
 
-                out_path = dst / Path(image.filename).with_suffix(".dcm")
-                self._write_dicom(out_path, ds)
+                    if image.metadata:
+                        # Private tags for IVIS
+                        ds.add_new((0x0011, 0x0010), "LO", "IVIS_PERKINELMER")
+                        ds = self._set_image_tag(image, ds)
+
+                    out_path = dst / Path(image.filename).with_suffix(".dcm")
+                    self._write_dicom(out_path, ds)
 
             except Exception as exc:
-                print(f"Error creating the DICOM image {image.file_path}: {exc}")
+                failed_scans_tmp.append((image.file_path, exc))
                 continue
+
+        return total_scans_tmp, failed_scans_tmp
 
     def _extract_section_tags(self) -> dict:
         tags = {}
@@ -240,9 +247,16 @@ class IvisDicomGenerator:
         return ds
 
     @staticmethod
+    def _is_valid_scan(path: Path) -> bool:
+        return path.is_file()
+
+    @staticmethod
     def _build_meta_file() -> FileMetaDataset:
         # --- File Meta Dataset ---
         file_meta = FileMetaDataset()
+
+        # --- File Meta Information Version ---
+        file_meta.FileMetaInformationVersion = b"\x00\x01"
 
         # --- Media Storage SOP Class UID ---
         file_meta.MediaStorageSOPClassUID = SecondaryCaptureImageStorage
@@ -396,6 +410,7 @@ class IvisDicomGenerator:
         except ValueError:
             dt = datetime.now()
 
+        ds.StudyDate = dt.strftime("%Y%m%d")
         ds.AcquisitionDate = dt.strftime("%Y%m%d")
         ds.AcquisitionTime = dt.strftime("%H%M%S")
 
