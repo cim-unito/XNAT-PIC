@@ -1,4 +1,7 @@
+import hashlib
 import re
+import socket
+import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -11,6 +14,7 @@ from pydicom.uid import SecondaryCaptureImageStorage, generate_uid, \
 from converter.dicom_converter.ivis_2_dicom.ivis_dataclasses.ivis_image_info import IvisImageInfo
 from converter.dicom_converter.ivis_2_dicom.ivis_metadata_parser import \
     IvisMetadata
+from enums.dicom_modality import DicomModality
 
 
 class IvisDicomGenerator:
@@ -255,6 +259,9 @@ class IvisDicomGenerator:
         # --- File Meta Dataset ---
         file_meta = FileMetaDataset()
 
+        # --- File Meta Information Group Length ---
+        file_meta.FileMetaInformationGroupLength = 202
+
         # --- File Meta Information Version ---
         file_meta.FileMetaInformationVersion = b"\x00\x01"
 
@@ -269,7 +276,7 @@ class IvisDicomGenerator:
         file_meta.TransferSyntaxUID = ExplicitVRLittleEndian
 
         # --- Implementation Class UID ---
-        file_meta.ImplementationClassUID = PYDICOM_IMPLEMENTATION_UID
+        file_meta.ImplementationClassUID = IvisDicomGenerator._generate_implementation_uid()
 
         return file_meta
 
@@ -280,9 +287,12 @@ class IvisDicomGenerator:
                          file_meta=file_meta,
                          preamble=b"\0" * 128)
 
-        ds.SOPClassUID = file_meta.MediaStorageSOPClassUID
-        ds.SOPInstanceUID = file_meta.MediaStorageSOPInstanceUID
-        ds.Modality = "OI"
+        now = datetime.now()
+        ds.InstanceCreationDate = now.strftime('%Y%m%d')
+        ds.InstanceCreationTime = now.strftime('%H%M%S')
+        ds.SOPClassUID = file_meta.get("MediaStorageSOPClassUID")
+        ds.SOPInstanceUID = file_meta.get("MediaStorageSOPInstanceUID")
+        ds.Modality = DicomModality.OI.value
         ds.ImageType = ["DERIVED", "SECONDARY", "OTHER"]
         ds.StudyInstanceUID = study_instance_uid
         ds.SeriesInstanceUID = generate_uid()
@@ -378,6 +388,39 @@ class IvisDicomGenerator:
         ds.is_implicit_VR = False
         ds.save_as(out_path, write_like_original=False)
         print(f"[OK] Saved: {out_path}")
+
+    @staticmethod
+    def _generate_implementation_uid() -> UID:
+        try:
+            # MAC address of computer
+            mac_address = uuid.getnode()
+
+            # Hostname of computer
+            hostname = socket.gethostname()
+
+            # Combination of data in a string
+            unique_string = f"{mac_address}-{hostname}"
+
+            # One-way hash to avoid exposing system information
+            hash_object = hashlib.sha256(unique_string.encode())
+            hex_dig = hash_object.hexdigest()
+
+            numeric_hash = int(hex_dig, 16)
+            numeric_hash_str = str(numeric_hash)
+
+            # Keep only 64 digits
+            implementation_uid = numeric_hash_str[:64]
+
+            uid = UID(implementation_uid)
+
+            # Validate UID
+            if not uid.is_valid:
+                raise ValueError("Generated ImplementationClassUID is invalid")
+
+            return uid
+
+        except Exception:
+            return PYDICOM_IMPLEMENTATION_UID
 
     @staticmethod
     def _stringify(value: str | None) -> str | None:

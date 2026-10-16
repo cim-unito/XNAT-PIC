@@ -2,17 +2,21 @@ import copy
 import hashlib
 import socket
 import uuid
+from pathlib import Path
 
 import numpy as np
 from pydicom import dcmread
 from pydicom.dataset import FileMetaDataset, FileDataset
 from pydicom.errors import InvalidDicomError
-from pydicom.uid import generate_uid, UID, ExplicitVRLittleEndian, SecondaryCaptureImageStorage
+from pydicom.uid import generate_uid, UID, ExplicitVRLittleEndian, SecondaryCaptureImageStorage, \
+    PYDICOM_IMPLEMENTATION_UID
+
+from enums.dicom_modality import DicomModality
 
 
 class DicomCompatibilityService:
     @staticmethod
-    def update_study_instance_uid_map(dicom_file, study_instance_uid_map):
+    def update_study_instance_uid_map(dicom_file: Path, study_instance_uid_map: dict[str, str]) -> dict[str, str]:
         sub_exp = DicomCompatibilityService._get_sub_exp(dicom_file)
 
         if sub_exp not in study_instance_uid_map:
@@ -21,7 +25,7 @@ class DicomCompatibilityService:
         return study_instance_uid_map
 
     @staticmethod
-    def get_compatible_dicom_file(dicom_file, exp_uid_map):
+    def get_compatible_dicom_file(dicom_file: Path, exp_uid_map: dict[str, str]):
         try:
             ds = dcmread(dicom_file)
         except InvalidDicomError as e:
@@ -51,7 +55,7 @@ class DicomCompatibilityService:
         )
 
     @staticmethod
-    def _build_meta_file(ds):
+    def _build_meta_file(ds: FileDataset) -> FileMetaDataset:
         # File Meta Dataset
         if not hasattr(ds, "file_meta") or ds.file_meta is None:
             ds.file_meta = FileMetaDataset()
@@ -93,12 +97,12 @@ class DicomCompatibilityService:
         # Implementation Class UID
         if not hasattr(ds.file_meta, "ImplementationClassUID") or \
                 not UID(ds.file_meta.ImplementationClassUID).is_valid:
-            ds.file_meta.ImplementationClassUID = DicomCompatibilityService._generate_implementation_uid()
+            ds.file_meta.ImplementationClassUID = DicomCompatibilityService._generate_implementation_uid() # ID of the system which created the file or PYDICOM_IMPLEMENTATION_UID
 
         return ds.file_meta
 
     @staticmethod
-    def _compatible_fujifilm(ds, dicom_file, exp_uid_map):
+    def _compatible_fujifilm(ds: FileDataset, dicom_file: Path, exp_uid_map: dict[str, str]) -> list[tuple[FileDataset, str]]:
         sub_exp = DicomCompatibilityService._get_sub_exp(dicom_file)
         study_instance_uid = exp_uid_map.get(sub_exp)
         if not study_instance_uid:
@@ -109,7 +113,7 @@ class DicomCompatibilityService:
         ds.StudyInstanceUID = study_instance_uid
         ds.SeriesInstanceUID = generate_uid()
         if not hasattr(ds, "Modality"):
-            ds.Modality = "OT"
+            ds.Modality = DicomModality.OT.value
 
         # From multiframe to single frame
         results = []
@@ -174,7 +178,7 @@ class DicomCompatibilityService:
         return results
 
     @staticmethod
-    def _compatible_ivis(ds, dicom_file, exp_uid_map):
+    def _compatible_ivis(ds: FileDataset, dicom_file: Path, exp_uid_map: dict[str, str]) -> list[tuple[FileDataset, str]]:
         ds.SOPClassUID = ds.file_meta.MediaStorageSOPClassUID
         ds.SOPInstanceUID = ds.file_meta.MediaStorageSOPInstanceUID
 
@@ -186,7 +190,7 @@ class DicomCompatibilityService:
         ds.StudyInstanceUID = study_instance_uid
         ds.SeriesInstanceUID = generate_uid()
         if not hasattr(ds, "Modality"):
-            ds.Modality = "OT"
+            ds.Modality = DicomModality.OI.value
         ds.PlanarConfiguration = 0
 
         filename = f"{dicom_file.stem}.dcm"
@@ -194,27 +198,40 @@ class DicomCompatibilityService:
         return [(new_file, filename)]
 
     @staticmethod
-    def _generate_implementation_uid():
-        # MAC-address of computer
-        mac_address = uuid.getnode()
+    def _generate_implementation_uid() -> UID:
+        try:
+            # MAC address of computer
+            mac_address = uuid.getnode()
 
-        # Hostname of computer
-        hostname = socket.gethostname()
+            # Hostname of computer
+            hostname = socket.gethostname()
 
-        # Combination of data in a string
-        unique_string = f"{mac_address}-{hostname}"
-        # use one way function so that you cant get actual information of the system
-        hash_object = hashlib.sha256(unique_string.encode())
-        hex_dig = hash_object.hexdigest()
-        numeric_hash = int(hex_dig, 16)
-        numeric_hash_str = str(numeric_hash)
-        # additional information loss (only 64 digits)
-        implementation_uid = numeric_hash_str[:64]
+            # Combination of data in a string
+            unique_string = f"{mac_address}-{hostname}"
 
-        return implementation_uid
+            # One-way hash to avoid exposing system information
+            hash_object = hashlib.sha256(unique_string.encode())
+            hex_dig = hash_object.hexdigest()
+
+            numeric_hash = int(hex_dig, 16)
+            numeric_hash_str = str(numeric_hash)
+
+            # Keep only 64 digits
+            implementation_uid = numeric_hash_str[:64]
+
+            uid = UID(implementation_uid)
+
+            # Validate UID
+            if not uid.is_valid:
+                raise ValueError("Generated ImplementationClassUID is invalid")
+
+            return uid
+
+        except Exception:
+            return PYDICOM_IMPLEMENTATION_UID
 
     @staticmethod
-    def _get_sub_exp(dicom_file):
+    def _get_sub_exp(dicom_file: Path) -> str:
         try:
             return dicom_file.parents[2].name + "_" + dicom_file.parents[1].name
         except IndexError as e:
