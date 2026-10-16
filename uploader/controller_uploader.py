@@ -213,17 +213,37 @@ class ControllerUploader:
                 return
 
             if validation_report["failed"]:
-                failed_preview = "\n".join(
-                    f"- {Path(entry['file']).name}: {entry['reason']}"
-                    for entry in validation_report["failed"][:3]
+                failed_files = validation_report["failed"]
+                total_failed = len(failed_files)
+
+                successful = validation_report["copied"] + validation_report["converted"]
+
+                max_errors_to_show = 3
+                displayed_errors = failed_files[:max_errors_to_show]
+
+                error_details = "\n".join(
+                    f"  • {Path(entry['file']).name}\n"
+                    f"    Reason: {entry['reason']}"
+                    for entry in displayed_errors
                 )
-                suffix = "\n..." if len(validation_report["failed"]) > 3 else ""
-                self._view.create_alert(
-                    "Best effort upload prepared. "
-                    f"Successful: {validation_report['copied'] + validation_report['converted']}, "
-                    f"failed: {len(validation_report['failed'])}."
-                    f"\nFirst failures:\n{failed_preview}{suffix}"
+
+                remaining = total_failed - len(displayed_errors)
+
+                if remaining > 0:
+                    error_details += f"\n  ... and {remaining} more error(s)."
+
+                message = (
+                    "DICOM validation completed with errors.\n\n"
+                    "Summary:\n"
+                    f"  • Total files: {validation_report['total']}\n"
+                    f"  • Copied: {validation_report['copied']}\n"
+                    f"  • Converted: {validation_report['converted']}\n"
+                    f"  • Failed: {total_failed}\n\n"
+                    "Failed files:\n"
+                    f"{error_details}"
                 )
+
+                self._view.create_alert(message)
 
             try:
                 self._treeview_controller.populate_tree(

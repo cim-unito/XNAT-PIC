@@ -14,7 +14,6 @@ class ModelUploader:
         self._input_root = None
         self._level = None
         self._tmp_folder_to_upload = None
-        self._validation_report = None
 
     @property
     def input_root(self):
@@ -43,16 +42,11 @@ class ModelUploader:
     def tmp_folder_to_upload(self, tmp_folder_to_upload):
         self._tmp_folder_to_upload = tmp_folder_to_upload
 
-    @property
-    def validation_report(self):
-        return self._validation_report
-
     def reset_state(self):
         """Reset all transient uploader state used by a single workflow."""
         self._input_root = None
         self._tmp_folder_to_upload = None
         self._level = None
-        self._validation_report = None
 
     def get_dicom_files(self) -> list[Path] | None:
         if self._level and self._level.value == "file":
@@ -68,15 +62,15 @@ class ModelUploader:
             )
         return list_dicom_files
 
-    def validate_dicom_files(self, list_dicom_files: list[Path] | None) -> dict:
+    def validate_dicom_files(self, list_dicom_files: list[Path] | None) -> dict[str, int | list[dict[str, str]]]:
         if self._level and self._level.value == "file":
-            self._validation_report = {
+            validate_dicom_report = {
                 "total": 1,
                 "copied": 1,
                 "converted": 0,
                 "failed": [],
             }
-            return self._validation_report
+            return validate_dicom_report
 
         if list_dicom_files is None:
             raise ValueError("No DICOM files provided for validation.")
@@ -88,11 +82,11 @@ class ModelUploader:
         except OSError as e:
             raise RuntimeError("Could not prepare temporary upload directory") from e
 
-        report = {
+        validate_dicom_report = {
             "total": len(list_dicom_files),
             "copied": 0,
             "converted": 0,
-            "failed": [],
+            "failed":  []
         }
         study_instance_uid_map = {}
 
@@ -102,7 +96,7 @@ class ModelUploader:
                     FilesystemService.copy_dicom_file(self._input_root,
                                                       dicom_file,
                                                       self._tmp_folder_to_upload)
-                    report["copied"] += 1
+                    validate_dicom_report["copied"] += 1
                     continue
 
                 exp_uid_map = DicomCompatibilityService.update_study_instance_uid_map(
@@ -116,24 +110,12 @@ class ModelUploader:
                                                   dicom_file,
                                                   self._tmp_folder_to_upload,
                                                   new_dicom_file)
-                report["converted"] += 1
-            except (OSError, ValueError, RuntimeError, TypeError) as e:
-                report["failed"].append({"file": str(dicom_file), "reason": str(e)})
+                validate_dicom_report["converted"] += 1
+            except Exception as e:
+                validate_dicom_report["failed"].append({"file": str(dicom_file), "reason": str(e)})
+                continue
 
-        succeeded = report["copied"] + report["converted"]
-        if succeeded == 0:
-            details = "\n".join(
-                f"{entry['file']}: {entry['reason']}" for entry in report["failed"][:5]
-            )
-            if len(report["failed"]) > 5:
-                details += "\n..."
-            raise RuntimeError(
-                "All DICOM files failed validation/conversion. "
-                f"Failures: {len(report['failed'])}\n{details}"
-            )
-
-        self._validation_report = report
-        return report
+        return validate_dicom_report
 
     def build_upload_targets(self, selected_subject_id: str | None,
                              selected_experiment_id: str | None):
