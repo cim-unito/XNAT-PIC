@@ -32,12 +32,13 @@ class IvisDicomGenerator:
         for ind, image in enumerate(image_list):
             try:
                 if self._is_valid_scan(image.file_path):
+                    dst_tmp = dst.parent.parent / dst.name / f"{dst.name}_{Path(image.filename).stem}"
                     total_scans_tmp += 1
 
                     file_meta = self._build_meta_file()
                     ds = self._build_dataset(file_meta, study_instance_uid)
 
-                    ds = self._set_patient_info(dst, ds)
+                    ds = self._set_patient_info(dst_tmp, ds)
 
                     img = self._load_image(image.file_path)
                     ds = self._set_photometric_interpretation(img, ds)
@@ -52,7 +53,7 @@ class IvisDicomGenerator:
                         ds.add_new((0x0011, 0x0010), "LO", "IVIS_PERKINELMER")
                         ds = self._set_image_tag(image, ds)
 
-                    out_path = dst / Path(image.filename).with_suffix(".dcm")
+                    out_path = dst_tmp / Path(image.filename).with_suffix(".dcm")
                     self._write_dicom(out_path, ds)
 
             except Exception as exc:
@@ -301,9 +302,9 @@ class IvisDicomGenerator:
         return ds
 
     @staticmethod
-    def _set_patient_info(dst: Path, ds: FileDataset) -> FileDataset:
-        ds.PatientName = dst.parts[-2]
-        ds.PatientID = dst.parts[-1]
+    def _set_patient_info(dst_tmp: Path, ds: FileDataset) -> FileDataset:
+        ds.PatientName = dst_tmp.parts[-2]
+        ds.PatientID = dst_tmp.parts[-1]
 
         return ds
 
