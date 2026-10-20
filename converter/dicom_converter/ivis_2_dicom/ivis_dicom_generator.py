@@ -32,7 +32,14 @@ class IvisDicomGenerator:
         for ind, image in enumerate(image_list):
             try:
                 if self._is_valid_scan(image.file_path):
-                    dst_tmp = dst.parent.parent / dst.name / f"{dst.name}_{Path(image.filename).stem}"
+                    dst_name = self._sanitize_path_component(dst.name)
+                    image_name = self._sanitize_path_component(Path(image.filename).stem)
+
+                    dst_tmp = (
+                            dst.parent.parent
+                            / dst_name
+                            / image_name
+                    )
                     total_scans_tmp += 1
 
                     file_meta = self._build_meta_file()
@@ -304,7 +311,7 @@ class IvisDicomGenerator:
     @staticmethod
     def _set_patient_info(dst_tmp: Path, ds: FileDataset) -> FileDataset:
         ds.PatientName = dst_tmp.parts[-2]
-        ds.PatientID = dst_tmp.parts[-1]
+        ds.PatientID = dst_tmp.parts[-2]
 
         return ds
 
@@ -422,6 +429,16 @@ class IvisDicomGenerator:
 
         except Exception:
             return PYDICOM_IMPLEMENTATION_UID
+
+    @staticmethod
+    def _sanitize_path_component(value: str) -> str:
+        value = re.sub(r'[.<>:"/\\|?*\x00-\x1f]', "_", value.strip())
+        value = value.rstrip(" .")
+
+        if not value:
+            raise ValueError("Invalid path component.")
+
+        return value
 
     @staticmethod
     def _stringify(value: str | None) -> str | None:
