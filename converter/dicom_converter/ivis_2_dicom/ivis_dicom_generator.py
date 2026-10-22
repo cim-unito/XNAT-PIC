@@ -14,6 +14,7 @@ from pydicom.uid import SecondaryCaptureImageStorage, generate_uid, \
 from converter.dicom_converter.ivis_2_dicom.ivis_dataclasses.ivis_image_info import IvisImageInfo
 from converter.dicom_converter.ivis_2_dicom.ivis_metadata_parser import \
     IvisMetadata
+from enums.converter_level import ConverterLevel
 from enums.dicom_modality import DicomModality
 
 
@@ -21,7 +22,7 @@ class IvisDicomGenerator:
     def __init__(self, metadata_parse: IvisMetadata):
         self._metadata_parse = metadata_parse
 
-    def generate_dicom(self, dst: Path) -> tuple[int, list[tuple[Path, Exception]]]:
+    def generate_dicom(self, dst: Path, level: ConverterLevel) -> tuple[int, list[tuple[Path, Exception]]]:
         total_scans_tmp = 0
         failed_scans_tmp = []
         image_list = self._metadata_parse.get_images()
@@ -35,11 +36,11 @@ class IvisDicomGenerator:
                     dst_name = self._sanitize_path_component(dst.name)
                     image_name = self._sanitize_path_component(Path(image.filename).stem)
 
-                    dst_tmp = (
-                            dst.parent.parent
-                            / dst_name
-                            / image_name
-                    )
+                    if level == ConverterLevel.EXPERIMENT:
+                        dst_tmp = dst / image_name
+                    else:
+                        dst_tmp = dst.parent.parent / dst_name / image_name
+
                     total_scans_tmp += 1
 
                     file_meta = self._build_meta_file()

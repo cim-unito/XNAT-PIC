@@ -5,6 +5,8 @@ from converter.dicom_converter.ivis_2_dicom.ivis_metadata_parser import \
 
 from converter.dicom_converter.ivis_2_dicom.ivis_dicom_generator import \
     IvisDicomGenerator
+from enums.converter_level import ConverterLevel
+from enums.converter_type import ConverterType
 
 
 class Ivis2DicomConverter:
@@ -12,7 +14,7 @@ class Ivis2DicomConverter:
         self._src = None
         self._dst = None
 
-    def convert(self, src_dst: list[str]) -> tuple[int, list[tuple[Path, Exception]]]:
+    def convert(self, src_dst: list[str], level: ConverterLevel) -> tuple[int, list[tuple[Path, Exception]]]:
         self._src = Path(src_dst[0])
         self._dst = Path(src_dst[1])
 
@@ -25,7 +27,7 @@ class Ivis2DicomConverter:
         except Exception as e:
             raise e
 
-        return IvisDicomGenerator(metadata_parser).generate_dicom(self._dst)
+        return IvisDicomGenerator(metadata_parser).generate_dicom(self._dst, level)
 
     def _find_metadata_file(self) -> Path | None:
         """

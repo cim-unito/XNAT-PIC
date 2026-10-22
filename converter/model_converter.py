@@ -44,7 +44,7 @@ class ModelConverter:
             return Bruker2DicomConverter.convert(src_dst)
         elif self.conversion_type == ConverterType.IVIS2DICOM:
             ivis2dicom = Ivis2DicomConverter()
-            return ivis2dicom.convert(src_dst)
+            return ivis2dicom.convert(src_dst, self.level)
         return None
 
     @staticmethod
