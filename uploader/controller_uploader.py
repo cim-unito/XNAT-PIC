@@ -25,6 +25,8 @@ from shared_ui.ui.xnat_new_experiment.view_xnat_new_experiment import \
     ViewXnatNewExperiment
 from shared_ui.ui.xnat_new_experiment.controller_xnat_new_experiment import \
     ControllerXnatNewExperiment
+from xnat_client.xnat_upload import XnatUpload
+
 
 class ControllerUploader:
     def __init__(self, view, model):
@@ -85,6 +87,7 @@ class ControllerUploader:
 
         self._xnat_session = None
         self._xnat_repo = None
+        self._xnat_upload = None
 
         self._selected_file_path = None
         self._selected_folder_path = None
@@ -115,6 +118,7 @@ class ControllerUploader:
             self._xnat_session.disconnect()
         self._xnat_session = None
         self._xnat_repo = None
+        self._xnat_upload = None
 
     # ==========================================================
     # HOME / BACK
@@ -212,38 +216,9 @@ class ControllerUploader:
                 self._reset_workflow_state()
                 return
 
-            if validation_report["failed"]:
-                failed_files = validation_report["failed"]
-                total_failed = len(failed_files)
-
-                successful = validation_report["copied"] + validation_report["converted"]
-
-                max_errors_to_show = 3
-                displayed_errors = failed_files[:max_errors_to_show]
-
-                error_details = "\n".join(
-                    f"  • {Path(entry['file']).name}\n"
-                    f"    Reason: {entry['reason']}"
-                    for entry in displayed_errors
-                )
-
-                remaining = total_failed - len(displayed_errors)
-
-                if remaining > 0:
-                    error_details += f"\n  ... and {remaining} more error(s)."
-
-                message = (
-                    "DICOM validation completed with errors.\n\n"
-                    "Summary:\n"
-                    f"  • Total files: {validation_report['total']}\n"
-                    f"  • Copied: {validation_report['copied']}\n"
-                    f"  • Converted: {validation_report['converted']}\n"
-                    f"  • Failed: {total_failed}\n\n"
-                    "Failed files:\n"
-                    f"{error_details}"
-                )
-
-                self._view.create_alert(message)
+            report_message = self._report_dicom_validation(validation_report)
+            if report_message:
+                self._view.create_alert(report_message)
 
             try:
                 self._treeview_controller.populate_tree(
@@ -514,7 +489,7 @@ class ControllerUploader:
     # UPLOAD
     # ==========================================================
     def dicom_and_not_dicom_upload(self, e: ft.ControlEvent):
-        if not self._xnat_repo:
+        if not self._xnat_upload:
             self._view.create_alert("You must login to XNAT first.")
             return
 
@@ -540,6 +515,7 @@ class ControllerUploader:
     def _on_login_success(self, xnat_session):
         self._xnat_session = xnat_session
         self._xnat_repo = XnatRepository(xnat_session)
+        self._xnat_upload = XnatUpload(xnat_session)
         self._view.set_initial_state()
 
     def _on_login_cancel(self):
@@ -547,6 +523,7 @@ class ControllerUploader:
             self._xnat_session.disconnect()
         self._xnat_session = None
         self._xnat_repo = None
+        self._xnat_upload = None
         self.go_home()
 
     def _reset_workflow_state(self):
@@ -674,7 +651,7 @@ class ControllerUploader:
         failed_uploads = []
         for exp_folder, subject_id, experiment_id in upload_targets:
             try:
-                self._xnat_repo.upload_dicom(
+                self._xnat_upload.upload_dicom(
                     exp_folder,
                     project_id,
                     subject_id,
@@ -729,7 +706,7 @@ class ControllerUploader:
         experiment_id = self._view.dd_xnat_experiment.value
 
         try:
-            uploaded_files = self._xnat_repo.upload_files_resources(
+            uploaded_files = self._xnat_upload.upload_files_resources(
                 source_folder=base_path,
                 project_id=project_id,
                 subject_id=subject_id,
@@ -774,6 +751,42 @@ class ControllerUploader:
             if preferred_value in {option_key, option_text}:
                 return option_key
         return None
+
+    @staticmethod
+    def _report_dicom_validation(validation_report: dict) -> str:
+        message = ""
+        if validation_report["failed"]:
+            failed_files = validation_report["failed"]
+            total_failed = len(failed_files)
+
+            successful = validation_report["copied"] + validation_report["converted"]
+
+            max_errors_to_show = 3
+            displayed_errors = failed_files[:max_errors_to_show]
+
+            error_details = "\n".join(
+                f"  • {Path(entry['file']).name}\n"
+                f"    Reason: {entry['reason']}"
+                for entry in displayed_errors
+            )
+
+            remaining = total_failed - len(displayed_errors)
+
+            if remaining > 0:
+                error_details += f"\n  ... and {remaining} more error(s)."
+
+            message = (
+                "DICOM validation completed with errors.\n\n"
+                "Summary:\n"
+                f"  • Total files: {validation_report['total']}\n"
+                f"  • Copied: {validation_report['copied']}\n"
+                f"  • Converted: {validation_report['converted']}\n"
+                f"  • Failed: {total_failed}\n\n"
+                "Failed files:\n"
+                f"{error_details}"
+            )
+
+        return message
 
     @staticmethod
     def _sanitize_label(label: str):
