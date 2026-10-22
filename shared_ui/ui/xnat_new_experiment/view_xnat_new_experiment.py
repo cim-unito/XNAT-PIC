@@ -38,11 +38,11 @@ class ViewXnatNewExperiment(BaseView):
         self.chk_edit_id.value = False
         self.btn_submit.disabled = True
 
-    def set_project_options(self, projects):
+    def set_project_options(self, projects: list):
         self.dd_project.options = [ft.dropdown.Option(project) for project in projects]
         self.update_page()
 
-    def set_subject_options(self, subjects):
+    def set_subject_options(self, subjects: list):
         self.dd_subject.options = []
 
         for subject in subjects:
@@ -56,15 +56,15 @@ class ViewXnatNewExperiment(BaseView):
             else:
                 self.dd_subject.options.append(ft.dropdown.Option(subject))
 
-    def set_experiment_id_value(self, value):
+    def set_experiment_id_value(self, value: str):
         self.txt_experiment_id.value = value
         self._page.update()
 
-    def set_experiment_id_editable(self, editable):
+    def set_experiment_id_editable(self, editable: bool):
         self.txt_experiment_id.disabled = not editable
         self.update_page()
 
-    def set_submit_enabled(self, enabled):
+    def set_submit_enabled(self, enabled: bool):
         self.btn_submit.disabled = not enabled
         self._page.update()
 
@@ -139,13 +139,13 @@ class ViewXnatNewExperiment(BaseView):
             actions_padding=ft.Padding(12, 0, 12, 12),
         )
 
-    def _on_submit(self, e):
+    def _on_submit(self, e: ft.ControlEvent):
         if self.on_submit_callback:
             self.on_submit_callback()
 
         self.close()
 
-    def _on_cancel(self, e):
+    def _on_cancel(self, e: ft.ControlEvent):
         if self.on_cancel_callback:
             self.on_cancel_callback()
 

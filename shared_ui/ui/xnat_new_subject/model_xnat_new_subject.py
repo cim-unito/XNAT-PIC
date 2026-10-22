@@ -13,7 +13,7 @@ class ModelXnatNewSubject:
             parent_project: str,
             subject_name: str,
             subject_id: str,
-    ):
+    ) -> dict[str, str]:
         return {
             "parent_project": (parent_project or "").strip(),
             "subject_name": (subject_name or "").strip(),

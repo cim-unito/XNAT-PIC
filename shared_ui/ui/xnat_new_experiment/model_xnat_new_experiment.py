@@ -15,7 +15,7 @@ class ModelXnatNewExperiment:
             subject_project: str,
             experiment_name: str,
             experiment_id: str,
-    ):
+    ) -> dict[str, str]:
         return {
             "parent_project": (parent_project or "").strip(),
             "subject_project": (subject_project or "").strip(),

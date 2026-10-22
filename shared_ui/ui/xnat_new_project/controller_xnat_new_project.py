@@ -1,3 +1,6 @@
+import flet as ft
+
+
 class ControllerXnatNewProject:
     def __init__(self, view, model, on_submit=None):
         self._view = view
@@ -9,7 +12,7 @@ class ControllerXnatNewProject:
         self._view.chk_edit_id.on_change = self.on_toggle_edit_id
         self._view.on_submit_callback = self.on_submit_requested
 
-    def on_project_name_changed(self, e):
+    def on_project_name_changed(self, e: ft.ControlEvent):
         project_name = e.control.value
 
         if not self._view.chk_edit_id.value:
@@ -21,7 +24,7 @@ class ControllerXnatNewProject:
     def on_project_id_changed(self, e):
         self._update_submit()
 
-    def on_toggle_edit_id(self, e):
+    def on_toggle_edit_id(self, e: ft.ControlEvent):
         editable = e.control.value
         self._view.set_project_id_editable(editable)
 

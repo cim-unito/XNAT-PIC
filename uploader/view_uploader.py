@@ -111,7 +111,7 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
 
         self._page.update()
 
-    def set_mode(self, xnat_subject, xnat_experiment):
+    def set_mode(self, xnat_subject: bool, xnat_experiment: bool):
         """Switch the UI to the active conversion mode."""
         # enable/disable top-level
         for c in [
@@ -171,7 +171,7 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         self.img_preview.src_base64 = b64
         self.img_preview.update()
 
-    def show_dicom_tags_dialog(self, tags):
+    def show_dicom_tags_dialog(self, tags:list):
         rows = []
         for elem in tags:
             tag_label = elem.get("tag_hex", str(elem["tag"]))

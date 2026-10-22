@@ -1,3 +1,5 @@
+import flet as ft
+
 class ControllerXnatNewExperiment:
     def __init__(self, view, model, on_submit=None):
         self._view = view
@@ -11,25 +13,25 @@ class ControllerXnatNewExperiment:
         self._view.chk_edit_id.on_change = self.on_toggle_edit_id
         self._view.on_submit_callback = self.on_submit_requested
 
-    def on_project_changed(self, e):
-        self._update_submit()
+    def on_project_changed(self, e: ft.ControlEvent):
+        self.update_submit()
 
-    def on_subject_changed(self, e):
-        self._update_submit()
+    def on_subject_changed(self, e: ft.ControlEvent):
+        self.update_submit()
 
-    def on_experiment_name_changed(self, e):
+    def on_experiment_name_changed(self, e: ft.ControlEvent):
         experiment_name = e.control.value
 
         if not self._view.chk_edit_id.value:
             experiment_id = self._model.generate_experiment_id(experiment_name)
             self._view.set_experiment_id_value(experiment_id)
 
-        self._update_submit()
+        self.update_submit()
 
-    def on_experiment_id_changed(self, e):
-        self._update_submit()
+    def on_experiment_id_changed(self, e: ft.ControlEvent):
+        self.update_submit()
 
-    def on_toggle_edit_id(self, e):
+    def on_toggle_edit_id(self, e: ft.ControlEvent):
         editable = e.control.value
         self._view.set_experiment_id_editable(editable)
 
@@ -37,7 +39,7 @@ class ControllerXnatNewExperiment:
             experiment_name = self._view.txt_experiment_name.value
             self._view.set_experiment_id_value(self._model.generate_experiment_id(experiment_name))
 
-        self._update_submit()
+        self.update_submit()
 
     def on_submit_requested(self):
         payload = self._model.build_payload(
@@ -53,7 +55,7 @@ class ControllerXnatNewExperiment:
     def reset_form(self):
         self._view.reset_form()
 
-    def _update_submit(self):
+    def update_submit(self):
         self._view.set_submit_enabled(
             self._model.can_submit(
                 self._view.dd_project.value,

@@ -37,15 +37,15 @@ class ViewXnatNewProject(BaseView):
         self.txt_description.value = ""
         self.btn_submit.disabled = True
 
-    def set_project_id_value(self, value):
+    def set_project_id_value(self, value: str):
         self.txt_project_id.value = value
         self._page.update()
 
-    def set_project_id_editable(self, editable):
+    def set_project_id_editable(self, editable: bool):
         self.txt_project_id.disabled = not editable
         self.update_page()
 
-    def set_submit_enabled(self, enabled):
+    def set_submit_enabled(self, enabled: bool):
         self.btn_submit.disabled = not enabled
         self._page.update()
 
@@ -128,13 +128,13 @@ class ViewXnatNewProject(BaseView):
             actions=[self.btn_cancel, self.btn_submit]
         )
 
-    def _on_submit(self, e):
+    def _on_submit(self, e: ft.ControlEvent):
         if self.on_submit_callback:
             self.on_submit_callback()
 
         self.close()
 
-    def _on_cancel(self, e):
+    def _on_cancel(self, e: ft.ControlEvent):
         if self.on_cancel_callback:
             self.on_cancel_callback()
 

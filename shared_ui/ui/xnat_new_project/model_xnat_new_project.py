@@ -43,7 +43,7 @@ class ModelXnatNewProject:
         return errors
 
     @staticmethod
-    def build_payload(project_name: str, project_id: str, accessibility: str, description: str):
+    def build_payload(project_name: str, project_id: str, accessibility: str, description: str) -> dict[str, str]:
         return {
             "project_name": (project_name or "").strip(),
             "project_id": (project_id or "").strip(),

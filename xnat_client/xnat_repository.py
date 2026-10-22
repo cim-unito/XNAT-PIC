@@ -1,3 +1,5 @@
+from bs4 import BeautifulSoup
+
 from xnat_client.xnat_session import XnatSession
 
 
@@ -7,19 +9,19 @@ class XnatRepository:
             raise ValueError("XNAT session not connected.")
         self._session = xnat_session.session
 
-    def list_projects(self):
+    def list_projects(self) -> list[dict[str, str]]:
         return [
             {"id": p.id, "label": p.name}
             for p in self._session.projects.values()
         ]
 
-    def project_exists(self, project_id: str):
+    def project_exists(self, project_id: str) -> bool:
         normalized_project_id = self._sanitize_label(str(project_id or "").strip())
         if not normalized_project_id:
             return False
         return normalized_project_id in self._session.projects
 
-    def list_subjects(self, project_id):
+    def list_subjects(self, project_id: str) -> list[dict[str, str]]:
         prj = self._session.projects[project_id]
 
         return [
@@ -27,7 +29,7 @@ class XnatRepository:
             for s in prj.subjects.values()
         ]
 
-    def subject_exists(self, project_id: str, subject_id: str):
+    def subject_exists(self, project_id: str, subject_id: str) -> bool:
         normalized_project_id = self._sanitize_label(str(project_id or "").strip())
         normalized_subject_id = self._sanitize_label(str(subject_id or "").strip())
         if not normalized_project_id or not normalized_subject_id:
@@ -41,7 +43,33 @@ class XnatRepository:
             for s in subjects
         )
 
-    def create_project(self, data):
+    def list_experiments(self, project_id: str, subject_id: str) -> list[dict[str, str]]:
+        subj = self._session.projects[project_id].subjects[subject_id]
+
+        return [
+            {"id": e.id, "label": e.label or e.id}
+            for e in subj.experiments.values()
+        ]
+
+    def experiment_exists(self, project_id: str, subject_id: str, experiment_id: str) -> bool:
+        normalized_project_id = self._sanitize_label(str(project_id or "").strip())
+        normalized_subject_id = self._sanitize_label(str(subject_id or "").strip())
+        normalized_experiment_id = self._sanitize_label(str(experiment_id or "").strip())
+
+        if not normalized_project_id or not normalized_subject_id or not normalized_experiment_id:
+            return False
+
+        try:
+            experiments = self.list_experiments(normalized_project_id, normalized_subject_id)
+        except Exception:
+            return False
+
+        return any(
+            e["id"] == normalized_experiment_id or e["label"] == normalized_experiment_id
+            for e in experiments
+        )
+
+    def create_project(self, data: dict[str, str]) -> dict[str, str]:
         session = self._session
 
         project_id = str(data.get("project_id") or "").strip()
@@ -49,9 +77,6 @@ class XnatRepository:
 
         if not project_id:
             raise ValueError("Project ID is required.")
-
-        if project_id in session.projects:
-            raise ValueError(f"Project '{project_id}' already exists.")
 
         project_name = str(data.get("project_name") or project_id).strip()
         project_description = str(data.get("description") or "").strip()
@@ -77,8 +102,15 @@ class XnatRepository:
             session.put(f"/data/projects/{project_id}/accessibility/{project_access}")
             session.clearcache()
         except Exception as err:
+            error_text = getattr(err, "text", None) or str(err)
+
+            soup = BeautifulSoup(error_text, "html.parser")
+            body = soup.body
+
+            error_message = body.get_text(" ", strip=True) if body else soup.get_text(" ", strip=True)
+
             raise RuntimeError(
-                f"Project creation failed for '{project_id}': {err}"
+                f"Project creation failed for '{project_id}': {error_message}"
             ) from err
 
         return {
@@ -88,7 +120,7 @@ class XnatRepository:
             "description": project_description,
         }
 
-    def create_subject(self, data):
+    def create_subject(self, data: dict[str, str]) -> dict[str, str]:
         session = self._session
 
         project_id = str(data["parent_project"]).strip()
@@ -112,8 +144,19 @@ class XnatRepository:
             )
             session.clearcache()
         except Exception as err:
+            error_text = getattr(err, "text", None) or str(err)
+
+            soup = BeautifulSoup(error_text, "html.parser")
+            body = soup.body
+
+            error_message = (
+                body.get_text(" ", strip=True)
+                if body
+                else soup.get_text(" ", strip=True)
+            )
+
             raise RuntimeError(
-                f"Subject creation failed for '{project_id}': {err}"
+                f"Subject creation failed for '{subject_id}': {error_message}"
             ) from err
 
         return {
@@ -122,7 +165,7 @@ class XnatRepository:
             "subject_id": subject_id,
         }
 
-    def create_experiment(self, data):
+    def create_experiment(self, data: dict[str, str]) -> dict[str, str]:
         session = self._session
 
         project_id = str(data["parent_project"]).strip()
@@ -149,8 +192,19 @@ class XnatRepository:
             )
             session.clearcache()
         except Exception as err:
+            error_text = getattr(err, "text", None) or str(err)
+
+            soup = BeautifulSoup(error_text, "html.parser")
+            body = soup.body
+
+            error_message = (
+                body.get_text(" ", strip=True)
+                if body
+                else soup.get_text(" ", strip=True)
+            )
+
             raise RuntimeError(
-                f"Project creation failed for '{project_id}': {err}"
+                f"Experiment creation failed for '{experiment_id}': {error_message}"
             ) from err
 
         return {
@@ -160,34 +214,8 @@ class XnatRepository:
             "experiment_name": experiment_label,
         }
 
-    def experiment_exists(self, project_id: str, subject_id: str, experiment_id: str):
-        normalized_project_id = self._sanitize_label(str(project_id or "").strip())
-        normalized_subject_id = self._sanitize_label(str(subject_id or "").strip())
-        normalized_experiment_id = self._sanitize_label(str(experiment_id or "").strip())
-
-        if not normalized_project_id or not normalized_subject_id or not normalized_experiment_id:
-            return False
-
-        try:
-            experiments = self.list_experiments(normalized_project_id, normalized_subject_id)
-        except Exception:
-            return False
-
-        return any(
-            e["id"] == normalized_experiment_id or e["label"] == normalized_experiment_id
-            for e in experiments
-        )
-
-    def list_experiments(self, project_id, subject_id):
-        subj = self._session.projects[project_id].subjects[subject_id]
-
-        return [
-            {"id": e.id, "label": e.label or e.id}
-            for e in subj.experiments.values()
-        ]
-
     @staticmethod
-    def _sanitize_label(label: str):
+    def _sanitize_label(label: str) -> str | None:
         cleaned = "".join(
             ch if (ch.isalnum() or ch in {"_", "-"}) else "_"
             for ch in label.strip()

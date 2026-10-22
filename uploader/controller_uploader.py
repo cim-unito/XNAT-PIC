@@ -282,7 +282,7 @@ class ControllerUploader:
         self._controller_xnat_new_project.reset_form()
         self._view_xnat_new_project.open()
 
-    def on_data_project_collected(self, data):
+    def on_data_project_collected(self, data: dict[str, str]):
         requested_project_id = str(data.get("project_id", "")).strip()
         project_id = self._sanitize_label(requested_project_id)
 
@@ -335,7 +335,7 @@ class ControllerUploader:
 
         self._view_xnat_new_subject.open()
 
-    def on_data_subject_collected(self, data):
+    def on_data_subject_collected(self, data: dict[str, str]):
         project_id = str(data.get("parent_project", "")).strip()
         requested_subject_id = str(data.get("subject_id", "")).strip()
         normalized_subject_id = self._sanitize_label(requested_subject_id)
@@ -415,7 +415,7 @@ class ControllerUploader:
         self._view_xnat_new_experiment.set_subject_options([])
 
         if not project_id:
-            self._controller_xnat_new_experiment._update_submit()
+            self._controller_xnat_new_experiment.update_submit()
             return
 
         try:
@@ -425,9 +425,9 @@ class ControllerUploader:
             self._view.create_alert(
                 f"Cannot load subjects for project '{project_id}': {ex}")
 
-        self._controller_xnat_new_experiment._update_submit()
+        self._controller_xnat_new_experiment.update_submit()
 
-    def on_data_experiment_collected(self, data):
+    def on_data_experiment_collected(self, data: dict[str, str]):
         project_id = str(data.get("parent_project", "")).strip()
         subject_id = str(data.get("subject_project", "")).strip()
         requested_experiment_id = str(data.get("experiment_id", "")).strip()
@@ -544,7 +544,7 @@ class ControllerUploader:
         self._controller_xnat_new_subject.reset_form()
         self._controller_xnat_new_experiment.reset_form()
 
-    def _set_level(self, level):
+    def _set_level(self, level: UploaderLevel):
         self._model.level = level
         """Set the uploader level and update the view mode."""
         if level == UploaderLevel.PROJECT:
@@ -552,7 +552,7 @@ class ControllerUploader:
         elif level == UploaderLevel.SUBJECT:
             self._view.set_mode(xnat_subject=True, xnat_experiment=False)
         elif level == UploaderLevel.EXPERIMENT:
-            self._view.set_mode(xnat_subject=True, xnat_experiment=True)
+            self._view.set_mode(xnat_subject=True, xnat_experiment=False)
         elif level == UploaderLevel.FILE:
             self._view.set_mode(xnat_subject=True, xnat_experiment=True)
 
@@ -605,7 +605,7 @@ class ControllerUploader:
         self._view.reset_dropdown(self._view.dd_xnat_experiment)
         self._view.update_page()
 
-    def _refresh_subject_dropdown(self, project_id: str, selected_subject_id: str | None = None):
+    def _refresh_subject_dropdown(self, project_id: str, selected_subject_id: str | None = None) -> list[dict[str, str]]:
         subjects = self._xnat_repo.list_subjects(project_id)
         self._view.populate_subjects(subjects)
         self._view.dd_xnat_subject.value = self._resolve_dropdown_selection(
@@ -627,6 +627,28 @@ class ControllerUploader:
         )
         self._view.update_page()
         return experiments
+
+    @staticmethod
+    def _dropdown_has_option(dropdown: ft.Dropdown, key: str):
+        return any(option.key == key for option in dropdown.options)
+
+    @staticmethod
+    def _resolve_dropdown_selection(dropdown: ft.Dropdown, preferred_value: str | None):
+        if not preferred_value:
+            return None
+
+        preferred_value = str(preferred_value).strip()
+        if not preferred_value:
+            return None
+
+        # XNAT can expose internal accession IDs as option keys while the
+        # creation flow tracks user-provided labels. Accept either.
+        for option in dropdown.options:
+            option_key = str(option.key or "").strip()
+            option_text = str(option.text or "").strip()
+            if preferred_value in {option_key, option_text}:
+                return option_key
+        return None
 
     def _upload_planner(self, base_path, project_id):
         if self._model.level == UploaderLevel.FILE:
@@ -729,28 +751,6 @@ class ControllerUploader:
             yield
         finally:
             self._view.close_progress_bar_dialog()
-
-    @staticmethod
-    def _dropdown_has_option(dropdown: ft.Dropdown, key: str):
-        return any(option.key == key for option in dropdown.options)
-
-    @staticmethod
-    def _resolve_dropdown_selection(dropdown: ft.Dropdown, preferred_value: str | None):
-        if not preferred_value:
-            return None
-
-        preferred_value = str(preferred_value).strip()
-        if not preferred_value:
-            return None
-
-        # XNAT can expose internal accession IDs as option keys while the
-        # creation flow tracks user-provided labels. Accept either.
-        for option in dropdown.options:
-            option_key = str(option.key or "").strip()
-            option_text = str(option.text or "").strip()
-            if preferred_value in {option_key, option_text}:
-                return option_key
-        return None
 
     @staticmethod
     def _report_dicom_validation(validation_report: dict) -> str:
