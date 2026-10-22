@@ -31,7 +31,8 @@ class FilesystemService:
             )
 
         return FilesystemService._filter_scans(experiment_list,
-                                               conversion_type)
+                                               conversion_type,
+                                               level)
 
     @staticmethod
     def get_output_scans(input_scans: list, input_root: Path, output_root: Path):
@@ -109,36 +110,53 @@ class FilesystemService:
 
     @staticmethod
     def _is_ivis_scan(scan: Path) -> bool:
-        """An IVIS scan is valid if it contains tif with 'clickinfo'
-        in the name."""
+        """An IVIS scan is valid if it contains a TIFF file
+        and a file with 'clickinfo' in its name.
+        """
+        has_tiff = False
+        has_clickinfo = False
 
-        has_tiff = any(
-            f.is_file() and f.suffix.lower() in {".tif", ".tiff"}
-            for f in scan.iterdir()
-        )
+        for f in scan.iterdir():
+            if not f.is_file():
+                continue
 
-        has_clickinfo = any(
-            f.is_file() and "clickinfo".lower() in f.name.lower()
-            for f in scan.iterdir()
-        )
+            if f.suffix.lower() in {".tif", ".tiff"}:
+                has_tiff = True
 
-        return has_tiff and has_clickinfo
+            if "clickinfo" in f.name.lower():
+                has_clickinfo = True
+
+            if has_tiff and has_clickinfo:
+                return True
+
+        return False
 
     @staticmethod
-    def _filter_scans(experiment_list: List[Path],
-                      conversion_type: ConverterType) -> list[Path]:
-        scans = []
-        for exp in experiment_list:
-            for scan in exp.iterdir():
-                if not scan.is_dir():
-                    continue
+    def _filter_scans(
+            experiment_list: list[Path],
+            conversion_type: ConverterType,
+            level: ConverterLevel,
+    ) -> list[Path]:
 
-                if conversion_type == ConverterType.BRUKER2DICOM:
-                    if FilesystemService._is_bruker_scan(scan):
-                        scans.append(scan)
+        if conversion_type == ConverterType.IVIS2DICOM:
+            if level == ConverterLevel.EXPERIMENT:
+                if not experiment_list:
+                    return []
 
-                elif conversion_type == ConverterType.IVIS2DICOM:
-                    if FilesystemService._is_ivis_scan(scan):
-                        scans.append(scan)
+                scan = experiment_list[0]
+                return [scan] if FilesystemService._is_ivis_scan(scan) else []
 
-        return scans
+            is_valid_scan = FilesystemService._is_ivis_scan
+
+        elif conversion_type == ConverterType.BRUKER2DICOM:
+            is_valid_scan = FilesystemService._is_bruker_scan
+
+        else:
+            return []
+
+        return [
+            scan
+            for exp in experiment_list
+            for scan in exp.iterdir()
+            if scan.is_dir() and is_valid_scan(scan)
+        ]
