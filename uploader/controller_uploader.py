@@ -283,8 +283,7 @@ class ControllerUploader:
         self._view_xnat_new_project.open()
 
     def on_data_project_collected(self, data: dict[str, str]):
-        requested_project_id = str(data.get("project_id", "")).strip()
-        project_id = self._sanitize_label(requested_project_id)
+        project_id = data.get("project_id")
 
         if not project_id:
             self._view.create_alert("Cannot create project: invalid project ID.")
@@ -308,9 +307,15 @@ class ControllerUploader:
                 self._view.create_alert(f"Cannot create project: {ex}")
                 return
             project_id = created_project["project_id"]
-            project_label = created_project["project_name"] or project_id
+            project_name = created_project["project_name"] or project_id
 
-            self._upsert_and_select_project(project_id, project_label)
+            self._clear_xnat_target_selection()
+
+            self._upsert_and_select_dropdown(
+                self._view.dd_xnat_project,
+                project_id,
+                project_name,
+            )
 
         self._view.create_alert(
             f"Project '{project_id}' created successfully."
@@ -327,8 +332,8 @@ class ControllerUploader:
 
         try:
             projects = self._xnat_repo.list_projects()
-            project_ids = [project["id"] for project in projects]
-            self._view_xnat_new_subject.set_project_options(project_ids)
+            project_ids_names = [(project["id"], project["name"]) for project in projects]
+            self._view_xnat_new_subject.set_project_options(project_ids_names)
         except Exception as ex:
             self._view.create_alert(f"Cannot load projects for new subject: {ex}")
             return
@@ -336,20 +341,19 @@ class ControllerUploader:
         self._view_xnat_new_subject.open()
 
     def on_data_subject_collected(self, data: dict[str, str]):
-        project_id = str(data.get("parent_project", "")).strip()
-        requested_subject_id = str(data.get("subject_id", "")).strip()
-        normalized_subject_id = self._sanitize_label(requested_subject_id)
+        project_id = data.get("parent_project")
+        subject_label = data.get("subject_label")
 
-        if not project_id or not normalized_subject_id:
-            self._view.create_alert("Cannot create subject: invalid project/subject ID.")
+        if not project_id or not subject_label:
+            self._view.create_alert("Cannot create subject: select a project and write subject label.")
             return
 
         with self._upload_progress_dialog():
             try:
-                if self._xnat_repo.subject_exists(project_id, normalized_subject_id):
+                if self._xnat_repo.subject_exists(project_id, subject_label):
                     self._clear_xnat_target_selection()
                     self._view.create_alert(
-                        f"Subject '{normalized_subject_id}' already exists in project '{project_id}'."
+                        f"Subject '{subject_label}' already exists in project '{project_id}'."
                     )
                     return
             except Exception as ex:
@@ -364,11 +368,18 @@ class ControllerUploader:
 
             project_id = created_subject["project_id"]
             subject_id = created_subject["subject_id"]
+            subject_label = created_subject["subject_label"]
+
+            self._clear_xnat_target_selection()
 
             self._view.dd_xnat_project.value = project_id
 
             try:
-                self._refresh_subject_dropdown(project_id, subject_id)
+                self._upsert_and_select_dropdown(
+                    self._view.dd_xnat_subject,
+                    subject_id,
+                    subject_label,
+                )
             except Exception as ex:
                 self._view.create_alert(
                     f"Subject created but list refresh failed: {ex}")
@@ -376,7 +387,7 @@ class ControllerUploader:
                 return
 
         self._view.create_alert(
-            f"Subject '{subject_id}' created successfully in project '{project_id}'."
+            f"Subject '{subject_label}' created successfully."
         )
 
     # ==========================================================
@@ -390,8 +401,8 @@ class ControllerUploader:
         self._controller_xnat_new_experiment.reset_form()
         try:
             projects = self._xnat_repo.list_projects()
-            project_ids = [project["id"] for project in projects]
-            self._view_xnat_new_experiment.set_project_options(project_ids)
+            project_ids_names = [(project["id"], project["name"]) for project in projects]
+            self._view_xnat_new_experiment.set_project_options(project_ids_names)
         except Exception as ex:
             self._view.create_alert(f"Cannot load projects for new experiment: {ex}")
             return
@@ -402,7 +413,8 @@ class ControllerUploader:
             self._view_xnat_new_experiment.dd_project.value = selected_project_id
             try:
                 subjects = self._xnat_repo.list_subjects(selected_project_id)
-                self._view_xnat_new_experiment.set_subject_options(subjects)
+                subject_ids_names = [(subject["id"], subject["name"]) for subject in subjects]
+                self._view_xnat_new_experiment.set_subject_options(subject_ids_names)
             except Exception as ex:
                 self._view.create_alert(
                     f"Cannot load subjects for project '{selected_project_id}': {ex}")
@@ -428,14 +440,13 @@ class ControllerUploader:
         self._controller_xnat_new_experiment.update_submit()
 
     def on_data_experiment_collected(self, data: dict[str, str]):
-        project_id = str(data.get("parent_project", "")).strip()
-        subject_id = str(data.get("subject_project", "")).strip()
-        requested_experiment_id = str(data.get("experiment_id", "")).strip()
-        normalized_experiment_id = self._sanitize_label(requested_experiment_id)
+        project_id = data.get("parent_project")
+        subject_id = data.get("parent_subject")
+        experiment_label = data.get("experiment_label")
 
-        if not project_id or not subject_id or not normalized_experiment_id:
+        if not project_id or not subject_id or not experiment_label:
             self._view.create_alert(
-                "Cannot create experiment: invalid project/subject/experiment ID."
+                "Cannot create experiment: invalid project/subject/experiment label."
             )
             return
 
@@ -444,11 +455,11 @@ class ControllerUploader:
                 if self._xnat_repo.experiment_exists(
                     project_id,
                     subject_id,
-                    normalized_experiment_id,
+                    experiment_label,
                 ):
                     self._view.create_alert(
-                        f"Experiment '{normalized_experiment_id}' already exists in "
-                        f"subject '{subject_id}' (project '{project_id}')."
+                        f"Experiment '{experiment_label}' already exists in "
+                        f"subject ID '{subject_id}' (project ID '{project_id}')."
                     )
                     return
             except Exception as ex:
@@ -463,26 +474,27 @@ class ControllerUploader:
 
             project_id = created_experiment["project_id"]
             subject_id = created_experiment["subject_id"]
+            experiment_label = created_experiment["experiment_label"]
             experiment_id = created_experiment["experiment_id"]
 
-            self._upsert_and_select_project(project_id, project_id)
+            self._clear_xnat_target_selection()
+
+            self._view.dd_xnat_project.value = project_id
+            self._view.dd_xnat_subject.value = subject_id
 
             try:
-                self._refresh_subject_dropdown(project_id, subject_id)
-            except Exception as ex:
-                self._view.create_alert(
-                    f"Experiment created but subject list refresh failed: {ex}")
-                return
-
-            try:
-                self._refresh_experiment_dropdown(project_id, subject_id, experiment_id)
+                self._upsert_and_select_dropdown(
+                    self._view.dd_xnat_experiment,
+                    experiment_id,
+                    experiment_label,
+                )
             except Exception as ex:
                 self._view.create_alert(
                     f"Experiment created but experiment list refresh failed: {ex}")
                 return
 
         self._view.create_alert(
-            f"Experiment '{experiment_id}' created successfully for subject '{subject_id}'."
+            f"Experiment '{experiment_label}' created successfully."
         )
 
     # ==========================================================
@@ -591,13 +603,22 @@ class ControllerUploader:
         except Exception as e:
             self._view.create_alert(f"Preview failed: {e}")
 
-    def _upsert_and_select_project(self, project_id: str, project_label: str):
-        if not self._dropdown_has_option(self._view.dd_xnat_project, project_id):
-            self._view.dd_xnat_project.options.append(
-                ft.dropdown.Option(key=project_id, text=project_label or project_id)
+    def _upsert_and_select_dropdown(
+            self,
+            dropdown: ft.Dropdown,
+            item_id: str,
+            item_name: str,
+    ) -> None:
+        if not self._dropdown_has_option(dropdown, item_id):
+            dropdown.options.append(
+                ft.dropdown.Option(
+                    key=item_id,
+                    text=item_name or item_id,
+                )
             )
-        self._view.dd_xnat_project.value = project_id
-        self._view.dd_xnat_project.update()
+
+        dropdown.value = item_id
+        dropdown.update()
 
     def _clear_xnat_target_selection(self):
         self._view.dd_xnat_project.value = None
@@ -605,50 +626,9 @@ class ControllerUploader:
         self._view.reset_dropdown(self._view.dd_xnat_experiment)
         self._view.update_page()
 
-    def _refresh_subject_dropdown(self, project_id: str, selected_subject_id: str | None = None) -> list[dict[str, str]]:
-        subjects = self._xnat_repo.list_subjects(project_id)
-        self._view.populate_subjects(subjects)
-        self._view.dd_xnat_subject.value = self._resolve_dropdown_selection(
-            self._view.dd_xnat_subject,
-            selected_subject_id,
-        )
-        self._view.update_page()
-        return subjects
-
-    def _refresh_experiment_dropdown(self,
-                                     project_id: str,
-                                     subject_id: str,
-                                     selected_experiment_id: str | None = None):
-        experiments = self._xnat_repo.list_experiments(project_id, subject_id)
-        self._view.populate_experiments(experiments)
-        self._view.dd_xnat_experiment.value = self._resolve_dropdown_selection(
-            self._view.dd_xnat_experiment,
-            selected_experiment_id,
-        )
-        self._view.update_page()
-        return experiments
-
     @staticmethod
     def _dropdown_has_option(dropdown: ft.Dropdown, key: str):
         return any(option.key == key for option in dropdown.options)
-
-    @staticmethod
-    def _resolve_dropdown_selection(dropdown: ft.Dropdown, preferred_value: str | None):
-        if not preferred_value:
-            return None
-
-        preferred_value = str(preferred_value).strip()
-        if not preferred_value:
-            return None
-
-        # XNAT can expose internal accession IDs as option keys while the
-        # creation flow tracks user-provided labels. Accept either.
-        for option in dropdown.options:
-            option_key = str(option.key or "").strip()
-            option_text = str(option.text or "").strip()
-            if preferred_value in {option_key, option_text}:
-                return option_key
-        return None
 
     def _upload_planner(self, base_path, project_id):
         if self._model.level == UploaderLevel.FILE:

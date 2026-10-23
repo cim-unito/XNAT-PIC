@@ -13,9 +13,7 @@ class ViewXnatNewExperiment(BaseView):
 
         self.dd_project = None
         self.dd_subject = None
-        self.txt_experiment_name = None
-        self.txt_experiment_id = None
-        self.chk_edit_id = None
+        self.txt_experiment_label = None
 
         self.btn_submit = None
         self.btn_cancel = None
@@ -32,36 +30,27 @@ class ViewXnatNewExperiment(BaseView):
     def set_initial_state(self):
         self.dd_project.value = None
         self.dd_subject.value = None
-        self.txt_experiment_name.value = ""
-        self.txt_experiment_id.value = ""
-        self.txt_experiment_id.disabled = True
-        self.chk_edit_id.value = False
+        self.txt_experiment_label.value = ""
         self.btn_submit.disabled = True
 
-    def set_project_options(self, projects: list):
-        self.dd_project.options = [ft.dropdown.Option(project) for project in projects]
+    def set_project_options(self, project_ids_names: list):
+        self.dd_project.options = [
+            ft.dropdown.Option(
+                key=str(project_id),
+                text=project_name
+            )
+            for project_id, project_name in project_ids_names
+        ]
         self.update_page()
 
-    def set_subject_options(self, subjects: list):
-        self.dd_subject.options = []
-
-        for subject in subjects:
-            if isinstance(subject, dict):
-                self.dd_subject.options.append(
-                    ft.dropdown.Option(
-                        key=subject.get("id"),
-                        text=subject.get("label") or subject.get("id"),
-                    )
-                )
-            else:
-                self.dd_subject.options.append(ft.dropdown.Option(subject))
-
-    def set_experiment_id_value(self, value: str):
-        self.txt_experiment_id.value = value
-        self._page.update()
-
-    def set_experiment_id_editable(self, editable: bool):
-        self.txt_experiment_id.disabled = not editable
+    def set_subject_options(self, subject_ids_names: list[tuple[str, str]]):
+        self.dd_subject.options = [
+            ft.dropdown.Option(
+                key=str(subject_id),
+                text=subject_name
+            )
+            for subject_id, subject_name in subject_ids_names
+        ]
         self.update_page()
 
     def set_submit_enabled(self, enabled: bool):
@@ -90,16 +79,7 @@ class ViewXnatNewExperiment(BaseView):
 
         self.dd_subject = ft.Dropdown(label="Parent subject *", options=[], expand=True)
 
-        self.txt_experiment_name = ft.TextField(label="Experiment name *", expand=True)
-
-        self.txt_experiment_id = ft.TextField(
-            label="Experiment ID *",
-            disabled=True,
-            expand=True,
-        )
-        self.chk_edit_id = ft.Checkbox(label="Edit ID")
-
-        self.txt_error = ft.Text(value="", color=ft.Colors.RED_600)
+        self.txt_experiment_label = ft.TextField(label="Experiment name *", expand=True)
 
         self.btn_cancel = ft.TextButton("Close")
         self.btn_submit = ft.ElevatedButton(
@@ -112,20 +92,13 @@ class ViewXnatNewExperiment(BaseView):
         self.btn_submit.on_click = self._on_submit
 
     def _define_layout(self):
-        id_row = ft.Row(
-            [self.txt_experiment_id, self.chk_edit_id],
-            spacing=10,
-        )
-
         content = ft.Column(
             width=600,
             spacing=12,
             controls=[
                 self.dd_project,
                 self.dd_subject,
-                self.txt_experiment_name,
-                id_row,
-                self.txt_error,
+                self.txt_experiment_label,
             ],
             scroll=ft.ScrollMode.AUTO,
         )

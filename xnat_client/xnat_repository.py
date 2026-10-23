@@ -11,15 +11,14 @@ class XnatRepository:
 
     def list_projects(self) -> list[dict[str, str]]:
         return [
-            {"id": p.id, "label": p.name}
+            {"id": p.id, "name": p.name}
             for p in self._session.projects.values()
         ]
 
     def project_exists(self, project_id: str) -> bool:
-        normalized_project_id = self._sanitize_label(str(project_id or "").strip())
-        if not normalized_project_id:
+        if not project_id:
             return False
-        return normalized_project_id in self._session.projects
+        return project_id in self._session.projects
 
     def list_subjects(self, project_id: str) -> list[dict[str, str]]:
         prj = self._session.projects[project_id]
@@ -29,17 +28,14 @@ class XnatRepository:
             for s in prj.subjects.values()
         ]
 
-    def subject_exists(self, project_id: str, subject_id: str) -> bool:
-        normalized_project_id = self._sanitize_label(str(project_id or "").strip())
-        normalized_subject_id = self._sanitize_label(str(subject_id or "").strip())
-        if not normalized_project_id or not normalized_subject_id:
+    def subject_exists(self, project_id: str, subject_label: str) -> bool:
+        if not project_id or not subject_label:
             return False
-        try:
-            subjects = self.list_subjects(normalized_project_id)
-        except Exception:
-            return False
+
+        subjects = self.list_subjects(project_id)
+
         return any(
-            s["id"] == normalized_subject_id or s["label"] == normalized_subject_id
+            s["label"] == subject_label
             for s in subjects
         )
 
@@ -51,29 +47,24 @@ class XnatRepository:
             for e in subj.experiments.values()
         ]
 
-    def experiment_exists(self, project_id: str, subject_id: str, experiment_id: str) -> bool:
-        normalized_project_id = self._sanitize_label(str(project_id or "").strip())
-        normalized_subject_id = self._sanitize_label(str(subject_id or "").strip())
-        normalized_experiment_id = self._sanitize_label(str(experiment_id or "").strip())
-
-        if not normalized_project_id or not normalized_subject_id or not normalized_experiment_id:
+    def experiment_exists(self, project_id: str, subject_id: str, experiment_label: str) -> bool:
+        if not project_id or not subject_id or not experiment_label:
             return False
 
         try:
-            experiments = self.list_experiments(normalized_project_id, normalized_subject_id)
+            experiments = self.list_experiments(project_id, subject_id)
         except Exception:
             return False
 
         return any(
-            e["id"] == normalized_experiment_id or e["label"] == normalized_experiment_id
+            e["label"] == experiment_label
             for e in experiments
         )
 
     def create_project(self, data: dict[str, str]) -> dict[str, str]:
         session = self._session
 
-        project_id = str(data.get("project_id") or "").strip()
-        project_id = self._sanitize_label(project_id)
+        project_id = data.get("project_id")
 
         if not project_id:
             raise ValueError("Project ID is required.")
@@ -94,7 +85,6 @@ class XnatRepository:
                 parent=session,
                 secondary_id=project_id,
                 id_=project_id,
-                label=project_id,
                 name=project_name,
             )
 
@@ -114,33 +104,27 @@ class XnatRepository:
             ) from err
 
         return {
-            "project_id": project_id,
-            "project_name": project_name,
+            "project_id": project.id,
+            "project_name": project.name,
             "accessibility": project_access,
-            "description": project_description,
+            "description": project_description or "",
         }
 
     def create_subject(self, data: dict[str, str]) -> dict[str, str]:
         session = self._session
 
-        project_id = str(data["parent_project"]).strip()
-        subject_id = str(data["subject_id"]).strip()
-        subject_id = self._sanitize_label(subject_id)
+        project_id = data.get("parent_project")
+        subject_label = data.get("subject_label")
         if not project_id:
             raise ValueError("parent_project is required.")
-        if not subject_id:
-            raise ValueError("subject_id is required.")
-
-        subject_name = str(data.get("subject_name", "")).strip()
-        subject_label = subject_name or subject_id
+        if not subject_label:
+            raise ValueError("subject_label is required.")
 
         try:
             project = session.projects[project_id]
             subject = session.classes.SubjectData(
                 parent = project,
-                id_ = subject_id,
-                label = subject_id,
-                name = subject_label,
+                label = subject_label,
             )
             session.clearcache()
         except Exception as err:
@@ -156,39 +140,34 @@ class XnatRepository:
             )
 
             raise RuntimeError(
-                f"Subject creation failed for '{subject_id}': {error_message}"
+                f"Subject creation failed for '{subject_label}': {error_message}"
             ) from err
 
         return {
-            "project_id": project_id,
-            "subject_name": subject_label,
-            "subject_id": subject_id,
+            "project_id": subject.project,
+            "subject_label": subject.label,
+            "subject_id": subject.id,
         }
 
     def create_experiment(self, data: dict[str, str]) -> dict[str, str]:
         session = self._session
 
-        project_id = str(data["parent_project"]).strip()
-        subject_id = str(data["subject_project"]).strip()
-        experiment_id = str(data["experiment_id"]).strip()
-        experiment_id = self._sanitize_label(experiment_id)
+        project_id = data.get("parent_project")
+        subject_id = data.get("parent_subject")
+        experiment_label = data.get("experiment_label")
+
         if not project_id:
             raise ValueError("parent_project is required.")
         if not subject_id:
-            raise ValueError("subject_project is required.")
-        if not experiment_id:
+            raise ValueError("parent_subject is required.")
+        if not experiment_label:
             raise ValueError("experiment_id is required.")
-
-        experiment_name = str(data.get("experiment_name", "")).strip()
-        experiment_label = experiment_name or experiment_id
 
         try:
             subject = session.projects[project_id].subjects[subject_id]
-            session.classes.MrSessionData(
+            experiment = session.classes.MrSessionData(
                 parent = subject,
-                id_ = experiment_id,
-                label = experiment_id,
-                name = experiment_label,
+                label = experiment_label,
             )
             session.clearcache()
         except Exception as err:
@@ -204,20 +183,13 @@ class XnatRepository:
             )
 
             raise RuntimeError(
-                f"Experiment creation failed for '{experiment_id}': {error_message}"
+                f"Experiment creation failed for '{experiment_label}': {error_message}"
             ) from err
 
         return {
-            "project_id": project_id,
-            "subject_id": subject_id,
-            "experiment_id": experiment_id,
-            "experiment_name": experiment_label,
+            "project_id": experiment.project,
+            "subject_id": experiment.subject_id,
+            "experiment_label": experiment.label,
+            "experiment_id": experiment.id,
         }
 
-    @staticmethod
-    def _sanitize_label(label: str) -> str | None:
-        cleaned = "".join(
-            ch if (ch.isalnum() or ch in {"_", "-"}) else "_"
-            for ch in label.strip()
-        )
-        return cleaned or None

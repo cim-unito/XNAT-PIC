@@ -12,9 +12,7 @@ class ViewXnatNewSubject(BaseView):
         self.dlg = None
 
         self.dd_project = None
-        self.txt_subject_name = None
-        self.txt_subject_id = None
-        self.chk_edit_id = None
+        self.txt_subject_label = None
 
         self.btn_submit = None
         self.btn_cancel = None
@@ -30,22 +28,17 @@ class ViewXnatNewSubject(BaseView):
 
     def set_initial_state(self):
         self.dd_project.value = None
-        self.txt_subject_name.value = ""
-        self.txt_subject_id.value = ""
-        self.txt_subject_id.disabled = True
-        self.chk_edit_id.value = False
+        self.txt_subject_label.value = ""
         self.btn_submit.disabled = True
 
-    def set_project_options(self, projects: list):
-        self.dd_project.options = [ft.dropdown.Option(project) for project in projects]
-        self.update_page()
-
-    def set_subject_id_value(self, value: str):
-        self.txt_subject_id.value = value
-        self._page.update()
-
-    def set_subject_id_editable(self, editable: bool):
-        self.txt_subject_id.disabled = not editable
+    def set_project_options(self, project_ids_names: list):
+        self.dd_project.options = [
+            ft.dropdown.Option(
+                key=str(project_id),
+                text=project_name
+            )
+            for project_id, project_name in project_ids_names
+        ]
         self.update_page()
 
     def set_submit_enabled(self, enabled: bool):
@@ -68,20 +61,10 @@ class ViewXnatNewSubject(BaseView):
         self._page.close(self.dlg)
         self._page.update()
 
-
     def _build_controls(self):
         self.dd_project = ft.Dropdown(label="Parent project *", options=[], expand=True)
 
-        self.txt_subject_name = ft.TextField(label="Subject name *", expand=True)
-
-        self.txt_subject_id = ft.TextField(
-            label="Subject ID *",
-            disabled=True,
-            expand=True,
-        )
-        self.chk_edit_id = ft.Checkbox(label="Edit ID")
-
-        self.txt_error = ft.Text(value="", color=ft.Colors.RED_600)
+        self.txt_subject_label = ft.TextField(label="Subject name *", expand=True)
 
         self.btn_cancel = ft.TextButton("Close")
         self.btn_submit = ft.ElevatedButton(
@@ -94,19 +77,12 @@ class ViewXnatNewSubject(BaseView):
         self.btn_submit.on_click = self._on_submit
 
     def _define_layout(self):
-        id_row = ft.Row(
-            [self.txt_subject_id, self.chk_edit_id],
-            spacing=10,
-        )
-
         content = ft.Column(
             width=600,
             spacing=12,
             controls=[
                 self.dd_project,
-                self.txt_subject_name,
-                id_row,
-                self.txt_error,
+                self.txt_subject_label,
             ],
             scroll=ft.ScrollMode.AUTO,
         )

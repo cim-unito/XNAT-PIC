@@ -85,7 +85,7 @@ class XnatDropdownMixin:
 
     def populate_projects(self, projects):
         self.dd_xnat_project.options = [
-            ft.dropdown.Option(key=p["id"], text=p["label"]) for p in projects
+            ft.dropdown.Option(key=p["id"], text=p["name"]) for p in projects
         ]
         self.dd_xnat_project.value = None
 
