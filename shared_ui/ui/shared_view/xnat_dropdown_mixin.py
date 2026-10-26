@@ -7,7 +7,7 @@ class XnatDropdownMixin:
         self.dd_xnat_subject = None
         self.dd_xnat_experiment = None
 
-    def populate_projects(self, projects):
+    def populate_projects(self, projects: list[dict[str, str]]):
         self.dd_xnat_project.options = [
             ft.dropdown.Option(key=p["id"], text=p["name"]) for p in projects
         ]
@@ -18,7 +18,7 @@ class XnatDropdownMixin:
 
         self._page.update()
 
-    def populate_subjects(self, subjects):
+    def populate_subjects(self, subjects: list[dict[str, str]]):
         self.dd_xnat_subject.options = [
             ft.dropdown.Option(key=s["id"], text=s["label"]) for s in subjects
         ]
@@ -28,7 +28,7 @@ class XnatDropdownMixin:
 
         self._page.update()
 
-    def populate_experiments(self, experiments):
+    def populate_experiments(self, experiments: list[dict[str, str]]):
         self.dd_xnat_experiment.options = [
             ft.dropdown.Option(key=e["id"], text=e["label"]) for e in experiments
         ]
@@ -36,6 +36,6 @@ class XnatDropdownMixin:
         self._page.update()
 
     @staticmethod
-    def reset_dropdown(dd):
+    def reset_dropdown(dd: ft.Dropdown):
         dd.options = []
         dd.value = None

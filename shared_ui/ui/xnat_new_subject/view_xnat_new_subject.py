@@ -31,14 +31,12 @@ class ViewXnatNewSubject(BaseView):
         self.txt_subject_label.value = ""
         self.btn_submit.disabled = True
 
-    def set_project_options(self, project_ids_names: list):
+    def populate_project_options(self, projects: list[dict[str, str]]):
         self.dd_project.options = [
-            ft.dropdown.Option(
-                key=str(project_id),
-                text=project_name
-            )
-            for project_id, project_name in project_ids_names
+            ft.dropdown.Option(key=p["id"], text=p["name"]) for p in projects
         ]
+        self.dd_project.value = None
+
         self.update_page()
 
     def set_submit_enabled(self, enabled: bool):

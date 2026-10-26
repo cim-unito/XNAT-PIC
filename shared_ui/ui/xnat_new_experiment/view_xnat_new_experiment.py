@@ -33,15 +33,21 @@ class ViewXnatNewExperiment(BaseView):
         self.txt_experiment_label.value = ""
         self.btn_submit.disabled = True
 
-    def set_project_options(self, project_ids_names: list):
+    def populate_project_options(self, projects: list[dict[str, str]]):
         self.dd_project.options = [
-            ft.dropdown.Option(
-                key=str(project_id),
-                text=project_name
-            )
-            for project_id, project_name in project_ids_names
+            ft.dropdown.Option(key=p["id"], text=p["name"]) for p in projects
         ]
+        self.dd_project.value = None
+
         self.update_page()
+
+    def populate_subject_options(self, subjects: list[dict[str, str]]):
+        self.dd_subject.options = [
+            ft.dropdown.Option(key=s["id"], text=s["label"]) for s in subjects
+        ]
+        self.dd_subject.value = None
+
+        self._page.update()
 
     def set_subject_options(self, subject_ids_names: list[tuple[str, str]]):
         self.dd_subject.options = [
@@ -61,6 +67,14 @@ class ViewXnatNewExperiment(BaseView):
         self.dd_project.options = []
         self.dd_subject.options = []
         self.set_initial_state()
+        self._page.update()
+
+    def reset_form_subject(self):
+        self.dd_subject.options = []
+        self.dd_subject.key = "Select"
+        self.dd_subject.value = None
+        self.txt_experiment_label.value = ""
+        self.btn_submit.disabled = True
         self._page.update()
 
     def open(self):

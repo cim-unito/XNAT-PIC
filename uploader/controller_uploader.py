@@ -169,8 +169,8 @@ class ControllerUploader:
 
     def on_project_selected(self, e: ft.ControlEvent):
         project_id = self._view.dd_xnat_project.value
-        self._view.populate_subjects([])
-        self._view.populate_experiments([])
+        self._view.reset_dropdown(self._view.subject)
+        self._view.reset_dropdown(self._view.dd_xnat_experiment)
 
         if not project_id:
             return
@@ -184,7 +184,7 @@ class ControllerUploader:
     def on_subject_selected(self, e: ft.ControlEvent):
         project_id = self._view.dd_xnat_project.value
         subject_id = self._view.dd_xnat_subject.value
-        self._view.populate_experiments([])
+        self._view.reset_dropdown(self._view.dd_xnat_experiment)
 
         if not project_id or not subject_id:
             return
@@ -303,19 +303,26 @@ class ControllerUploader:
 
             try:
                 created_project = self._xnat_repo.create_project(data)
+
+                project_id = created_project["project_id"]
+                project_name = created_project["project_name"] or project_id
             except Exception as ex:
+                self._clear_xnat_target_selection()
                 self._view.create_alert(f"Cannot create project: {ex}")
                 return
-            project_id = created_project["project_id"]
-            project_name = created_project["project_name"] or project_id
 
-            self._clear_xnat_target_selection()
+            try:
+                self._clear_xnat_target_selection()
 
-            self._upsert_and_select_dropdown(
-                self._view.dd_xnat_project,
-                project_id,
-                project_name,
-            )
+                self._upsert_and_select_dropdown(
+                    self._view.dd_xnat_project,
+                    project_id,
+                    project_name,
+                )
+            except Exception as ex:
+                self._view.create_alert(
+                    f"Project created but list refresh failed: {ex}")
+                return
 
         self._view.create_alert(
             f"Project '{project_id}' created successfully."
@@ -332,8 +339,7 @@ class ControllerUploader:
 
         try:
             projects = self._xnat_repo.list_projects()
-            project_ids_names = [(project["id"], project["name"]) for project in projects]
-            self._view_xnat_new_subject.set_project_options(project_ids_names)
+            self._view_xnat_new_subject.populate_project_options(projects)
         except Exception as ex:
             self._view.create_alert(f"Cannot load projects for new subject: {ex}")
             return
@@ -362,19 +368,19 @@ class ControllerUploader:
 
             try:
                 created_subject = self._xnat_repo.create_subject(data)
+                project_id = created_subject["project_id"]
+                subject_id = created_subject["subject_id"]
+                subject_label = created_subject["subject_label"] or subject_id
             except Exception as ex:
+                self._clear_xnat_target_selection()
                 self._view.create_alert(f"Cannot create subject: {ex}")
                 return
 
-            project_id = created_subject["project_id"]
-            subject_id = created_subject["subject_id"]
-            subject_label = created_subject["subject_label"]
-
-            self._clear_xnat_target_selection()
-
-            self._view.dd_xnat_project.value = project_id
-
             try:
+                self._clear_xnat_target_selection()
+
+                self._view.dd_xnat_project.value = project_id
+
                 self._upsert_and_select_dropdown(
                     self._view.dd_xnat_subject,
                     subject_id,
@@ -383,7 +389,6 @@ class ControllerUploader:
             except Exception as ex:
                 self._view.create_alert(
                     f"Subject created but list refresh failed: {ex}")
-                self._view.dd_xnat_project.update()
                 return
 
         self._view.create_alert(
@@ -401,30 +406,18 @@ class ControllerUploader:
         self._controller_xnat_new_experiment.reset_form()
         try:
             projects = self._xnat_repo.list_projects()
-            project_ids_names = [(project["id"], project["name"]) for project in projects]
-            self._view_xnat_new_experiment.set_project_options(project_ids_names)
+            self._view_xnat_new_experiment.populate_project_options(projects)
         except Exception as ex:
             self._view.create_alert(f"Cannot load projects for new experiment: {ex}")
             return
-
-        selected_project_id = self._view.dd_xnat_project.value
-
-        if selected_project_id:
-            self._view_xnat_new_experiment.dd_project.value = selected_project_id
-            try:
-                subjects = self._xnat_repo.list_subjects(selected_project_id)
-                subject_ids_names = [(subject["id"], subject["name"]) for subject in subjects]
-                self._view_xnat_new_experiment.set_subject_options(subject_ids_names)
-            except Exception as ex:
-                self._view.create_alert(
-                    f"Cannot load subjects for project '{selected_project_id}': {ex}")
-                return
 
         self._view_xnat_new_experiment.open()
 
     def on_new_experiment_project_selected(self, e: ft.ControlEvent):
         project_id = self._view_xnat_new_experiment.dd_project.value
         self._view_xnat_new_experiment.set_subject_options([])
+        self._view_xnat_new_experiment.reset_form_subject()
+
 
         if not project_id:
             self._controller_xnat_new_experiment.update_submit()
@@ -432,8 +425,8 @@ class ControllerUploader:
 
         try:
             subjects = self._xnat_repo.list_subjects(project_id)
-            subject_ids_names = [(subject["id"], subject["name"]) for subject in subjects]
-            self._view_xnat_new_experiment.set_subject_options(subject_ids_names)
+
+            self._view_xnat_new_experiment.populate_subject_options(subjects)
         except Exception as ex:
             self._view.create_alert(
                 f"Cannot load subjects for project '{project_id}': {ex}")
@@ -469,21 +462,23 @@ class ControllerUploader:
 
             try:
                 created_experiment = self._xnat_repo.create_experiment(data)
+
+                project_id = created_experiment["project_id"]
+                subject_id = created_experiment["subject_id"]
+                experiment_id = created_experiment["experiment_id"]
+                experiment_label = created_experiment["experiment_label"] or experiment_id
             except Exception as ex:
+                self._clear_xnat_target_selection()
                 self._view.create_alert(f"Cannot create experiment: {ex}")
                 return
 
-            project_id = created_experiment["project_id"]
-            subject_id = created_experiment["subject_id"]
-            experiment_label = created_experiment["experiment_label"]
-            experiment_id = created_experiment["experiment_id"]
-
-            self._clear_xnat_target_selection()
-
-            self._view.dd_xnat_project.value = project_id
-            self._view.dd_xnat_subject.value = subject_id
-
             try:
+                self._view.dd_xnat_project.value = project_id
+
+                subjects = self._xnat_repo.list_subjects(project_id)
+                self._view.populate_subjects(subjects)
+                self._view.dd_xnat_subject.value = subject_id
+
                 self._upsert_and_select_dropdown(
                     self._view.dd_xnat_experiment,
                     experiment_id,
@@ -627,10 +622,6 @@ class ControllerUploader:
         self._view.reset_dropdown(self._view.dd_xnat_experiment)
         self._view.update_page()
 
-    @staticmethod
-    def _dropdown_has_option(dropdown: ft.Dropdown, key: str):
-        return any(option.key == key for option in dropdown.options)
-
     def _upload_planner(self, base_path, project_id):
         if self._model.level == UploaderLevel.FILE:
             self._upload_not_dicom_thread(base_path, project_id)
@@ -732,6 +723,10 @@ class ControllerUploader:
             yield
         finally:
             self._view.close_progress_bar_dialog()
+
+    @staticmethod
+    def _dropdown_has_option(dropdown: ft.Dropdown, key: str):
+        return any(option.key == key for option in dropdown.options)
 
     @staticmethod
     def _report_dicom_validation(validation_report: dict) -> str:
