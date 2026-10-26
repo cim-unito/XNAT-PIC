@@ -31,7 +31,7 @@ class XnatRepository:
     def subject_exists(self, project_id: str, subject_label: str) -> bool:
         if not project_id or not subject_label:
             return False
-
+        
         subjects = self.list_subjects(project_id)
 
         return any(
@@ -51,10 +51,7 @@ class XnatRepository:
         if not project_id or not subject_id or not experiment_label:
             return False
 
-        try:
-            experiments = self.list_experiments(project_id, subject_id)
-        except Exception:
-            return False
+        experiments = self.list_experiments(project_id, subject_id)
 
         return any(
             e["label"] == experiment_label

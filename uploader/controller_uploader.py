@@ -739,11 +739,4 @@ class ControllerUploader:
 
         return message
 
-    @staticmethod
-    def _sanitize_label(label: str):
-        cleaned = "".join(
-            ch if (ch.isalnum() or ch in {"_", "-"}) else "_"
-            for ch in label.strip()
-        )
-        return cleaned or None
 
