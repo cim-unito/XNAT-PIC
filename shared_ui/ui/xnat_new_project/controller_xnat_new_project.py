@@ -16,7 +16,7 @@ class ControllerXnatNewProject:
         project_name = e.control.value
 
         if not self._view.chk_edit_id.value:
-            project_id = self._model.generate_project_id(project_name)
+            project_id = project_name
             self._view.set_project_id_value(project_id)
 
         self._update_submit()
@@ -30,21 +30,11 @@ class ControllerXnatNewProject:
 
         if not editable:
             project_name = self._view.txt_project_name.value
-            self._view.set_project_id_value(self._model.generate_project_id(project_name))
+            self._view.set_project_id_value(project_name)
 
         self._update_submit()
 
     def on_submit_requested(self):
-        validation_errors = self._model.validate_payload(
-            self._view.txt_project_name.value,
-            self._view.txt_project_id.value,
-            self._view.rb_access.value,
-        )
-
-        if validation_errors:
-            self._view.create_alert("\n".join(validation_errors))
-            return
-
         payload = self._model.build_payload(
             self._view.txt_project_name.value,
             self._view.txt_project_id.value,

@@ -1,6 +1,6 @@
 import flet as ft
 
-from shared_ui.ui.base_view import BaseView
+from shared_ui.ui.shared_view.base_view import BaseView
 
 class ViewXnatNewProject(BaseView):
     def __init__(self, page: ft.Page, on_submit=None, on_cancel=None):

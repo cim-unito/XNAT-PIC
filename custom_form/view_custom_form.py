@@ -1,6 +1,8 @@
 import flet as ft
 
-from shared_ui.ui.base_view import BaseView, AuthDialogMixin, XnatDropdownMixin
+from shared_ui.ui.shared_view.base_view import BaseView
+from shared_ui.ui.shared_view.auth_dialog_mixin import AuthDialogMixin
+from shared_ui.ui.shared_view.xnat_dropdown_mixin import XnatDropdownMixin
 from shared_ui.ui.button import Button
 from shared_ui.ui.header import build_header
 from shared_ui.ui.palette import Palette, default_palette

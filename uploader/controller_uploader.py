@@ -432,7 +432,8 @@ class ControllerUploader:
 
         try:
             subjects = self._xnat_repo.list_subjects(project_id)
-            self._view_xnat_new_experiment.set_subject_options(subjects)
+            subject_ids_names = [(subject["id"], subject["name"]) for subject in subjects]
+            self._view_xnat_new_experiment.set_subject_options(subject_ids_names)
         except Exception as ex:
             self._view.create_alert(
                 f"Cannot load subjects for project '{project_id}': {ex}")

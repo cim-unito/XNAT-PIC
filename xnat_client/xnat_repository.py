@@ -92,12 +92,7 @@ class XnatRepository:
             session.put(f"/data/projects/{project_id}/accessibility/{project_access}")
             session.clearcache()
         except Exception as err:
-            error_text = getattr(err, "text", None) or str(err)
-
-            soup = BeautifulSoup(error_text, "html.parser")
-            body = soup.body
-
-            error_message = body.get_text(" ", strip=True) if body else soup.get_text(" ", strip=True)
+            error_message = self._extract_error_message(err)
 
             raise RuntimeError(
                 f"Project creation failed for '{project_id}': {error_message}"
@@ -128,16 +123,7 @@ class XnatRepository:
             )
             session.clearcache()
         except Exception as err:
-            error_text = getattr(err, "text", None) or str(err)
-
-            soup = BeautifulSoup(error_text, "html.parser")
-            body = soup.body
-
-            error_message = (
-                body.get_text(" ", strip=True)
-                if body
-                else soup.get_text(" ", strip=True)
-            )
+            error_message = self._extract_error_message(err)
 
             raise RuntimeError(
                 f"Subject creation failed for '{subject_label}': {error_message}"
@@ -171,16 +157,7 @@ class XnatRepository:
             )
             session.clearcache()
         except Exception as err:
-            error_text = getattr(err, "text", None) or str(err)
-
-            soup = BeautifulSoup(error_text, "html.parser")
-            body = soup.body
-
-            error_message = (
-                body.get_text(" ", strip=True)
-                if body
-                else soup.get_text(" ", strip=True)
-            )
+            error_message = self._extract_error_message(err)
 
             raise RuntimeError(
                 f"Experiment creation failed for '{experiment_label}': {error_message}"
@@ -193,3 +170,22 @@ class XnatRepository:
             "experiment_id": experiment.id,
         }
 
+    @staticmethod
+    def _extract_error_message(err: Exception) -> str:
+        error_text = getattr(err, "text", None) or str(err)
+
+        soup = BeautifulSoup(error_text, "html.parser")
+        body = soup.body
+
+        error_message = (
+            body.get_text(" ", strip=True)
+            if body
+            else soup.get_text(" ", strip=True)
+        )
+
+        error_message = error_message.replace(
+            "You can get technical details here . Please continue your visit at our home page .",
+            ""
+        ).strip()
+
+        return error_message
