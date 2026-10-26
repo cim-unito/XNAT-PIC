@@ -169,7 +169,7 @@ class ControllerUploader:
 
     def on_project_selected(self, e: ft.ControlEvent):
         project_id = self._view.dd_xnat_project.value
-        self._view.reset_dropdown(self._view.subject)
+        self._view.reset_dropdown(self._view.dd_xnat_subject)
         self._view.reset_dropdown(self._view.dd_xnat_experiment)
 
         if not project_id:
@@ -291,17 +291,6 @@ class ControllerUploader:
 
         with self._upload_progress_dialog():
             try:
-                if self._xnat_repo.project_exists(project_id):
-                    self._clear_xnat_target_selection()
-                    self._view.create_alert(
-                        f"Project '{project_id}' already exists on XNAT."
-                    )
-                    return
-            except Exception as ex:
-                self._view.create_alert(f"Cannot verify existing projects: {ex}")
-                return
-
-            try:
                 created_project = self._xnat_repo.create_project(data)
 
                 project_id = created_project["project_id"]
@@ -365,7 +354,6 @@ class ControllerUploader:
             except Exception as ex:
                 self._view.create_alert(f"Cannot verify existing subjects: {ex}")
                 return
-
             try:
                 created_subject = self._xnat_repo.create_subject(data)
                 project_id = created_subject["project_id"]
@@ -446,21 +434,6 @@ class ControllerUploader:
 
         with self._upload_progress_dialog():
             try:
-                if self._xnat_repo.experiment_exists(
-                    project_id,
-                    subject_id,
-                    experiment_label,
-                ):
-                    self._view.create_alert(
-                        f"Experiment '{experiment_label}' already exists in "
-                        f"subject ID '{subject_id}' (project ID '{project_id}')."
-                    )
-                    return
-            except Exception as ex:
-                self._view.create_alert(f"Cannot verify existing experiments: {ex}")
-                return
-
-            try:
                 created_experiment = self._xnat_repo.create_experiment(data)
 
                 project_id = created_experiment["project_id"]
@@ -473,6 +446,8 @@ class ControllerUploader:
                 return
 
             try:
+                self._clear_xnat_target_selection()
+
                 self._view.dd_xnat_project.value = project_id
 
                 subjects = self._xnat_repo.list_subjects(project_id)
