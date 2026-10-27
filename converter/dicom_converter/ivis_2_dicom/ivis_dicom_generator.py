@@ -269,7 +269,7 @@ class IvisDicomGenerator:
         file_meta = FileMetaDataset()
 
         # --- File Meta Information Group Length ---
-        file_meta.FileMetaInformationGroupLength = 202
+        file_meta.FileMetaInformationGroupLength = 125
 
         # --- File Meta Information Version ---
         file_meta.FileMetaInformationVersion = b"\x00\x01"

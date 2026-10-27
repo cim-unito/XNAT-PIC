@@ -1,21 +1,15 @@
 class ModelXnatNewSubject:
 
     @staticmethod
-    def generate_subject_id(subject_id: str) -> str:
-        return subject_id.lower().replace(" ", "_")
-
-    @staticmethod
-    def can_submit(parent_project: str, subject_name: str, subject_id: str) -> bool:
-        return bool((parent_project or "").strip()) and bool((subject_name or "").strip()) and bool((subject_id or "").strip())
+    def can_submit(parent_project: str, subject_label: str) -> bool:
+        return bool((parent_project or "").strip()) and bool((subject_label or "").strip())
 
     @staticmethod
     def build_payload(
             parent_project: str,
-            subject_name: str,
-            subject_id: str,
-    ):
+            subject_label: str,
+    ) -> dict[str, str]:
         return {
             "parent_project": (parent_project or "").strip(),
-            "subject_name": (subject_name or "").strip(),
-            "subject_id": (subject_id or "").strip(),
+            "subject_label": (subject_label or "").strip(),
         }

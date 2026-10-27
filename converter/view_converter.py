@@ -2,7 +2,7 @@ import flet as ft
 
 from enums.converter_type import ConverterType
 from enums.tree_type import TreeType
-from shared_ui.ui.base_view import BaseView
+from shared_ui.ui.shared_view.base_view import BaseView
 from shared_ui.ui.button import Button
 from shared_ui.ui.header import build_header
 from shared_ui.ui.palette import Palette, default_palette

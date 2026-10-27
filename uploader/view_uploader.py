@@ -2,7 +2,9 @@ import flet as ft
 
 from enums.dicom_modality import DicomModality
 from enums.tree_type import TreeType
-from shared_ui.ui.base_view import BaseView, AuthDialogMixin, XnatDropdownMixin
+from shared_ui.ui.shared_view.base_view import BaseView
+from shared_ui.ui.shared_view.auth_dialog_mixin import AuthDialogMixin
+from shared_ui.ui.shared_view.xnat_dropdown_mixin import XnatDropdownMixin
 from shared_ui.ui.button import Button
 from shared_ui.ui.header import build_header
 from shared_ui.ui.palette import Palette, default_palette
@@ -111,7 +113,7 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
 
         self._page.update()
 
-    def set_mode(self, xnat_subject, xnat_experiment):
+    def set_mode(self, xnat_subject: bool, xnat_experiment: bool):
         """Switch the UI to the active conversion mode."""
         # enable/disable top-level
         for c in [
@@ -171,7 +173,7 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         self.img_preview.src_base64 = b64
         self.img_preview.update()
 
-    def show_dicom_tags_dialog(self, tags):
+    def show_dicom_tags_dialog(self, tags:list):
         rows = []
         for elem in tags:
             tag_label = elem.get("tag_hex", str(elem["tag"]))
