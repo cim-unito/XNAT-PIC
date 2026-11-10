@@ -2,7 +2,7 @@
     <img src="assets/images/Eubi.jpg" alt="Logo" width="500"/>
   </a>
 
-# Download
+# Download XNAT-PIC
 You can download XNAT-PIC from the GitHub Releases page:
 
 - **Direct MSI download (Windows):** [XNAT-PIC-2-1-0-rc-1.msi](https://github.com/cim-unito/XNAT-PIC/releases/download/v2.1-rc.1/XNAT-PIC-2-1-0-rc-1.msi)
