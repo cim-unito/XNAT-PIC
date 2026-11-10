@@ -138,7 +138,7 @@ You can download XNAT-PIC from the GitHub Releases page:
 ---
 
 ## XNAT Plugins
-The Optical and Photoacoustic plugins are available for download from the GitHub Releases page:
+The Optical and Photoacoustic plugins are available for download:
 
 - **XNAT Plugin for Optical Imaging:** [optical-imaging-plugin](https://github.com/cim-unito/XNAT-PIC/releases/download/v2.1-rc.1/optical-imaging-plugin-1.0.0-SNAPSHOT-xpl.jar)
 - **XNAT Plugin for Photoacoustic Imaging:** [photoacoustic-imaging-plugin](https://github.com/cim-unito/XNAT-PIC/releases/download/v2.1-rc.1/photoacoustic-imaging-plugin-1.0.0-SNAPSHOT-xpl.jar)
