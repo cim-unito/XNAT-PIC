@@ -2,6 +2,11 @@
     <img src="assets/images/Eubi.jpg" alt="Logo" width="500"/>
   </a>
 
+# Download
+You can download XNAT-PIC from the GitHub Releases page:
+
+- **Direct MSI download (Windows):** [XNAT-PIC-2-1-0-rc-1.msi](https://github.com/cim-unito/XNAT-PIC/releases/download/v2.1-rc.1/XNAT-PIC-2-1-0-rc-1.msi)
+
 ---
 
 # Image Data Community Days 2026 – XNAT-PIC and QC Tools
@@ -38,6 +43,7 @@ This workshop provides instruction on how to use XNAT-PIC and QC Tools within th
   [Download example folder of non-DICOM files](https://github.com/cim-unito/XNAT-PIC/releases/download/v2.1-beta.1/Non_DICOM_folder.zip)
 
 ---
+
 # XNAT-PIC
 
 XNAT for Preclinical Imaging Centers (XNAT-PIC) is a free and open-source Windows desktop application, which offers several tools to expand the XNAT core functionalities to support
