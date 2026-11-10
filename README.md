@@ -58,6 +58,7 @@ the preclinical imaging community and to promote open science practices.
 - [Requirements](#requirements)
 - [Run the App](#run-the-app)
 - [Releases](#releases)
+- [XNAT Plugins](#xnat-plugins)
 - [Roadmap](#roadmap)
 - [License](#license)
 - [Citation](#citation)
@@ -134,6 +135,15 @@ You can download XNAT-PIC from the GitHub Releases page:
 - **Direct MSI download (Windows):** [XNAT-PIC-2-1-0-rc-1.msi](https://github.com/cim-unito/XNAT-PIC/releases/download/v2.1-rc.1/XNAT-PIC-2-1-0-rc-1.msi)
 - **All releases:** [GitHub Releases](https://github.com/cim-unito/XNAT-PIC/releases)
 
+---
+
+## XNAT Plugins
+The Optical and Photoacoustic plugins are available for download from the GitHub Releases page:
+
+- **XNAT Plugin for Optical Imaging:** [optical-imaging-plugin](https://github.com/cim-unito/XNAT-PIC/releases/download/v2.1-rc.1/optical-imaging-plugin-1.0.0-SNAPSHOT-xpl.jar)
+- **XNAT Plugin for Photoacoustic Imaging:** [photoacoustic-imaging-plugin](https://github.com/cim-unito/XNAT-PIC/releases/download/v2.1-rc.1/photoacoustic-imaging-plugin-1.0.0-SNAPSHOT-xpl.jar)
+
+---
 
 ## Roadmap
 
