@@ -46,6 +46,7 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         self.btn_upload = None
         # progressbar
         self.pb_upload = None
+        self.txt_pb = None
         self.dlg_upload = None
 
         # layout
@@ -215,9 +216,11 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
         self._page.open(self.dlg_upload)
         self._page.update()
 
-    def update_progress_bar(self, value: float):
+    def update_progress_bar(self, value_pb: float | int | None, text_pb: str):
         """Update the progress bar value and refresh the page."""
-        self.pb_upload.value = value
+        if value_pb:
+            self.pb_upload.value = value_pb
+        self.txt_pb.value = text_pb
         self._page.update()
 
     def close_progress_bar_dialog(self):
@@ -456,9 +459,10 @@ class ViewUploader(BaseView, AuthDialogMixin, XnatDropdownMixin):
 
         # progressbar dialog
         self.pb_upload = ft.ProgressBar(width=320, value=None)
+        self.txt_pb = ft.Text("Loading...")
         self.dlg_upload = ft.AlertDialog(
             modal=True,
-            title=ft.Text("Loading..."),
+            title=self.txt_pb,
             content=ft.Column(
                 tight=True,
                 spacing=12,
